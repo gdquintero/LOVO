@@ -46,7 +46,8 @@ program algencama
    real(kind=8), allocatable :: c(:),lbnd(:),ubnd(:),lambda(:),x(:)
 
    !--> LOVO Algorithm variables <--
-   integer :: samples,inf,sup
+   integer :: samples,inf,sup,lovo_order
+   real(kind=8) :: sigma
    real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),data(:,:),indices(:),sp_vector(:),grad_sp(:)
 
    integer :: i
@@ -161,7 +162,7 @@ program algencama
    inf = 5
    sup = 5
 
-   call mixed_test(samples,inf,sup,t,y,indices,sp_vector,grad_sp)
+   call mixed_test(samples,n,lovo_order,inf,sup,t,y,indices,sp_vector,grad_sp)
 
    call cpu_time(start)
 
@@ -189,11 +190,12 @@ program algencama
    ! LOVO SUBROUTINES
    ! *****************************************************************
 
-   subroutine mixed_test(samples,inf,sup,t,y,indices,sp_vector,grad_sp)
+   subroutine mixed_test(samples,n,lovo_order,inf,sup,t,y,indices,sp_vector,grad_sp)
       implicit none
 
-      integer,       intent(in) :: samples,inf,sup
+      integer,       intent(in) :: samples,inf,sup,n
       real(kind=8),  intent(in) :: t(samples)
+      integer,       intent(inout) :: lovo_order
       real(kind=8),  intent(inout) :: y(samples),indices(samples),sp_vector(samples),grad_sp(n)
 
       integer :: noutliers
@@ -203,7 +205,7 @@ program algencama
       y(:) = data(2,:)
 
       do noutliers = inf, sup
-         call lovo_algorithm(samples,noutliers,t,y,indices,sp_vector,grad_sp)
+         call lovo_algorithm(samples,n,lovo_order,noutliers,t,y,indices,sp_vector,grad_sp)
       enddo
 
       
@@ -212,23 +214,21 @@ program algencama
    !*****************************************************************
    !*****************************************************************
 
-   subroutine lovo_algorithm(samples,noutliers,t,y,indices,sp_vector,grad_sp)
+   subroutine lovo_algorithm(samples,n,lovo_order,noutliers,t,y,indices,sp_vector,grad_sp)
       implicit none
 
-      integer,       intent(in) :: samples,noutliers
+      integer,       intent(in) :: samples,noutliers,n
       real(kind=8),  intent(in) :: t(samples),y(samples)
+      integer,       intent(inout) :: lovo_order
       real(kind=8),  intent(inout) :: indices(samples),sp_vector(samples),grad_sp(n)
 
-      real(kind=8) :: sp
-      integer :: lovo_order
+      real(kind=8) :: sp,sigmin
 
       x(1:n) = 10.0d0
+      sigmin = 1.0d0
 
       lovo_order = samples - noutliers
-
-      call compute_sp(samples,lovo_order,n,t,y,x,indices,sp_vector,sp)
-      call compute_grad_sp(samples,lovo_order,n,t,y,x,indices,grad_sp)
-
+      sigma = sigmin
 
    end subroutine lovo_algorithm
 
@@ -341,18 +341,20 @@ program algencama
    !*****************************************************************
    !*****************************************************************
 
-   subroutine regularized_taylor(x,n,ind_train,nuk,sigma,res)
+   subroutine regularized_taylor(samples,n,lovo_order,sigma,t,y,x,indices,sp_vector,grad_sp,res)
 
       implicit none
 
-      integer,        intent(in) :: n,nuk,ind_train
-      real(kind=8),   intent(in) :: x(n),sigma
-      real(kind=8),   intent(out) :: res
+      integer,       intent(in) :: samples,n,lovo_order
+      real(kind=8),  intent(in) :: x(n),sigma,t(samples),y(samples)
+      real(kind=8),  intent(inout) :: indices(samples),sp_vector(samples),grad_sp(n)
+      real(kind=8),  intent(out) :: res
 
-      ! call compute_Fmin(x,n,ind_train,res)
-      ! call compute_grad_Fi(x,n,nuk,grad_Fi)
-      ! res = res + dot_product(grad_Fi,x(1:n) - xk(1:n))
-      ! res = res + 0.5d0 * sigma * (norm2(x(1:n) - xk(1:n))**2)
+
+      call compute_sp(samples,lovo_order,n,t,y,x,indices,sp_vector,res)
+      call compute_grad_sp(samples,lovo_order,n,t,y,x,indices,grad_sp)
+      res = res + dot_product(grad_sp,x(1:n) - xk(1:n))
+      res = res + 0.5d0 * sigma * (norm2(x(1:n) - xk(1:n))**2)
 
   end subroutine regularized_Taylor
 
@@ -381,7 +383,7 @@ program algencama
    call c_f_pointer(pdataptr,pdata)
    pdata%counters(1) = pdata%counters(1) + 1
    
-   f = ( x(1) + 4.0d0 ) ** 4.0d0 + x(2) ** 2.0d0
+   call regularized_taylor(samples,n,lovo_order,sigma,t,y,x,indices,sp_vector,grad_sp,f)
    
    end subroutine evalf
 
