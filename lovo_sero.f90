@@ -161,7 +161,7 @@ program algencama
    inf = 5
    sup = 5
 
-   call mixed_test(samples,inf,sup,t,y,indices,sp_vector)
+   call mixed_test(samples,inf,sup,t,y,indices,sp_vector,grad_sp)
 
    call cpu_time(start)
 
@@ -189,12 +189,12 @@ program algencama
    ! LOVO SUBROUTINES
    ! *****************************************************************
 
-   subroutine mixed_test(samples,inf,sup,t,y,indices,sp_vector)
+   subroutine mixed_test(samples,inf,sup,t,y,indices,sp_vector,grad_sp)
       implicit none
 
       integer,       intent(in) :: samples,inf,sup
       real(kind=8),  intent(in) :: t(samples)
-      real(kind=8),  intent(inout) :: y(samples),indices(samples),sp_vector(samples)
+      real(kind=8),  intent(inout) :: y(samples),indices(samples),sp_vector(samples),grad_sp(n)
 
       integer :: noutliers
 
@@ -203,7 +203,7 @@ program algencama
       y(:) = data(2,:)
 
       do noutliers = inf, sup
-         call lovo_algorithm(samples,noutliers,t,y,indices,sp_vector)
+         call lovo_algorithm(samples,noutliers,t,y,indices,sp_vector,grad_sp)
       enddo
 
       
@@ -212,12 +212,12 @@ program algencama
    !*****************************************************************
    !*****************************************************************
 
-   subroutine lovo_algorithm(samples,noutliers,t,y,indices,sp_vector)
+   subroutine lovo_algorithm(samples,noutliers,t,y,indices,sp_vector,grad_sp)
       implicit none
 
       integer,       intent(in) :: samples,noutliers
       real(kind=8),  intent(in) :: t(samples),y(samples)
-      real(kind=8),  intent(inout) :: indices(samples),sp_vector(samples)
+      real(kind=8),  intent(inout) :: indices(samples),sp_vector(samples),grad_sp(n)
 
       real(kind=8) :: sp
       integer :: lovo_order
@@ -227,7 +227,8 @@ program algencama
       lovo_order = samples - noutliers
 
       call compute_sp(samples,lovo_order,n,t,y,x,indices,sp_vector,sp)
-      call compute_grad_sp(samples,n,x,indices)
+      call compute_grad_sp(samples,lovo_order,n,t,y,x,indices,grad_sp)
+
 
    end subroutine lovo_algorithm
 
@@ -262,13 +263,39 @@ program algencama
    !*****************************************************************
    !*****************************************************************
 
-   subroutine compute_grad_sp(samples,n,x,indices,res)
+   subroutine compute_grad_sp(samples,lovo_order,n,t,y,x,indices,res)
       implicit none
 
-      integer,       intent(in) :: samples,n
-      real(kind=8),  intent(in) :: indices(samples),x(n)
+      integer,       intent(in) :: samples,n,lovo_order
+      real(kind=8),  intent(in) :: indices(samples),x(n),t(samples),y(samples)
       real(kind=8),  intent(out) :: res(n)
+
+      real(kind=8) :: gaux1,gaux2,a,b,c,ebt,ti,i,j
+
+      a = x(1)
+      b = x(2)
+      c = x(3)
       
+      res(:) = 0.0d0
+
+      do i = 1, lovo_order
+         ti = t(int(indices(i)))
+         ebt = exp(-b * ti)
+
+         call model(x,int(indices(i)),n,t,samples,gaux1)
+
+         gaux1 = gaux1 - y(int(indices(i)))
+         gaux2 = (a / b) * ti * ebt + (1.0d0 / b) * ((a / b) - c) * (ebt - 1.0d0) - c * ti
+         gaux2 = exp(gaux2)
+
+         res(1) = (1.0d0 / b**2) * (ebt * (ti * b + 1.0d0) - 1.0d0)
+         res(2) = ebt * ((-2.0d0 * a * ti / b**2) - ((a * ti**2) / b) - (2.0d0 * a / b**3) + &
+                            (c / b**2) + (c * ti / b)) + (2.0d0 * a / b**3) - (c / b**2)
+    
+         res(3) = (1.0d0 / b) * (1.0d0 - ebt) - ti
+
+         res(:) = res(:) + gaux1 * gaux2 * res(:)
+      enddo
 
    end subroutine compute_grad_sp
 
