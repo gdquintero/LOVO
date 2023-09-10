@@ -196,7 +196,7 @@ program algencama
 
   end subroutine model
 
-   subroutine regularized_Taylor(x,n,ind_train,nuk,sigma,res)
+   subroutine regularized_taylor(x,n,ind_train,nuk,sigma,res)
 
       implicit none
 
