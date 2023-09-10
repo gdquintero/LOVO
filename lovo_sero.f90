@@ -47,7 +47,7 @@ program algencama
 
    !--> LOVO Algorithm variables <--
    integer :: samples,inf,sup
-   real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),data(:,:),indices(:),sp_vector(:)
+   real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),data(:,:),indices(:),sp_vector(:),grad_sp(:)
 
    integer :: i
 
@@ -69,7 +69,7 @@ program algencama
    end if
 
    allocate(xtrial(n),xk(n),t(samples),y(samples),data(5,samples),indices(samples),&
-            sp_vector(samples),stat=allocerr)
+            sp_vector(samples),grad_sp(n),stat=allocerr)
 
    if ( allocerr .ne. 0 ) then
       write(*,*) 'Allocation error.'
@@ -262,12 +262,12 @@ program algencama
    !*****************************************************************
    !*****************************************************************
 
-   subroutine compute_grad_sp(samples,n,x,indices)
+   subroutine compute_grad_sp(samples,n,x,indices,res)
       implicit none
 
       integer,       intent(in) :: samples,n
       real(kind=8),  intent(in) :: indices(samples),x(n)
-
+      real(kind=8),  intent(out) :: res(n)
       
 
    end subroutine compute_grad_sp
