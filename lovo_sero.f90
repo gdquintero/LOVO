@@ -227,6 +227,7 @@ program algencama
       lovo_order = samples - noutliers
 
       call compute_sp(samples,lovo_order,n,t,y,x,indices,sp_vector,sp)
+      call compute_grad_sp(samples,n,x,indices)
 
    end subroutine lovo_algorithm
 
@@ -243,7 +244,7 @@ program algencama
       integer :: i,kflag
 
       sp_vector(:) = 0.0d0
-      kflag = 1
+      kflag = 2
       indices(:) = (/(i, i = 1, samples)/)
 
       do i = 1, samples
@@ -257,6 +258,19 @@ program algencama
       res = sum(sp_vector(1:lovo_order))
 
    end subroutine compute_sp
+
+   !*****************************************************************
+   !*****************************************************************
+
+   subroutine compute_grad_sp(samples,n,x,indices)
+      implicit none
+
+      integer,       intent(in) :: samples,n
+      real(kind=8),  intent(in) :: indices(samples),x(n)
+
+      
+
+   end subroutine compute_grad_sp
 
    !*****************************************************************
    !*****************************************************************
