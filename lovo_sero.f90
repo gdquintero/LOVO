@@ -17,7 +17,7 @@
 ! *****************************************************************
 
 program algencama
-
+   use sort
    use bmalgencan, only: algencan
    use iso_c_binding, only: c_ptr, c_loc,c_f_pointer
 
@@ -47,7 +47,7 @@ program algencama
 
    !--> LOVO Algorithm variables <--
    integer :: samples,inf,sup
-   real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),data(:,:)
+   real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),data(:,:),indices(:),sp_vector(:)
 
    integer :: i
 
@@ -68,7 +68,8 @@ program algencama
       stop
    end if
 
-   allocate(xtrial(n),xk(n),t(samples),y(samples),data(5,samples),stat=allocerr)
+   allocate(xtrial(n),xk(n),t(samples),y(samples),data(5,samples),indices(samples),&
+            sp_vector(samples),stat=allocerr)
 
    if ( allocerr .ne. 0 ) then
       write(*,*) 'Allocation error.'
@@ -83,9 +84,7 @@ program algencama
 
    close(1000)
 
-   ! Initial guess and bound constraints
-   
-   x(1:n) = 10.0d0
+   ! Bound constraints
 
    lind(1:n) = .true.
    lbnd(1:n) = - 100.0d0
@@ -162,7 +161,7 @@ program algencama
    inf = 5
    sup = 5
 
-   call mixed_test(samples,inf,sup,t,y)
+   call mixed_test(samples,inf,sup,t,y,indices,sp_vector)
 
    call cpu_time(start)
 
@@ -190,12 +189,12 @@ program algencama
    ! LOVO SUBROUTINES
    ! *****************************************************************
 
-   subroutine mixed_test(samples,inf,sup,t,y)
+   subroutine mixed_test(samples,inf,sup,t,y,indices,sp_vector)
       implicit none
 
       integer,       intent(in) :: samples,inf,sup
       real(kind=8),  intent(in) :: t(samples)
-      real(kind=8),  intent(inout) :: y(samples)
+      real(kind=8),  intent(inout) :: y(samples),indices(samples),sp_vector(samples)
 
       integer :: noutliers
 
@@ -204,7 +203,7 @@ program algencama
       y(:) = data(2,:)
 
       do noutliers = inf, sup
-         call lovo_algorithm(samples,noutliers,t,y)
+         call lovo_algorithm(samples,noutliers,t,y,indices,sp_vector)
       enddo
 
       
@@ -213,15 +212,54 @@ program algencama
    !*****************************************************************
    !*****************************************************************
 
-   subroutine lovo_algorithm(samples,noutliers,t,y)
+   subroutine lovo_algorithm(samples,noutliers,t,y,indices,sp_vector)
       implicit none
 
       integer,       intent(in) :: samples,noutliers
       real(kind=8),  intent(in) :: t(samples),y(samples)
+      real(kind=8),  intent(inout) :: indices(samples),sp_vector(samples)
 
+      real(kind=8) :: sp
+      integer :: lovo_order
 
+      x(1:n) = 10.0d0
+
+      lovo_order = samples - noutliers
+
+      call compute_sp(samples,lovo_order,n,t,y,x,indices,sp_vector,sp)
 
    end subroutine lovo_algorithm
+
+   !*****************************************************************
+   !*****************************************************************
+
+   subroutine compute_sp(samples,lovo_order,n,t,y,x,indices,sp_vector,res)
+      implicit none
+      integer,       intent(in) :: samples,n,lovo_order
+      real(kind=8),  intent(in) :: x(n),t(samples),y(samples)
+      real(kind=8),  intent(inout) :: indices(samples),sp_vector(samples)
+      real(kind=8),  intent(out) :: res
+
+      integer :: i,kflag
+
+      sp_vector(:) = 0.0d0
+      kflag = 1
+      indices(:) = (/(i, i = 1, samples)/)
+
+      do i = 1, samples
+         call fi(x,i,n,t,y,samples,sp_vector(i))
+      end do
+      print*, sp_vector
+      print*
+      ! Sorting
+      call DSORT(sp_vector,indices,samples,kflag)
+
+      print*, sp_vector
+
+      ! Lovo function 
+      res = sum(sp_vector(1:lovo_order))
+
+   end subroutine compute_sp
 
    !*****************************************************************
    !*****************************************************************
@@ -230,7 +268,7 @@ program algencama
       implicit none 
 
       integer,        intent(in) :: n,i,samples
-      real(kind=8),   intent(in) :: x(n-1),t(samples)
+      real(kind=8),   intent(in) :: x(n),t(samples)
       real(kind=8),   intent(out) :: res
       real(kind=8) :: a,b,c,ti,ebt
 
@@ -253,7 +291,7 @@ program algencama
       implicit none
 
       integer,        intent(in) :: n,i,samples
-      real(kind=8),   intent(in) :: x(n-1),t(samples),y(samples)
+      real(kind=8),   intent(in) :: x(n),t(samples),y(samples)
       real(kind=8),   intent(out) :: res
       
       call model(x,i,n,t,samples,res)
