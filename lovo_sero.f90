@@ -220,13 +220,16 @@ program algencama
       integer,       intent(inout) :: lovo_order
       real(kind=8),  intent(inout) :: indices(samples),sp_vector(samples),grad_sp(n)
 
-      real(kind=8) :: sp,sigmin
+      real(kind=8) :: sp,sigmin,epsilon
 
       x(1:n) = 10.0d0
       sigmin = 1.0d0
+      epsilon = 1.0d-4
 
       lovo_order = samples - noutliers
       sigma = sigmin
+
+
 
    end subroutine lovo_algorithm
 
