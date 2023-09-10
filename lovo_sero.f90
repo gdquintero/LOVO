@@ -249,6 +249,22 @@ program algencama
    !*****************************************************************
    !*****************************************************************
 
+   subroutine fi(x,i,n,t,y,samples,res)
+      implicit none
+
+      integer,        intent(in) :: n,i,samples
+      real(kind=8),   intent(in) :: x(n-1),t(samples),y(samples)
+      real(kind=8),   intent(out) :: res
+      
+      call model(x,i,n,t,samples,res)
+      res = res - y(i)
+      res = 0.5d0 * (res**2)
+
+   end subroutine fi
+
+   !*****************************************************************
+   !*****************************************************************
+
    subroutine regularized_taylor(x,n,ind_train,nuk,sigma,res)
 
       implicit none
