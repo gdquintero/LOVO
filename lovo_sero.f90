@@ -172,8 +172,6 @@ program algencama
    !    outiter,totiter,nwcalls,nwtotit,ierr,istop,c_loc(pdata))
 
    call cpu_time(finish)
-
-  
    
    deallocate(lind,lbnd,uind,ubnd,x,lambda,c,stat=allocerr)
    
@@ -356,7 +354,23 @@ program algencama
       res = res + dot_product(grad_sp,x(1:n) - xk(1:n))
       res = res + 0.5d0 * sigma * (norm2(x(1:n) - xk(1:n))**2)
 
-  end subroutine regularized_Taylor
+   end subroutine regularized_Taylor
+
+   !*****************************************************************
+   !*****************************************************************
+
+   subroutine grad_regularized_taylor(samples,n,lovo_order,sigma,t,y,x,indices,res)
+      implicit none
+
+      integer,       intent(in) :: samples,n,lovo_order
+      real(kind=8),  intent(in) :: x(n),sigma,t(samples),y(samples)
+      real(kind=8),  intent(inout) :: indices(samples)
+      real(kind=8),  intent(out) :: res(n)
+      
+      call compute_grad_sp(samples,lovo_order,n,t,y,x,indices,res)
+      res = res + sigma * (x(1:n) - xk(1:n))
+
+   end subroutine grad_regularized_taylor
 
    ! *****************************************************************
    ! ALGENCAN SUBROUTINES
@@ -412,8 +426,7 @@ program algencama
    call c_f_pointer(pdataptr,pdata)
    pdata%counters(2) = pdata%counters(2) + 1
    
-   g(1) = 4.0d0 * ( x(1) + 4.0d0 ) ** 3.0d0
-   g(2) = 2.0d0 * x(2)
+   call grad_regularized_taylor(samples,n,lovo_order,sigma,t,y,x,indices,g)
 
    end subroutine evalg
 
@@ -438,10 +451,6 @@ program algencama
    ! LOCAL SCALARS
    type(pdata_type), pointer :: pdata
    
-   call c_f_pointer(pdataptr,pdata)
-   pdata%counters(3) = pdata%counters(3) + 1
-   
-   c(1) = x(1) ** 3.0d0 - x(2) - 1.0d0
    
    end subroutine evalc
 
@@ -472,35 +481,6 @@ program algencama
    integer :: i
    type(pdata_type), pointer :: pdata
    
-   call c_f_pointer(pdataptr,pdata)
-   pdata%counters(4) = pdata%counters(4) + 1
-
-   ! Only gradients of constraints j such that ind(j) = .true. need
-   ! to be computed.
-   
-   if ( ind(1) ) then
-      if ( lim .lt. n ) then
-         inform = -94
-         return
-      end if
-      
-      jsta(1) = 1
-      jlen(1) = n
-      
-      jvar(1:n) = (/ (i,i=1,n) /)
-
-      jval(1) = 3.0d0 * x(1) ** 2.0d0
-      jval(2) = - 1.0d0
-
-      ! Says whether the variables' indices in jvar (related to this
-      ! constraint) are in increasing order. In case they are,
-      ! Algencan takes advantage of this. Implement sorted gradients
-      ! of constraints if you can do this in a natural (cheap)
-      ! way. Under no circumnstance use a sorting algorithm. (It is
-      ! better to set sorted(1) = .false. in this case.)
-      
-      sorted(1) = .true.
-   end if
    
    end subroutine evalj
 
@@ -538,22 +518,17 @@ program algencama
    ! If .not. inclf then the Hessian of the objective function must not be included
    
    if ( inclf ) then
-      if ( hlnnz + 2 .gt. lim ) then
-         inform = -95
-         return
+      hlnnz = n
+
+      if ( hlnnz .gt. lim ) then
+          inform = -95
+          return
       end if
-   
-      hlnnz = hlnnz + 1
       
-      hlrow(hlnnz) = 1
-      hlcol(hlnnz) = 1
-      hlval(hlnnz) = 12.0d0 * ( x(1) + 4.0d0 ) ** 2.0d0
-   
-      hlnnz = hlnnz + 1
-      
-      hlrow(hlnnz) = 2
-      hlcol(hlnnz) = 2
-      hlval(hlnnz) = 2.0d0
+      hlrow(1:n) = (/(i, i = 1, n)/)
+      hlcol(1:n) = (/(i, i = 1, n)/)
+      hlval(1:n) = sigma
+
    end if
 
    ! Note that entries of the Hessian of the Lagrangian can be
