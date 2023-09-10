@@ -249,14 +249,11 @@ program algencama
       do i = 1, samples
          call fi(x,i,n,t,y,samples,sp_vector(i))
       end do
-      print*, sp_vector
-      print*
+      
       ! Sorting
       call DSORT(sp_vector,indices,samples,kflag)
 
-      print*, sp_vector
-
-      ! Lovo function 
+      ! Lovo function
       res = sum(sp_vector(1:lovo_order))
 
    end subroutine compute_sp
