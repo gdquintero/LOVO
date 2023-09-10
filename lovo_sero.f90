@@ -46,12 +46,20 @@ program algencama
    real(kind=8), allocatable :: c(:),lbnd(:),ubnd(:),lambda(:),x(:)
 
    !--> LOVO Algorithm variables <--
-   integer :: samples
-   real(kind=8), allocatable :: xtrial(:),xk(:)
+   integer :: samples,inf,sup
+   real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),data(:,:)
+
+   integer :: i
 
    ! Number of variables
 
    n = 3
+
+   ! Reading data and storing it in the variables t and y
+   Open(Unit = 1000, File = "output/seropositives.txt", ACCESS = "SEQUENTIAL")
+
+   ! Set parameters
+   read(1000,*) samples
    
    allocate(x(n),lind(n),lbnd(n),uind(n),ubnd(n),stat=allocerr)
 
@@ -60,12 +68,20 @@ program algencama
       stop
    end if
 
-   allocate(xtrial(n),xk(n),stat=allocerr)
+   allocate(xtrial(n),xk(n),t(samples),y(samples),data(5,samples),stat=allocerr)
 
    if ( allocerr .ne. 0 ) then
       write(*,*) 'Allocation error.'
       stop
    end if
+
+   do i = 1, samples
+      read(1000,*) data(:,i)
+   enddo
+
+   t(:) = data(1,:)
+
+   close(1000)
 
    ! Initial guess and bound constraints
    
@@ -143,6 +159,11 @@ program algencama
    ! process. You should test both choices for the problem at hand.
    corrin = .false.
 
+   inf = 5
+   sup = 5
+
+   call mixed_test(samples,inf,sup,t,y)
+
    call cpu_time(start)
 
    ! call algencan(evalf,evalg,evalc,evalj,evalhl,jnnzmax,hlnnzmax, &
@@ -164,18 +185,47 @@ program algencama
    stop
   
    contains
+
    ! *****************************************************************
    ! LOVO SUBROUTINES
    ! *****************************************************************
 
-   subroutine lovo_algorithm()
+   subroutine mixed_test(samples,inf,sup,t,y)
       implicit none
+
+      integer,       intent(in) :: samples,inf,sup
+      real(kind=8),  intent(in) :: t(samples)
+      real(kind=8),  intent(inout) :: y(samples)
+
+      integer :: noutliers
+
+      Print*, "LOVO Algorithm for Measles:"
+
+      y(:) = data(2,:)
+
+      do noutliers = inf, sup
+         call lovo_algorithm(samples,noutliers,t,y)
+      enddo
+
+      
+   end subroutine mixed_test
+
+   !*****************************************************************
+   !*****************************************************************
+
+   subroutine lovo_algorithm(samples,noutliers,t,y)
+      implicit none
+
+      integer,       intent(in) :: samples,noutliers
+      real(kind=8),  intent(in) :: t(samples),y(samples)
+
+
 
    end subroutine lovo_algorithm
 
    !*****************************************************************
-   ! MODEL TO BE FITTED TO THE DATA
    !*****************************************************************
+
    subroutine model(x,i,n,t,samples,res)
       implicit none 
 
@@ -194,7 +244,10 @@ program algencama
       res = res + (1.0d0 / b) * ((a / b) - c) * (ebt - 1.0d0) 
       res = 1.0d0 - exp(res - c * ti)
 
-  end subroutine model
+   end subroutine model
+
+   !*****************************************************************
+   !*****************************************************************
 
    subroutine regularized_taylor(x,n,ind_train,nuk,sigma,res)
 

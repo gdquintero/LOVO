@@ -9,5 +9,5 @@ gfortran -g -w -fcheck=all \
 -L$ALGENCAN/sources/algencan/lib -lalgencan -L$ALGENCAN/sources/hsl/lib -lhsl \
 -L$ALGENCAN/sources/blas/lib -lblas sort.o subset.o -o lovo_sero
 
-./lovo
+./lovo_sero
 
