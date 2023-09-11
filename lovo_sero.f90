@@ -88,10 +88,10 @@ program algencama
    ! Bound constraints
 
    lind(1:n) = .true.
-   lbnd(1:n) = - 100.0d0
+   lbnd(1:n) = 0.0d0
 
    uind(1:n) = .true.
-   ubnd(1:n) =   100.0d0
+   ubnd(1:n) = 1.0d+20
 
    ! Number equality (m) and inequality (p) constraints.
    
@@ -166,10 +166,7 @@ program algencama
 
    call cpu_time(start)
 
-   ! call algencan(evalf,evalg,evalc,evalj,evalhl,jnnzmax,hlnnzmax, &
-   !    n,x,lind,lbnd,uind,ubnd,m,p,lambda,epsfeas,epscompl,epsopt,maxoutit, &
-   !    scale,rhoauto,rhoini,extallowed,corrin,f,csupn,ssupn,nlpsupn,bdsvio, &
-   !    outiter,totiter,nwcalls,nwtotit,ierr,istop,c_loc(pdata))
+  
 
    call cpu_time(finish)
    
@@ -220,16 +217,50 @@ program algencama
       integer,       intent(inout) :: lovo_order
       real(kind=8),  intent(inout) :: indices(samples),sp_vector(samples),grad_sp(n)
 
-      real(kind=8) :: sp,sigmin,epsilon
+      real(kind=8) :: sp,sigmin,epsilon,fxk,fxtrial,theta,alpha,gamma
+      integer :: iter,iter_sub,max_iter,max_iter_sub
 
-      x(1:n) = 10.0d0
       sigmin = 1.0d0
       epsilon = 1.0d-4
-
+      alpha = 1.0d-8
+      gamma = 5.0d0
+      max_iter = 1
+      max_iter_sub = 100
       lovo_order = samples - noutliers
-      sigma = sigmin
+      xk(1:n) = 1.0d0
+      iter = 0
 
+      call compute_sp(samples,lovo_order,n,t,y,xk,indices,sp_vector,fxk)
 
+      do
+         iter = iter + 1
+         x(:) = xk(:)
+         sigma = sigmin
+
+         do
+
+            call algencan(evalf,evalg,evalc,evalj,evalhl,jnnzmax,hlnnzmax, &
+               n,x,lind,lbnd,uind,ubnd,m,p,lambda,epsfeas,epscompl,epsopt,maxoutit, &
+               scale,rhoauto,rhoini,extallowed,corrin,f,csupn,ssupn,nlpsupn,bdsvio, &
+               outiter,totiter,nwcalls,nwtotit,ierr,istop,c_loc(pdata))
+
+            xtrial(:) = x(:)
+
+            call compute_sp(samples,lovo_order,n,t,y,xtrial,indices,sp_vector,fxtrial)
+
+            if (fxtrial .le. (fxk - alpha * norm2(xtrial(1:n-1) - xk(1:n-1))**2)) exit
+            if (iter_sub .ge. max_iter_sub) exit
+
+            sigma = gamma * sigma
+            iter_sub = iter_sub + 1
+
+         enddo
+
+         fxk = fxtrial
+         xk(:) = xtrial(:)
+
+         if (iter .ge. max_iter) exit
+      enddo
 
    end subroutine lovo_algorithm
 
@@ -289,13 +320,13 @@ program algencama
          gaux2 = (a / b) * ti * ebt + (1.0d0 / b) * ((a / b) - c) * (ebt - 1.0d0) - c * ti
          gaux2 = exp(gaux2)
 
-         res(1) = (1.0d0 / b**2) * (ebt * (ti * b + 1.0d0) - 1.0d0)
-         res(2) = ebt * ((-2.0d0 * a * ti / b**2) - ((a * ti**2) / b) - (2.0d0 * a / b**3) + &
+         res(1) = res(1) + (1.0d0 / b**2) * (ebt * (ti * b + 1.0d0) - 1.0d0)
+         res(2) = res(2) + ebt * ((-2.0d0 * a * ti / b**2) - ((a * ti**2) / b) - (2.0d0 * a / b**3) + &
                             (c / b**2) + (c * ti / b)) + (2.0d0 * a / b**3) - (c / b**2)
     
-         res(3) = (1.0d0 / b) * (1.0d0 - ebt) - ti
+         res(3) = res(3) + (1.0d0 / b) * (1.0d0 - ebt) - ti
 
-         res(:) = res(:) + gaux1 * gaux2 * res(:)
+         res(:) = gaux1 * gaux2 * res(:)
       enddo
 
    end subroutine compute_grad_sp
@@ -544,12 +575,6 @@ program algencama
       return
    end if
    
-   hlnnz = hlnnz + 1
-   
-   hlrow(hlnnz) = 1
-   hlcol(hlnnz) = 1
-   hlval(hlnnz) = lambda(1) * 6.0d0 * x(1)
-   
    end subroutine evalhl
   
-  end program algencama
+end program algencama
