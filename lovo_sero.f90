@@ -49,6 +49,7 @@ program algencama
    integer :: samples,inf,sup,lovo_order
    real(kind=8) :: sigma
    real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),data(:,:),indices(:),sp_vector(:),grad_sp(:),gp(:)
+   integer, allocatable :: outliers(:)
 
    integer :: i
 
@@ -162,7 +163,18 @@ program algencama
    inf = 4
    sup = 4
 
-   call mixed_test(samples,n,lovo_order,inf,sup,t,y,indices,sp_vector,grad_sp,gp)
+   allocate(outliers(3*samples*(sup-inf+1)),stat=allocerr)
+
+   if ( allocerr .ne. 0 ) then
+       write(*,*) 'Allocation error in main program'
+       stop
+   end if
+
+   outliers(:) = 0
+
+   call mixed_test(samples,n,lovo_order,inf,sup,t,y,indices,sp_vector,grad_sp,gp,outliers)
+
+   call export(outliers,sup)
 
    call cpu_time(start)
 
@@ -183,36 +195,57 @@ program algencama
    ! LOVO SUBROUTINES
    ! *****************************************************************
 
-   subroutine mixed_test(samples,n,lovo_order,inf,sup,t,y,indices,sp_vector,grad_sp,gp)
+   subroutine mixed_test(samples,n,lovo_order,inf,sup,t,y,indices,sp_vector,grad_sp,gp,outliers)
       implicit none
 
       integer,       intent(in) :: samples,inf,sup,n
       real(kind=8),  intent(in) :: t(samples)
-      integer,       intent(inout) :: lovo_order
+      integer,       intent(inout) :: lovo_order,outliers(3*samples*(sup-inf+1))
       real(kind=8),  intent(inout) :: y(samples),indices(samples),sp_vector(samples),grad_sp(n),gp(n)
 
-      integer :: noutliers
+      integer :: noutliers,ind
 
       Print*, "LOVO Algorithm for Measles:"
 
-      y(:) = data(2,:)
-
       do noutliers = inf, sup
-         call lovo_algorithm(samples,n,lovo_order,noutliers,t,y,indices,sp_vector,grad_sp,gp)
+         ind = 1
+         y(:) = data(2,:)
+         call lovo_algorithm(samples,n,lovo_order,noutliers,t,y,indices,sp_vector,&
+            grad_sp,gp,outliers(ind:ind+noutliers-1))
+         Open(Unit = 100, File = "output/solutions_mixed_measles.txt", ACCESS = "SEQUENTIAL")
+         write(100,1000) xk(1), xk(2), xk(3)
+
+         ind = ind + noutliers
+         y(:) = data(3,:)
+         call lovo_algorithm(samples,n,lovo_order,noutliers,t,y,indices,sp_vector,&
+            grad_sp,gp,outliers(ind:ind+noutliers-1))
+         Open(Unit = 200, File = "output/solutions_mixed_mumps.txt", ACCESS = "SEQUENTIAL")
+         write(200,1000) xk(1), xk(2), xk(3)
+
+         ind = ind + noutliers
+         y(:) = data(4,:)
+         call lovo_algorithm(samples,n,lovo_order,noutliers,t,y,indices,sp_vector,&
+            grad_sp,gp,outliers(ind:ind+noutliers-1))
+         Open(Unit = 300, File = "output/solutions_mixed_rubella.txt", ACCESS = "SEQUENTIAL")
+         write(300,1000) xk(1), xk(2), xk(3)
       enddo
 
-      
+      1000 format (ES12.6,1X,ES12.6,1X,ES12.6)
+      close(100)
+      close(200)
+      close(300)
+
    end subroutine mixed_test
 
    !*****************************************************************
    !*****************************************************************
 
-   subroutine lovo_algorithm(samples,n,lovo_order,noutliers,t,y,indices,sp_vector,grad_sp,gp)
+   subroutine lovo_algorithm(samples,n,lovo_order,noutliers,t,y,indices,sp_vector,grad_sp,gp,outliers)
       implicit none
 
       integer,       intent(in) :: samples,noutliers,n
       real(kind=8),  intent(in) :: t(samples),y(samples)
-      integer,       intent(inout) :: lovo_order
+      integer,       intent(inout) :: lovo_order,outliers(noutliers)
       real(kind=8),  intent(inout) :: indices(samples),sp_vector(samples),grad_sp(n),gp(n)
 
       real(kind=8) :: sp,sigmin,epsilon,fxk,fxtrial,theta,alpha,gamma,termination
@@ -287,9 +320,31 @@ program algencama
 
       write(100,*) "--------------------------------------------------"
 
-      write(100,*) xk
+      outliers(:) = int(indices(samples - noutliers + 1:))
 
    end subroutine lovo_algorithm
+
+   !*****************************************************************
+   !*****************************************************************
+   subroutine export(outliers,noutliers)
+      implicit none
+
+      integer,        intent(in) :: noutliers,outliers(3*samples)
+      integer :: i
+
+      Open(Unit = 200, File = "output/outliers.txt", ACCESS = "SEQUENTIAL")
+
+      write(200,210) noutliers
+
+      do i = 1, 3*noutliers
+          write(200,210) outliers(i)
+      enddo
+
+      210 format (I2)
+
+      close(200)
+
+  end subroutine export
 
    !*****************************************************************
    !*****************************************************************
