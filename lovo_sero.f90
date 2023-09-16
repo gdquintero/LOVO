@@ -255,7 +255,7 @@ program algencama
       epsilon = 1.0d-4
       alpha = 1.0d-8
       gamma = 1.0d+1
-      max_iter = 1000
+      max_iter = 100
       max_iter_sub = 100
       lovo_order = samples - noutliers
       iter = 0
