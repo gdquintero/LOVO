@@ -221,8 +221,8 @@ program algencama
       sigmin = 1.0d0
       epsilon = 1.0d-4
       alpha = 1.0d-8
-      gamma = 2.0d0
-      max_iter = 100
+      gamma = 1.0d+1
+      max_iter = 1000
       max_iter_sub = 100
       lovo_order = samples - noutliers
       iter = 0
@@ -347,14 +347,14 @@ program algencama
          gaux1 = y(int(indices(i))) - gaux1
          gaux2 = exp((a / b) * ti * ebt + (1.0d0 / b) * ((a / b) - c) * (ebt - 1.0d0) - c * ti)
 
-         res(1) = res(1) + (1.0d0 / b**2) * (ebt * (ti * b + 1.0d0) - 1.0d0)
+         res(1) = res(1) + gaux1 * gaux2 * ((1.0d0 / b**2) * (ebt * (ti * b + 1.0d0) - 1.0d0))
 
-         res(2) = res(2) + ebt * ((-2.0d0 * a * ti / b**2) - ((a * ti**2) / b) - (2.0d0 * a / b**3) + &
-                            (c / b**2) + (c * ti / b)) + (2.0d0 * a / b**3) - (c / b**2)
+         res(2) = res(2) + gaux1 * gaux2 * (ebt * ((-2.0d0 * a * ti / b**2) - ((a * ti**2) / b) &
+                  - (2.0d0 * a / b**3) + (c / b**2) + (c * ti / b)) + (2.0d0 * a / b**3) - (c / b**2))
     
-         res(3) = res(3) + (1.0d0 / b) * (1.0d0 - ebt) - ti
+         res(3) = res(3) + gaux1 * gaux2 * ((1.0d0 / b) * (1.0d0 - ebt) - ti)
 
-         res(:) = gaux1 * gaux2 * res(:)
+         ! res(:) = gaux1 * gaux2 * res(:)
       enddo
 
    end subroutine compute_grad_sp
