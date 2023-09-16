@@ -48,7 +48,7 @@ program algencama
    !--> LOVO Algorithm variables <--
    integer :: samples,inf,sup,lovo_order
    real(kind=8) :: sigma
-   real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),data(:,:),indices(:),sp_vector(:),grad_sp(:)
+   real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),data(:,:),indices(:),sp_vector(:),grad_sp(:),gp(:)
 
    integer :: i
 
@@ -70,7 +70,7 @@ program algencama
    end if
 
    allocate(xtrial(n),xk(n),t(samples),y(samples),data(5,samples),indices(samples),&
-            sp_vector(samples),grad_sp(n),stat=allocerr)
+            sp_vector(samples),grad_sp(n),gp(n),stat=allocerr)
 
    if ( allocerr .ne. 0 ) then
       write(*,*) 'Allocation error.'
@@ -111,7 +111,7 @@ program algencama
 
    ! Number of entries in the JAcobian of the constraints
    
-   jnnzmax = n
+   jnnzmax = 10000
 
    ! This should be the number of entries in the Hessian of the
    ! Lagrangian. But, in fact, some extra space is need (to store the
@@ -159,14 +159,12 @@ program algencama
    ! process. You should test both choices for the problem at hand.
    corrin = .false.
 
-   inf = 5
-   sup = 5
+   inf = 4
+   sup = 4
 
-   call mixed_test(samples,n,lovo_order,inf,sup,t,y,indices,sp_vector,grad_sp)
+   call mixed_test(samples,n,lovo_order,inf,sup,t,y,indices,sp_vector,grad_sp,gp)
 
    call cpu_time(start)
-
-  
 
    call cpu_time(finish)
    
@@ -185,13 +183,13 @@ program algencama
    ! LOVO SUBROUTINES
    ! *****************************************************************
 
-   subroutine mixed_test(samples,n,lovo_order,inf,sup,t,y,indices,sp_vector,grad_sp)
+   subroutine mixed_test(samples,n,lovo_order,inf,sup,t,y,indices,sp_vector,grad_sp,gp)
       implicit none
 
       integer,       intent(in) :: samples,inf,sup,n
       real(kind=8),  intent(in) :: t(samples)
       integer,       intent(inout) :: lovo_order
-      real(kind=8),  intent(inout) :: y(samples),indices(samples),sp_vector(samples),grad_sp(n)
+      real(kind=8),  intent(inout) :: y(samples),indices(samples),sp_vector(samples),grad_sp(n),gp(n)
 
       integer :: noutliers
 
@@ -200,7 +198,7 @@ program algencama
       y(:) = data(2,:)
 
       do noutliers = inf, sup
-         call lovo_algorithm(samples,n,lovo_order,noutliers,t,y,indices,sp_vector,grad_sp)
+         call lovo_algorithm(samples,n,lovo_order,noutliers,t,y,indices,sp_vector,grad_sp,gp)
       enddo
 
       
@@ -209,16 +207,16 @@ program algencama
    !*****************************************************************
    !*****************************************************************
 
-   subroutine lovo_algorithm(samples,n,lovo_order,noutliers,t,y,indices,sp_vector,grad_sp)
+   subroutine lovo_algorithm(samples,n,lovo_order,noutliers,t,y,indices,sp_vector,grad_sp,gp)
       implicit none
 
       integer,       intent(in) :: samples,noutliers,n
       real(kind=8),  intent(in) :: t(samples),y(samples)
       integer,       intent(inout) :: lovo_order
-      real(kind=8),  intent(inout) :: indices(samples),sp_vector(samples),grad_sp(n)
+      real(kind=8),  intent(inout) :: indices(samples),sp_vector(samples),grad_sp(n),gp(n)
 
-      real(kind=8) :: sp,sigmin,epsilon,fxk,fxtrial,theta,alpha,gamma
-      integer :: iter,iter_sub,max_iter,max_iter_sub
+      real(kind=8) :: sp,sigmin,epsilon,fxk,fxtrial,theta,alpha,gamma,termination
+      integer :: iter,iter_sub,max_iter,max_iter_sub,i
 
       sigmin = 1.0d0
       epsilon = 1.0d-4
@@ -228,23 +226,40 @@ program algencama
       max_iter_sub = 100
       lovo_order = samples - noutliers
       iter = 0
+      iter_sub = 0
 
-      xk(1:n) = 1.0d-1
+      xk(1:n) = 1.0d0
 
       call compute_sp(samples,lovo_order,n,t,y,xk,indices,sp_vector,fxk)
 
       Open(Unit = 100, File = "output/algorithm_output.txt", ACCESS = "SEQUENTIAL")
 
-      write(100,10) "Iterations","Inter. Iter.","Objective func."
-      10 format (A11,2X,A12,2X,A15)
-
-      write(100,20) 0,"-",fxk
-      20 format (5X,I1,13X,A1,6X,ES14.6)
+      write(100,*) "--------------------------------------------------"
+      write(100,10) "#iter","#init","Sp(xstar)","||gp(xstar)||"
+      10 format (2X,A5,4X,A5,6X,A9,6X,A13)
+      write(100,*) "--------------------------------------------------"
 
       do
          iter = iter + 1
-         x(:) = xk(:)
+
+         call compute_grad_sp(samples,lovo_order,n,t,y,xk,indices,gp)
+
+         do i = 1, n
+            gp(i) = max(lbnd(i),min(xk(i) - gp(i),ubnd(i)))
+         enddo
+
+         termination = norm2(gp(1:n) - xk(1:n))
+
+         write(100,20)  iter,iter_sub,fxk,termination
+         20 format (I6,5X,I4,4X,ES14.6,3X,ES14.6)
+
+         if (termination .le. epsilon) exit
+         if (iter .ge. max_iter) exit
+
+         x(1:n) = xk(1:n)
          sigma = sigmin
+        
+         iter_sub = 1
 
          do
 
@@ -265,14 +280,14 @@ program algencama
 
          enddo
 
-         write(100,30)  iter,iter_sub,fxtrial
-         30 format (I6,10X,I4,6X,ES14.6)
-
          fxk = fxtrial
          xk(:) = xtrial(:)
 
-         if (iter .ge. max_iter) exit
       enddo
+
+      write(100,*) "--------------------------------------------------"
+
+      write(100,*) xk
 
    end subroutine lovo_algorithm
 
@@ -398,7 +413,7 @@ program algencama
 
       call compute_sp(samples,lovo_order,n,t,y,x,indices,sp_vector,res)
       call compute_grad_sp(samples,lovo_order,n,t,y,x,indices,grad_sp)
-      res = res + dot_product(grad_sp,x(1:n) - xk(1:n))
+      res = res + dot_product(grad_sp(1:n),x(1:n) - xk(1:n))
       res = res + 0.5d0 * sigma * (norm2(x(1:n) - xk(1:n))**2)
 
    end subroutine regularized_Taylor
