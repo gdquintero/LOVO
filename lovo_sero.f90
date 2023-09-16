@@ -57,10 +57,10 @@ program algencama
    n = 3
 
    ! Reading data and storing it in the variables t and y
-   Open(Unit = 1000, File = "output/seropositives.txt", ACCESS = "SEQUENTIAL")
+   Open(Unit = 100, File = "output/seropositives.txt", ACCESS = "SEQUENTIAL")
 
    ! Set parameters
-   read(1000,*) samples
+   read(100,*) samples
    
    allocate(x(n),lind(n),lbnd(n),uind(n),ubnd(n),stat=allocerr)
 
@@ -78,12 +78,12 @@ program algencama
    end if
 
    do i = 1, samples
-      read(1000,*) data(:,i)
+      read(100,*) data(:,i)
    enddo
 
    t(:) = data(1,:)
 
-   close(1000)
+   close(100)
 
    ! Bound constraints
 
@@ -223,14 +223,23 @@ program algencama
       sigmin = 1.0d0
       epsilon = 1.0d-4
       alpha = 1.0d-8
-      gamma = 5.0d0
-      max_iter = 1
+      gamma = 2.0d0
+      max_iter = 100
       max_iter_sub = 100
       lovo_order = samples - noutliers
-      xk(1:n) = 1.0d0
       iter = 0
 
+      xk(1:n) = 1.0d-1
+
       call compute_sp(samples,lovo_order,n,t,y,xk,indices,sp_vector,fxk)
+
+      Open(Unit = 100, File = "output/algorithm_output.txt", ACCESS = "SEQUENTIAL")
+
+      write(100,10) "Iterations","Inter. Iter.","Objective func."
+      10 format (A11,2X,A12,2X,A15)
+
+      write(100,20) 0,"-",fxk
+      20 format (5X,I1,13X,A1,6X,ES14.6)
 
       do
          iter = iter + 1
@@ -255,6 +264,9 @@ program algencama
             iter_sub = iter_sub + 1
 
          enddo
+
+         write(100,30)  iter,iter_sub,fxtrial
+         30 format (I6,10X,I4,6X,ES14.6)
 
          fxk = fxtrial
          xk(:) = xtrial(:)
@@ -302,7 +314,8 @@ program algencama
       real(kind=8),  intent(in) :: indices(samples),x(n),t(samples),y(samples)
       real(kind=8),  intent(out) :: res(n)
 
-      real(kind=8) :: gaux1,gaux2,a,b,c,ebt,ti,i,j
+      real(kind=8) :: gaux1,gaux2,a,b,c,ebt,ti
+      integer :: i,j
 
       a = x(1)
       b = x(2)
@@ -316,11 +329,11 @@ program algencama
 
          call model(x,int(indices(i)),n,t,samples,gaux1)
 
-         gaux1 = gaux1 - y(int(indices(i)))
-         gaux2 = (a / b) * ti * ebt + (1.0d0 / b) * ((a / b) - c) * (ebt - 1.0d0) - c * ti
-         gaux2 = exp(gaux2)
+         gaux1 = y(int(indices(i))) - gaux1
+         gaux2 = exp((a / b) * ti * ebt + (1.0d0 / b) * ((a / b) - c) * (ebt - 1.0d0) - c * ti)
 
          res(1) = res(1) + (1.0d0 / b**2) * (ebt * (ti * b + 1.0d0) - 1.0d0)
+
          res(2) = res(2) + ebt * ((-2.0d0 * a * ti / b**2) - ((a * ti**2) / b) - (2.0d0 * a / b**3) + &
                             (c / b**2) + (c * ti / b)) + (2.0d0 * a / b**3) - (c / b**2)
     
