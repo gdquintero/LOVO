@@ -160,8 +160,8 @@ program algencama
    ! process. You should test both choices for the problem at hand.
    corrin = .false.
 
-   inf = 4
-   sup = 4
+   inf = 0
+   sup = 10
 
    allocate(outliers(3*samples*(sup-inf+1)),stat=allocerr)
 
@@ -205,9 +205,8 @@ program algencama
 
       integer :: noutliers,ind
 
-      Print*, "LOVO Algorithm for Measles:"
-
       do noutliers = inf, sup
+         write(*,*) "LOVO Algorithm for Measles:"
          ind = 1
          y(:) = data(2,:)
          call lovo_algorithm(samples,n,lovo_order,noutliers,t,y,indices,sp_vector,&
@@ -215,6 +214,8 @@ program algencama
          Open(Unit = 100, File = "output/solutions_mixed_measles.txt", ACCESS = "SEQUENTIAL")
          write(100,1000) xk(1), xk(2), xk(3)
 
+         write(*,*)
+         write(*,*) "LOVO Algorithm for Mumps:"
          ind = ind + noutliers
          y(:) = data(3,:)
          call lovo_algorithm(samples,n,lovo_order,noutliers,t,y,indices,sp_vector,&
@@ -222,6 +223,8 @@ program algencama
          Open(Unit = 200, File = "output/solutions_mixed_mumps.txt", ACCESS = "SEQUENTIAL")
          write(200,1000) xk(1), xk(2), xk(3)
 
+         write(*,*)
+         write(*,*) "LOVO Algorithm for Rubella:"
          ind = ind + noutliers
          y(:) = data(4,:)
          call lovo_algorithm(samples,n,lovo_order,noutliers,t,y,indices,sp_vector,&
@@ -230,10 +233,16 @@ program algencama
          write(300,1000) xk(1), xk(2), xk(3)
       enddo
 
+      Open(Unit = 500, File = "output/num_mixed_test.txt", ACCESS = "SEQUENTIAL")
+      write(500,1200) inf
+      write(500,1200) sup
+
       1000 format (ES12.6,1X,ES12.6,1X,ES12.6)
+      1200 format (I2)
       close(100)
       close(200)
       close(300)
+      CLOSE(500)
 
    end subroutine mixed_test
 
@@ -252,10 +261,10 @@ program algencama
       integer :: iter,iter_sub,max_iter,max_iter_sub,i
 
       sigmin = 1.0d0
-      epsilon = 1.0d-4
+      epsilon = 1.0d-3
       alpha = 1.0d-8
       gamma = 1.0d+1
-      max_iter = 100
+      max_iter = 10000
       max_iter_sub = 100
       lovo_order = samples - noutliers
       iter = 0
@@ -265,12 +274,12 @@ program algencama
 
       call compute_sp(samples,lovo_order,n,t,y,xk,indices,sp_vector,fxk)
 
-      Open(Unit = 100, File = "output/algorithm_output.txt", ACCESS = "SEQUENTIAL")
+      ! Open(Unit = 100, File = "output/algorithm_output.txt", ACCESS = "SEQUENTIAL")
 
-      write(100,*) "--------------------------------------------------"
-      write(100,10) "#iter","#init","Sp(xstar)","||gp(xstar)||"
+      write(*,*) "--------------------------------------------------"
+      write(*,10) "#iter","#init","Sp(xstar)","||gp(xstar)||"
       10 format (2X,A5,4X,A5,6X,A9,6X,A13)
-      write(100,*) "--------------------------------------------------"
+      write(*,*) "--------------------------------------------------"
 
       do
          iter = iter + 1
@@ -283,11 +292,11 @@ program algencama
 
          termination = norm2(gp(1:n) - xk(1:n))
 
-         write(100,20)  iter,iter_sub,fxk,termination
+         write(*,20)  iter,iter_sub,fxk,termination
          20 format (I6,5X,I4,4X,ES14.6,3X,ES14.6)
 
-         if (termination .le. epsilon) exit
-         if (iter .ge. max_iter) exit
+         if (termination .lt. epsilon) exit
+         if (iter .gt. max_iter) exit
 
          x(1:n) = xk(1:n)
          sigma = sigmin
@@ -306,7 +315,7 @@ program algencama
             call compute_sp(samples,lovo_order,n,t,y,xtrial,indices,sp_vector,fxtrial)
 
             if (fxtrial .le. (fxk - alpha * norm2(xtrial(1:n-1) - xk(1:n-1))**2)) exit
-            if (iter_sub .ge. max_iter_sub) exit
+            if (iter_sub .gt. max_iter_sub) exit
 
             sigma = gamma * sigma
             iter_sub = iter_sub + 1
@@ -318,7 +327,7 @@ program algencama
 
       enddo
 
-      write(100,*) "--------------------------------------------------"
+      write(*,*) "--------------------------------------------------"
 
       outliers(:) = int(indices(samples - noutliers + 1:))
 

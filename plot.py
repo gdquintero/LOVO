@@ -26,7 +26,8 @@ def plot_solutions(ind,df_seropositives,df_sol,sero_outliers,noutliers):
     plt.setp(l, 'markersize', 6)
     # plt.title(disease[ind-1],fontsize = 18)
     plt.savefig(disease[ind-1]+".pdf",bbox_inches = "tight")
-    plt.show()
+    # plt.show()
+    plt.close()
 
 df_seropositives = pd.read_table("output/seropositives.txt",delimiter=" ",header=None,skiprows=1)
 df_mixed_measles = pd.read_table("output/solutions_mixed_measles.txt",delimiter=" ",header=None,skiprows=0)
