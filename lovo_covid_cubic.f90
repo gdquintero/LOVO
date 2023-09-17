@@ -88,11 +88,11 @@ program algencama
 
    ! Bound constraints
 
-   lind(1:n) = .true.
+   lind(1:n) = .false.
    lbnd(1:n) = 0.0d0
 
    uind(1:n) = .true.
-   ubnd(1:n) = 1.0d+20
+   ubnd(1:n) = 0.0d0
 
    ! Number equality (m) and inequality (p) constraints.
    
