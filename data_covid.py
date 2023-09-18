@@ -1,11 +1,11 @@
 import pandas as pd
 
-# Datos considerados del 22-03-2020 al 07-09-2022 (900 dias en total)
-
 df = pd.read_excel("dados_full_brasil.xlsx")
 
-initial_date = 25 # 22-03-2020
-total_days = 900
+ind_excel = 122 # 2 de mayo 2020
+
+initial_date = ind_excel - 2
+total_days = 40
 
 with open("output/data_covid.txt","w") as f:
     f.write("%i\n" % total_days)
