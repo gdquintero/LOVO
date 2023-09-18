@@ -393,32 +393,19 @@ program algencama
       real(kind=8),  intent(in) :: indices(samples),x(n),t(samples),y(samples)
       real(kind=8),  intent(out) :: res(n)
 
-      real(kind=8) :: gaux1,gaux2,a,b,c,ebt,ti
+      real(kind=8) :: gaux,ti
       integer :: i,j
-
-      a = x(1)
-      b = x(2)
-      c = x(3)
       
       res(:) = 0.0d0
 
       do i = 1, lovo_order
          ti = t(int(indices(i)))
-         ebt = exp(-b * ti)
-
-         call model(x,int(indices(i)),n,t,samples,gaux1)
-
-         gaux1 = y(int(indices(i))) - gaux1
-         gaux2 = exp((a / b) * ti * ebt + (1.0d0 / b) * ((a / b) - c) * (ebt - 1.0d0) - c * ti)
-
-         res(1) = res(1) + gaux1 * gaux2 * ((1.0d0 / b**2) * (ebt * (ti * b + 1.0d0) - 1.0d0))
-
-         res(2) = res(2) + gaux1 * gaux2 * (ebt * ((-2.0d0 * a * ti / b**2) - ((a * ti**2) / b) &
-                  - (2.0d0 * a / b**3) + (c / b**2) + (c * ti / b)) + (2.0d0 * a / b**3) - (c / b**2))
-    
-         res(3) = res(3) + gaux1 * gaux2 * ((1.0d0 / b) * (1.0d0 - ebt) - ti)
-
-         ! res(:) = gaux1 * gaux2 * res(:)
+         call model(x,int(indices(i)),n,t,y,samples,gaux)
+         gaux = gaux - y(int(indices(i)))
+         
+         res(1) = res(1) + gaux * (ti - t(samples))
+         res(2) = res(2) + gaux * ((ti - t(samples))**2)
+         res(3) = res(3) + gaux * ((ti - t(samples))**3)
       enddo
 
    end subroutine compute_grad_sp
@@ -426,23 +413,15 @@ program algencama
    !*****************************************************************
    !*****************************************************************
 
-   subroutine model(x,i,n,t,samples,res)
+   subroutine model(x,i,n,t,y,samples,res)
       implicit none 
 
       integer,        intent(in) :: n,i,samples
       real(kind=8),   intent(in) :: x(n),t(samples)
       real(kind=8),   intent(out) :: res
-      real(kind=8) :: a,b,c,ti,ebt
 
-      a = x(1)
-      b = x(2)
-      c = x(3)
-      ti = t(i)
-      ebt = exp(-b * ti)
-
-      res = (a / b) * ti * ebt
-      res = res + (1.0d0 / b) * ((a / b) - c) * (ebt - 1.0d0) 
-      res = 1.0d0 - exp(res - c * ti)
+      res = y(samples) + x(1) * (t(i) - t(samples)) + &
+            x(2) * ((t(i) - t(samples))**2) + x(2) * ((t(i) - t(samples))**3)
 
    end subroutine model
 
@@ -456,7 +435,7 @@ program algencama
       real(kind=8),   intent(in) :: x(n),t(samples),y(samples)
       real(kind=8),   intent(out) :: res
       
-      call model(x,i,n,t,samples,res)
+      call model(x,i,n,t,y,samples,res)
       res = res - y(i)
       res = 0.5d0 * (res**2)
 

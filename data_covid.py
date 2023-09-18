@@ -7,7 +7,7 @@ df = pd.read_excel("dados_full_brasil.xlsx")
 initial_date = 25 # 22-03-2020
 total_days = 900
 
-with open("output/data.txt","w") as f:
+with open("output/data_covid.txt","w") as f:
     f.write("%i\n" % total_days)
     for i in range(initial_date,initial_date + total_days):
         x = df["new_deaths_smoothed_per_million"][i]
