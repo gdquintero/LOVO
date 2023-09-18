@@ -17,4 +17,3 @@ with open("output/data_covid.txt","w") as f:
         else:
             f.write("%f\n" % x)
             
-print
