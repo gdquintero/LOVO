@@ -159,9 +159,9 @@ program algencama
    ! process. You should test both choices for the problem at hand.
    corrin = .false.
 
-   inf = 5
+   inf = 10
    ! sup = n_train
-   sup = 5
+   sup = 10
    
    do samples = inf, sup
       allocate(t(samples),y(samples),indices(samples),sp_vector(samples),stat=allocerr)
@@ -175,7 +175,7 @@ program algencama
       indices(1:samples)   = (/(i, i = 1, samples)/)
       y(1:samples)         = train_set(n_train - samples + 1:n_train)
 
-      noutliers = 0
+      noutliers = 1
 
       call lovo_algorithm(samples,n,lovo_order,noutliers,t,y,indices,sp_vector,grad_sp,gp)
 
