@@ -156,31 +156,33 @@ program algencama
    ! process. You should test both choices for the problem at hand.
    corrin = .false.
 
-   inf = 0
-   sup = 10
-
-   samples = 5
+   inf = 5
+   ! sup = n_train
+   sup = 5
    
-   allocate(t(samples),y(samples),indices(samples),&
-            sp_vector(samples),stat=allocerr)
+   do samples = inf, sup
+      allocate(t(samples),y(samples),indices(samples),sp_vector(samples),stat=allocerr)
 
-   if ( allocerr .ne. 0 ) then
-      write(*,*) 'Allocation error.'
-      stop
-   end if
+      if ( allocerr .ne. 0 ) then
+         write(*,*) 'Allocation error.'
+         stop
+      end if
 
-   allocate(outliers(3*samples*(sup-inf+1)),stat=allocerr)
+      t(1:samples)         = (/(i, i = 1, samples)/)
+      indices(1:samples)   = (/(i, i = 1, samples)/)
+      y(1:samples)         = train_set(n_train - samples + 1:n_train)
 
-   if ( allocerr .ne. 0 ) then
-       write(*,*) 'Allocation error in main program'
-       stop
-   end if
+      
 
-   outliers(:) = 0
+      deallocate(t,y,indices,sp_vector,stat=allocerr)
+   
+      if ( allocerr .ne. 0 ) then
+         write(*,*) 'Deallocation error.'
+         stop
+      end if
 
-   ! call mixed_test(samples,n,lovo_order,inf,sup,t,y,indices,sp_vector,grad_sp,gp,outliers)
+   enddo
 
-   ! call export(outliers,sup)
 
    call cpu_time(start)
 
@@ -201,287 +203,232 @@ program algencama
    ! LOVO SUBROUTINES
    ! *****************************************************************
 
-!    subroutine mixed_test(samples,n,lovo_order,inf,sup,t,y,indices,sp_vector,grad_sp,gp,outliers)
-!       implicit none
+   subroutine lovo_algorithm(samples,n,lovo_order,noutliers,t,y,indices,sp_vector,grad_sp,gp,outliers)
+      implicit none
 
-!       integer,       intent(in) :: samples,inf,sup,n
-!       real(kind=8),  intent(in) :: t(samples)
-!       integer,       intent(inout) :: lovo_order,outliers(3*samples*(sup-inf+1))
-!       real(kind=8),  intent(inout) :: y(samples),indices(samples),sp_vector(samples),grad_sp(n),gp(n)
+      integer,       intent(in) :: samples,noutliers,n
+      real(kind=8),  intent(in) :: t(samples),y(samples)
+      integer,       intent(inout) :: lovo_order,outliers(noutliers)
+      real(kind=8),  intent(inout) :: indices(samples),sp_vector(samples),grad_sp(n),gp(n)
 
-!       integer :: noutliers,ind
+      real(kind=8) :: sp,sigmin,epsilon,fxk,fxtrial,theta,alpha,gamma,termination
+      integer :: iter,iter_sub,max_iter,max_iter_sub,i
 
-!       do noutliers = inf, sup
-!          write(*,*) "LOVO Algorithm for Measles:"
-!          ind = 1
-!          y(:) = data(2,:)
-!          call lovo_algorithm(samples,n,lovo_order,noutliers,t,y,indices,sp_vector,&
-!             grad_sp,gp,outliers(ind:ind+noutliers-1))
-!          Open(Unit = 100, File = "output/solutions_mixed_measles.txt", ACCESS = "SEQUENTIAL")
-!          write(100,1000) xk(1), xk(2), xk(3)
+      sigmin = 1.0d0
+      epsilon = 1.0d-3
+      alpha = 1.0d-8
+      gamma = 1.0d+1
+      max_iter = 10000
+      max_iter_sub = 100
+      lovo_order = samples - noutliers
+      iter = 0
+      iter_sub = 0
 
-!          write(*,*)
-!          write(*,*) "LOVO Algorithm for Mumps:"
-!          ind = ind + noutliers
-!          y(:) = data(3,:)
-!          call lovo_algorithm(samples,n,lovo_order,noutliers,t,y,indices,sp_vector,&
-!             grad_sp,gp,outliers(ind:ind+noutliers-1))
-!          Open(Unit = 200, File = "output/solutions_mixed_mumps.txt", ACCESS = "SEQUENTIAL")
-!          write(200,1000) xk(1), xk(2), xk(3)
+      xk(1:n) = 1.0d0
 
-!          write(*,*)
-!          write(*,*) "LOVO Algorithm for Rubella:"
-!          ind = ind + noutliers
-!          y(:) = data(4,:)
-!          call lovo_algorithm(samples,n,lovo_order,noutliers,t,y,indices,sp_vector,&
-!             grad_sp,gp,outliers(ind:ind+noutliers-1))
-!          Open(Unit = 300, File = "output/solutions_mixed_rubella.txt", ACCESS = "SEQUENTIAL")
-!          write(300,1000) xk(1), xk(2), xk(3)
-!       enddo
+      call compute_sp(samples,lovo_order,n,t,y,xk,indices,sp_vector,fxk)
 
-!       Open(Unit = 500, File = "output/num_mixed_test.txt", ACCESS = "SEQUENTIAL")
-!       write(500,1200) inf
-!       write(500,1200) sup
+      write(*,*) "--------------------------------------------------"
+      write(*,10) "#iter","#init","Sp(xstar)","||gp(xstar)||"
+      10 format (2X,A5,4X,A5,6X,A9,6X,A13)
+      write(*,*) "--------------------------------------------------"
 
-!       1000 format (ES12.6,1X,ES12.6,1X,ES12.6)
-!       1200 format (I2)
-!       close(100)
-!       close(200)
-!       close(300)
-!       CLOSE(500)
+      do
+         iter = iter + 1
 
-!    end subroutine mixed_test
+         call compute_grad_sp(samples,lovo_order,n,t,y,xk,indices,gp)
 
-!    !*****************************************************************
-!    !*****************************************************************
+         do i = 1, n
+            gp(i) = max(lbnd(i),min(xk(i) - gp(i),ubnd(i)))
+         enddo
 
-!    subroutine lovo_algorithm(samples,n,lovo_order,noutliers,t,y,indices,sp_vector,grad_sp,gp,outliers)
-!       implicit none
+         termination = norm2(gp(1:n) - xk(1:n))
 
-!       integer,       intent(in) :: samples,noutliers,n
-!       real(kind=8),  intent(in) :: t(samples),y(samples)
-!       integer,       intent(inout) :: lovo_order,outliers(noutliers)
-!       real(kind=8),  intent(inout) :: indices(samples),sp_vector(samples),grad_sp(n),gp(n)
+         write(*,20)  iter,iter_sub,fxk,termination
+         20 format (I6,5X,I4,4X,ES14.6,3X,ES14.6)
 
-!       real(kind=8) :: sp,sigmin,epsilon,fxk,fxtrial,theta,alpha,gamma,termination
-!       integer :: iter,iter_sub,max_iter,max_iter_sub,i
+         if (termination .lt. epsilon) exit
+         if (iter .gt. max_iter) exit
 
-!       sigmin = 1.0d0
-!       epsilon = 1.0d-3
-!       alpha = 1.0d-8
-!       gamma = 1.0d+1
-!       max_iter = 10000
-!       max_iter_sub = 100
-!       lovo_order = samples - noutliers
-!       iter = 0
-!       iter_sub = 0
-
-!       xk(1:n) = 1.0d0
-
-!       call compute_sp(samples,lovo_order,n,t,y,xk,indices,sp_vector,fxk)
-
-!       ! Open(Unit = 100, File = "output/algorithm_output.txt", ACCESS = "SEQUENTIAL")
-
-!       write(*,*) "--------------------------------------------------"
-!       write(*,10) "#iter","#init","Sp(xstar)","||gp(xstar)||"
-!       10 format (2X,A5,4X,A5,6X,A9,6X,A13)
-!       write(*,*) "--------------------------------------------------"
-
-!       do
-!          iter = iter + 1
-
-!          call compute_grad_sp(samples,lovo_order,n,t,y,xk,indices,gp)
-
-!          do i = 1, n
-!             gp(i) = max(lbnd(i),min(xk(i) - gp(i),ubnd(i)))
-!          enddo
-
-!          termination = norm2(gp(1:n) - xk(1:n))
-
-!          write(*,20)  iter,iter_sub,fxk,termination
-!          20 format (I6,5X,I4,4X,ES14.6,3X,ES14.6)
-
-!          if (termination .lt. epsilon) exit
-!          if (iter .gt. max_iter) exit
-
-!          x(1:n) = xk(1:n)
-!          sigma = sigmin
+         x(1:n) = xk(1:n)
+         sigma = sigmin
         
-!          iter_sub = 1
+         iter_sub = 1
 
-!          do
+         do
 
-!             call algencan(evalf,evalg,evalc,evalj,evalhl,jnnzmax,hlnnzmax, &
-!                n,x,lind,lbnd,uind,ubnd,m,p,lambda,epsfeas,epscompl,epsopt,maxoutit, &
-!                scale,rhoauto,rhoini,extallowed,corrin,f,csupn,ssupn,nlpsupn,bdsvio, &
-!                outiter,totiter,nwcalls,nwtotit,ierr,istop,c_loc(pdata))
+            call algencan(evalf,evalg,evalc,evalj,evalhl,jnnzmax,hlnnzmax, &
+               n,x,lind,lbnd,uind,ubnd,m,p,lambda,epsfeas,epscompl,epsopt,maxoutit, &
+               scale,rhoauto,rhoini,extallowed,corrin,f,csupn,ssupn,nlpsupn,bdsvio, &
+               outiter,totiter,nwcalls,nwtotit,ierr,istop,c_loc(pdata))
 
-!             xtrial(:) = x(:)
+            xtrial(:) = x(:)
 
-!             call compute_sp(samples,lovo_order,n,t,y,xtrial,indices,sp_vector,fxtrial)
+            call compute_sp(samples,lovo_order,n,t,y,xtrial,indices,sp_vector,fxtrial)
 
-!             if (fxtrial .le. (fxk - alpha * norm2(xtrial(1:n-1) - xk(1:n-1))**2)) exit
-!             if (iter_sub .gt. max_iter_sub) exit
+            if (fxtrial .le. (fxk - alpha * norm2(xtrial(1:n-1) - xk(1:n-1))**2)) exit
+            if (iter_sub .gt. max_iter_sub) exit
 
-!             sigma = gamma * sigma
-!             iter_sub = iter_sub + 1
+            sigma = gamma * sigma
+            iter_sub = iter_sub + 1
 
-!          enddo
+         enddo
 
-!          fxk = fxtrial
-!          xk(:) = xtrial(:)
+         fxk = fxtrial
+         xk(:) = xtrial(:)
 
-!       enddo
+      enddo
 
-!       write(*,*) "--------------------------------------------------"
+      write(*,*) "--------------------------------------------------"
 
-!       outliers(:) = int(indices(samples - noutliers + 1:))
+      outliers(:) = int(indices(samples - noutliers + 1:))
 
-!    end subroutine lovo_algorithm
+   end subroutine lovo_algorithm
 
-!    !*****************************************************************
-!    !*****************************************************************
-!    subroutine export(outliers,noutliers)
-!       implicit none
+   !*****************************************************************
+   !*****************************************************************
 
-!       integer,        intent(in) :: noutliers,outliers(3*samples)
-!       integer :: i
+   subroutine export(outliers,noutliers)
+      implicit none
 
-!       Open(Unit = 200, File = "output/outliers.txt", ACCESS = "SEQUENTIAL")
+      integer,        intent(in) :: noutliers,outliers(3*samples)
+      integer :: i
 
-!       write(200,210) noutliers
+      Open(Unit = 200, File = "output/outliers.txt", ACCESS = "SEQUENTIAL")
 
-!       do i = 1, 3*noutliers
-!           write(200,210) outliers(i)
-!       enddo
+      write(200,210) noutliers
 
-!       210 format (I2)
+      do i = 1, 3*noutliers
+          write(200,210) outliers(i)
+      enddo
 
-!       close(200)
+      210 format (I2)
 
-!   end subroutine export
+      close(200)
 
-!    !*****************************************************************
-!    !*****************************************************************
+  end subroutine export
 
-!    subroutine compute_sp(samples,lovo_order,n,t,y,x,indices,sp_vector,res)
-!       implicit none
-!       integer,       intent(in) :: samples,n,lovo_order
-!       real(kind=8),  intent(in) :: x(n),t(samples),y(samples)
-!       real(kind=8),  intent(inout) :: indices(samples),sp_vector(samples)
-!       real(kind=8),  intent(out) :: res
+   !*****************************************************************
+   !*****************************************************************
 
-!       integer :: i,kflag
+   subroutine compute_sp(samples,lovo_order,n,t,y,x,indices,sp_vector,res)
+      implicit none
+      integer,       intent(in) :: samples,n,lovo_order
+      real(kind=8),  intent(in) :: x(n),t(samples),y(samples)
+      real(kind=8),  intent(inout) :: indices(samples),sp_vector(samples)
+      real(kind=8),  intent(out) :: res
 
-!       sp_vector(:) = 0.0d0
-!       kflag = 2
-!       indices(:) = (/(i, i = 1, samples)/)
+      integer :: i,kflag
 
-!       do i = 1, samples
-!          call fi(x,i,n,t,y,samples,sp_vector(i))
-!       end do
+      sp_vector(:) = 0.0d0
+      kflag = 2
+      indices(:) = (/(i, i = 1, samples)/)
+
+      do i = 1, samples
+         call fi(x,i,n,t,y,samples,sp_vector(i))
+      end do
       
-!       ! Sorting
-!       call DSORT(sp_vector,indices,samples,kflag)
+      ! Sorting
+      call DSORT(sp_vector,indices,samples,kflag)
 
-!       ! Lovo function
-!       res = sum(sp_vector(1:lovo_order))
+      ! Lovo function
+      res = sum(sp_vector(1:lovo_order))
 
-!    end subroutine compute_sp
+   end subroutine compute_sp
 
-!    !*****************************************************************
-!    !*****************************************************************
+   !*****************************************************************
+   !*****************************************************************
 
-!    subroutine compute_grad_sp(samples,lovo_order,n,t,y,x,indices,res)
-!       implicit none
+   subroutine compute_grad_sp(samples,lovo_order,n,t,y,x,indices,res)
+      implicit none
 
-!       integer,       intent(in) :: samples,n,lovo_order
-!       real(kind=8),  intent(in) :: indices(samples),x(n),t(samples),y(samples)
-!       real(kind=8),  intent(out) :: res(n)
+      integer,       intent(in) :: samples,n,lovo_order
+      real(kind=8),  intent(in) :: indices(samples),x(n),t(samples),y(samples)
+      real(kind=8),  intent(out) :: res(n)
 
-!       real(kind=8) :: gaux,ti
-!       integer :: i,j
+      real(kind=8) :: gaux,ti
+      integer :: i,j
       
-!       res(:) = 0.0d0
+      res(:) = 0.0d0
 
-!       do i = 1, lovo_order
-!          ti = t(int(indices(i)))
-!          call model(x,int(indices(i)),n,t,y,samples,gaux)
-!          gaux = gaux - y(int(indices(i)))
+      do i = 1, lovo_order
+         ti = t(int(indices(i)))
+         call model(x,int(indices(i)),n,t,y,samples,gaux)
+         gaux = gaux - y(int(indices(i)))
          
-!          res(1) = res(1) + gaux * (ti - t(samples))
-!          res(2) = res(2) + gaux * ((ti - t(samples))**2)
-!          res(3) = res(3) + gaux * ((ti - t(samples))**3)
-!       enddo
+         res(1) = res(1) + gaux * (ti - t(samples))
+         res(2) = res(2) + gaux * ((ti - t(samples))**2)
+         res(3) = res(3) + gaux * ((ti - t(samples))**3)
+      enddo
 
-!    end subroutine compute_grad_sp
+   end subroutine compute_grad_sp
 
-!    !*****************************************************************
-!    !*****************************************************************
+   !*****************************************************************
+   !*****************************************************************
 
-!    subroutine model(x,i,n,t,y,samples,res)
-!       implicit none 
+   subroutine model(x,i,n,t,y,samples,res)
+      implicit none 
 
-!       integer,        intent(in) :: n,i,samples
-!       real(kind=8),   intent(in) :: x(n),t(samples)
-!       real(kind=8),   intent(out) :: res
+      integer,        intent(in) :: n,i,samples
+      real(kind=8),   intent(in) :: x(n),t(samples),y(samples)
+      real(kind=8),   intent(out) :: res
 
-!       res = y(samples) + x(1) * (t(i) - t(samples)) + &
-!             x(2) * ((t(i) - t(samples))**2) + x(2) * ((t(i) - t(samples))**3)
+      res = y(samples) + x(1) * (t(i) - t(samples)) + &
+            x(2) * ((t(i) - t(samples))**2) + x(2) * ((t(i) - t(samples))**3)
 
-!    end subroutine model
+   end subroutine model
 
-!    !*****************************************************************
-!    !*****************************************************************
+   !*****************************************************************
+   !*****************************************************************
 
-!    subroutine fi(x,i,n,t,y,samples,res)
-!       implicit none
+   subroutine fi(x,i,n,t,y,samples,res)
+      implicit none
 
-!       integer,        intent(in) :: n,i,samples
-!       real(kind=8),   intent(in) :: x(n),t(samples),y(samples)
-!       real(kind=8),   intent(out) :: res
+      integer,        intent(in) :: n,i,samples
+      real(kind=8),   intent(in) :: x(n),t(samples),y(samples)
+      real(kind=8),   intent(out) :: res
       
-!       call model(x,i,n,t,y,samples,res)
-!       res = res - y(i)
-!       res = 0.5d0 * (res**2)
+      call model(x,i,n,t,y,samples,res)
+      res = res - y(i)
+      res = 0.5d0 * (res**2)
 
-!    end subroutine fi
+   end subroutine fi
 
-!    !*****************************************************************
-!    !*****************************************************************
+   !*****************************************************************
+   !*****************************************************************
 
-!    subroutine regularized_taylor(samples,n,lovo_order,sigma,t,y,x,indices,sp_vector,grad_sp,res)
+   subroutine regularized_taylor(samples,n,lovo_order,sigma,t,y,x,indices,sp_vector,grad_sp,res)
 
-!       implicit none
+      implicit none
 
-!       integer,       intent(in) :: samples,n,lovo_order
-!       real(kind=8),  intent(in) :: x(n),sigma,t(samples),y(samples)
-!       real(kind=8),  intent(inout) :: indices(samples),sp_vector(samples),grad_sp(n)
-!       real(kind=8),  intent(out) :: res
+      integer,       intent(in) :: samples,n,lovo_order
+      real(kind=8),  intent(in) :: x(n),sigma,t(samples),y(samples)
+      real(kind=8),  intent(inout) :: indices(samples),sp_vector(samples),grad_sp(n)
+      real(kind=8),  intent(out) :: res
 
 
-!       call compute_sp(samples,lovo_order,n,t,y,x,indices,sp_vector,res)
-!       call compute_grad_sp(samples,lovo_order,n,t,y,x,indices,grad_sp)
-!       res = res + dot_product(grad_sp(1:n),x(1:n) - xk(1:n))
-!       res = res + 0.5d0 * sigma * (norm2(x(1:n) - xk(1:n))**2)
+      call compute_sp(samples,lovo_order,n,t,y,x,indices,sp_vector,res)
+      call compute_grad_sp(samples,lovo_order,n,t,y,x,indices,grad_sp)
+      res = res + dot_product(grad_sp(1:n),x(1:n) - xk(1:n))
+      res = res + 0.5d0 * sigma * (norm2(x(1:n) - xk(1:n))**2)
 
-!    end subroutine regularized_Taylor
+   end subroutine regularized_Taylor
 
-!    !*****************************************************************
-!    !*****************************************************************
+   !*****************************************************************
+   !*****************************************************************
 
-!    subroutine grad_regularized_taylor(samples,n,lovo_order,sigma,t,y,x,indices,res)
-!       implicit none
+   subroutine grad_regularized_taylor(samples,n,lovo_order,sigma,t,y,x,indices,res)
+      implicit none
 
-!       integer,       intent(in) :: samples,n,lovo_order
-!       real(kind=8),  intent(in) :: x(n),sigma,t(samples),y(samples)
-!       real(kind=8),  intent(inout) :: indices(samples)
-!       real(kind=8),  intent(out) :: res(n)
+      integer,       intent(in) :: samples,n,lovo_order
+      real(kind=8),  intent(in) :: x(n),sigma,t(samples),y(samples)
+      real(kind=8),  intent(inout) :: indices(samples)
+      real(kind=8),  intent(out) :: res(n)
       
-!       call compute_grad_sp(samples,lovo_order,n,t,y,x,indices,res)
-!       res = res + sigma * (x(1:n) - xk(1:n))
+      call compute_grad_sp(samples,lovo_order,n,t,y,x,indices,res)
+      res = res + sigma * (x(1:n) - xk(1:n))
 
-!    end subroutine grad_regularized_taylor
+   end subroutine grad_regularized_taylor
 
    ! *****************************************************************
    ! ALGENCAN SUBROUTINES
