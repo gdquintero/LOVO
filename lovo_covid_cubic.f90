@@ -159,9 +159,11 @@ program algencama
    ! process. You should test both choices for the problem at hand.
    corrin = .false.
 
-   inf = 30
+   inf = 5
    ! sup = n_train
-   sup = 30
+   sup = n_train
+
+   noutliers = 0
    
    do samples = inf, sup
       allocate(t(samples),y(samples),indices(samples),sp_vector(samples),stat=allocerr)
@@ -175,9 +177,11 @@ program algencama
       indices(1:samples)   = (/(i, i = 1, samples)/)
       y(1:samples)         = train_set(n_train - samples + 1:n_train)
 
-      noutliers = 4
+      if (mod(dble(samples),7.d0) .eq. 0) then
+         noutliers = noutliers + 1
+      endif
 
-      call lovo_algorithm(samples,n,lovo_order,noutliers,t,y,indices,sp_vector,grad_sp,gp)
+      ! call lovo_algorithm(samples,n,lovo_order,noutliers,t,y,indices,sp_vector,grad_sp,gp)
 
       Open(Unit = 100, File = "output/solution_covid_cubic.txt", ACCESS = "SEQUENTIAL")
       write(100,10) xk(1), xk(2), xk(3)
