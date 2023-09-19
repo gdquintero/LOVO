@@ -159,7 +159,7 @@ program algencama
    inf = 0
    sup = 10
 
-   stop
+   samples = 5
    
    allocate(t(samples),y(samples),indices(samples),&
             sp_vector(samples),stat=allocerr)
