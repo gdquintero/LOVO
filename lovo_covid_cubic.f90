@@ -82,6 +82,9 @@ program algencama
       read(200,*) test_set(i)
    enddo
 
+   close(100)
+   close(200)
+
    ! Bound constraints
 
    lind(1:n) = .false.
@@ -176,6 +179,8 @@ program algencama
 
       call lovo_algorithm(samples,n,lovo_order,noutliers,t,y,indices,sp_vector,grad_sp,gp)
 
+      Open(Unit = 100, File = "output/solution_covid_cubic.txt", ACCESS = "SEQUENTIAL")
+      write(100,1000) xk(1), xk(2), xk(3)
 
       deallocate(t,y,indices,sp_vector,stat=allocerr)
    
@@ -186,6 +191,8 @@ program algencama
 
    enddo
 
+   1000 format (ES13.6,1X,ES13.6,1X,ES13.6)
+   close(100)
 
    call cpu_time(start)
 
@@ -232,8 +239,8 @@ program algencama
       call compute_sp(samples,lovo_order,n,t,y,xk,indices,sp_vector,fxk)
 
       write(*,*) "--------------------------------------------------"
-      write(*,10) "#iter","#init","Sp(xstar)","||gp(xstar)||"
-      10 format (2X,A5,4X,A5,6X,A9,6X,A13)
+      write(*,10) "#iter","#init","Sp(xstar)","||g(xstar)||"
+      10 format (2X,A5,4X,A5,6X,A9,7X,A12)
       write(*,*) "--------------------------------------------------"
 
       do
