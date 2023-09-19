@@ -15,8 +15,8 @@ day = np.linspace(1,10,10)
 t = np.linspace(1,10,1000)
 
 x[0] = df_solution.values[0][0]
-x[1] = df_solution.values[1][0]
-x[2] = df_solution.values[2][0]
+x[1] = df_solution.values[0][1]
+x[2] = df_solution.values[0][2]
 
 for i in range(n_train):
     y[i] = df_train_set.values[i+1][0]
@@ -25,3 +25,4 @@ for i in range(n_train):
 plt.plot(day,y[n_train-10:],"ko")
 plt.plot(t,cubic(*x,t,y[-1],10))
 plt.savefig("cubic.pdf",bbox_inches = "tight")
+plt.close()
