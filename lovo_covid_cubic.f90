@@ -46,7 +46,7 @@ program algencama
    real(kind=8), allocatable :: c(:),lbnd(:),ubnd(:),lambda(:),x(:)
 
    !--> LOVO Algorithm variables <--
-   integer :: samples,inf,sup,lovo_order,n_train,n_test
+   integer :: samples,inf,sup,lovo_order,n_train,n_test,noutliers
    real(kind=8) :: sigma
    real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),data(:,:),indices(:),sp_vector(:),grad_sp(:),&
                                 gp(:),train_set(:),test_set(:)
@@ -87,7 +87,7 @@ program algencama
    lind(1:n) = .false.
    lbnd(1:n) = 0.0d0
 
-   uind(1:n) = .true.
+   uind(1:n) = .false.
    ubnd(1:n) = 0.0d0
 
    ! Number equality (m) and inequality (p) constraints.
@@ -172,7 +172,10 @@ program algencama
       indices(1:samples)   = (/(i, i = 1, samples)/)
       y(1:samples)         = train_set(n_train - samples + 1:n_train)
 
-      
+      noutliers = 0
+
+      call lovo_algorithm(samples,n,lovo_order,noutliers,t,y,indices,sp_vector,grad_sp,gp)
+
 
       deallocate(t,y,indices,sp_vector,stat=allocerr)
    
@@ -203,12 +206,12 @@ program algencama
    ! LOVO SUBROUTINES
    ! *****************************************************************
 
-   subroutine lovo_algorithm(samples,n,lovo_order,noutliers,t,y,indices,sp_vector,grad_sp,gp,outliers)
+   subroutine lovo_algorithm(samples,n,lovo_order,noutliers,t,y,indices,sp_vector,grad_sp,gp)
       implicit none
 
       integer,       intent(in) :: samples,noutliers,n
       real(kind=8),  intent(in) :: t(samples),y(samples)
-      integer,       intent(inout) :: lovo_order,outliers(noutliers)
+      integer,       intent(inout) :: lovo_order
       real(kind=8),  intent(inout) :: indices(samples),sp_vector(samples),grad_sp(n),gp(n)
 
       real(kind=8) :: sp,sigmin,epsilon,fxk,fxtrial,theta,alpha,gamma,termination
@@ -238,11 +241,11 @@ program algencama
 
          call compute_grad_sp(samples,lovo_order,n,t,y,xk,indices,gp)
 
-         do i = 1, n
-            gp(i) = max(lbnd(i),min(xk(i) - gp(i),ubnd(i)))
-         enddo
+         ! do i = 1, n
+         !    gp(i) = max(lbnd(i),min(xk(i) - gp(i),ubnd(i)))
+         ! enddo
 
-         termination = norm2(gp(1:n) - xk(1:n))
+         termination = norm2(gp(1:n))
 
          write(*,20)  iter,iter_sub,fxk,termination
          20 format (I6,5X,I4,4X,ES14.6,3X,ES14.6)
@@ -280,8 +283,6 @@ program algencama
       enddo
 
       write(*,*) "--------------------------------------------------"
-
-      outliers(:) = int(indices(samples - noutliers + 1:))
 
    end subroutine lovo_algorithm
 
@@ -374,7 +375,7 @@ program algencama
       real(kind=8),   intent(out) :: res
 
       res = y(samples) + x(1) * (t(i) - t(samples)) + &
-            x(2) * ((t(i) - t(samples))**2) + x(2) * ((t(i) - t(samples))**3)
+            x(2) * ((t(i) - t(samples))**2) + x(3) * ((t(i) - t(samples))**3)
 
    end subroutine model
 
@@ -405,7 +406,6 @@ program algencama
       real(kind=8),  intent(in) :: x(n),sigma,t(samples),y(samples)
       real(kind=8),  intent(inout) :: indices(samples),sp_vector(samples),grad_sp(n)
       real(kind=8),  intent(out) :: res
-
 
       call compute_sp(samples,lovo_order,n,t,y,x,indices,sp_vector,res)
       call compute_grad_sp(samples,lovo_order,n,t,y,x,indices,grad_sp)
