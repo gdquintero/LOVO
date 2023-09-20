@@ -182,7 +182,7 @@ program algencama
 
       call lovo_algorithm(samples,n,lovo_order,noutliers,t,y,indices,sp_vector,grad_sp,gp)
 
-      Open(Unit = 100, File = "output/solution_covid_cubic.txt", ACCESS = "SEQUENTIAL")
+      Open(Unit = 100, File = "output/solutions_covid_cubic.txt", ACCESS = "SEQUENTIAL")
       write(100,10) xk(1), xk(2), xk(3)
 
       deallocate(t,y,indices,sp_vector,stat=allocerr)
