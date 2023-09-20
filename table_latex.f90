@@ -6,8 +6,8 @@ program table
     integer :: i,j,allocerr,n_train,n_test,inf
 
     ! Reading data and storing it in the variables t and y
-    Open(Unit = 100, File = "output/covid_train.txt", ACCESS = "SEQUENTIAL")
-    Open(Unit = 200, File = "output/covid_test.txt", ACCESS = "SEQUENTIAL")
+    Open(Unit = 100, File = "output/covid_train1.txt", ACCESS = "SEQUENTIAL")
+    Open(Unit = 200, File = "output/covid_test1.txt", ACCESS = "SEQUENTIAL")
     Open(Unit = 300, File = "output/solutions_covid_cubic.txt", ACCESS = "SEQUENTIAL")
     Open(Unit = 400, File = "output/accuracy_matrix.txt", ACCESS = "SEQUENTIAL")
     Open(Unit = 500, File = "output/table_covid_cubic.txt", ACCESS = "SEQUENTIAL")
