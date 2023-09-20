@@ -58,8 +58,8 @@ program algencama
    n = 3
 
    ! Reading data and storing it in the variables t and y
-   Open(Unit = 100, File = "output/covid_train3.txt", ACCESS = "SEQUENTIAL")
-   Open(Unit = 200, File = "output/covid_test3.txt", ACCESS = "SEQUENTIAL")
+   Open(Unit = 100, File = "output/covid_train1.txt", ACCESS = "SEQUENTIAL")
+   Open(Unit = 200, File = "output/covid_test1.txt", ACCESS = "SEQUENTIAL")
 
    ! Set parameters
    read(100,*) n_train
@@ -158,8 +158,8 @@ program algencama
    ! process. You should test both choices for the problem at hand.
    corrin = .false.
 
-   inf = 5
-   sup = n_train
+   inf = 20
+   sup = 20!n_train
 
    noutliers = 0
    
