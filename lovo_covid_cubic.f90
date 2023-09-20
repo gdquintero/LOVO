@@ -51,7 +51,6 @@ program algencama
    real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),data(:,:),indices(:),sp_vector(:),grad_sp(:),&
                                 gp(:),train_set(:),test_set(:)
    integer, allocatable :: outliers(:)
-
    integer :: i
 
    ! Number of variables
@@ -232,13 +231,13 @@ program algencama
       epsilon = 1.0d-3
       alpha = 1.0d-8
       gamma = 1.0d+1
-      max_iter = 10000
+      max_iter = 1000
       max_iter_sub = 100
       lovo_order = samples - noutliers
       iter = 0
       iter_sub = 0
 
-      xk(1:n) = 1.0d-1
+      xk(1:n) = 1.0d-2
 
       call compute_sp(samples,lovo_order,n,t,y,xk,indices,sp_vector,fxk)
 
@@ -296,29 +295,6 @@ program algencama
       write(*,*) "--------------------------------------------------"
 
    end subroutine lovo_algorithm
-
-   !*****************************************************************
-   !*****************************************************************
-
-   subroutine export(outliers,noutliers)
-      implicit none
-
-      integer,        intent(in) :: noutliers,outliers(3*samples)
-      integer :: i
-
-      Open(Unit = 200, File = "output/outliers.txt", ACCESS = "SEQUENTIAL")
-
-      write(200,210) noutliers
-
-      do i = 1, 3*noutliers
-          write(200,210) outliers(i)
-      enddo
-
-      210 format (I2)
-
-      close(200)
-
-  end subroutine export
 
    !*****************************************************************
    !*****************************************************************
