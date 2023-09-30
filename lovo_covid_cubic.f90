@@ -58,8 +58,8 @@ program algencama
    n = 3
 
    ! Reading data and storing it in the variables t and y
-   Open(Unit = 100, File = "output/covid_train1.txt", ACCESS = "SEQUENTIAL")
-   Open(Unit = 200, File = "output/covid_test1.txt", ACCESS = "SEQUENTIAL")
+   Open(Unit = 100, File = "output/covid_train.txt", ACCESS = "SEQUENTIAL")
+   Open(Unit = 200, File = "output/covid_test.txt", ACCESS = "SEQUENTIAL")
 
    ! Set parameters
    read(100,*) n_train
@@ -158,8 +158,8 @@ program algencama
    ! process. You should test both choices for the problem at hand.
    corrin = .false.
 
-   inf = 20
-   sup = 20!n_train
+   inf = 5
+   sup = n_train
 
    noutliers = 0
    
@@ -175,9 +175,9 @@ program algencama
       indices(1:samples)   = (/(i, i = 1, samples)/)
       y(1:samples)         = train_set(n_train - samples + 1:n_train)
 
-      if (mod(dble(samples),7.d0) .eq. 0) then
-         noutliers = noutliers + 1
-      endif
+      ! if (mod(dble(samples),7.d0) .eq. 0) then
+      !    noutliers = noutliers + 1
+      ! endif
 
       call lovo_algorithm(samples,n,lovo_order,noutliers,t,y,indices,sp_vector,grad_sp,gp)
 

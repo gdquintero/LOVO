@@ -1,20 +1,3 @@
-! *****************************************************************
-! *****************************************************************
-
-! This is a main program that calls Algencan to solve a simple
-! problem. It is intended to be used as an (incomplete) example of
-! usage. Algencan applies to problems of the form
-!
-! Minimize f(x)
-!
-! subject to
-!
-!   heq(x) = 0    heq : R^n \to R^m represents the equality constraints
-!   hin(x) <= 0   hin : R^n \to R^p represents the inequality constraints
-!   l <= x <= u   l and u \in R^n are the bound constraints.
-
-! *****************************************************************
-! *****************************************************************
 
 program algencama
    use sort
