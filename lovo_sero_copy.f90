@@ -28,7 +28,6 @@ program gencanma
    real(kind=8), allocatable :: g(:),lbnd(:),ubnd(:),x(:)
 
    integer :: i
-   real(kind=8) :: valor
  
    n = 3
  
@@ -38,7 +37,7 @@ program gencanma
       stop
    end if
  
-   lbnd(1:n) = - 1.0d+20
+   lbnd(1:n) = 0.0d0
    ubnd(1:n) = 1.0d+20
  
    where( lbnd(1:n) .gt. - 1.0d+20 )
@@ -62,7 +61,6 @@ program gencanma
    extallowed  =     .true.
  
    nbds = count( lind(1:n) ) + count( uind(1:n) )
-
 
    ! Reading data and storing it in the variables t and y
    Open(Unit = 10, File = "output/seropositives.txt", ACCESS = "SEQUENTIAL")
@@ -98,10 +96,7 @@ program gencanma
 
    pdata%outliers(:) = 0
 
-   x = 1.0d0
-   i = 1
-
-   call mixed_test(n,pdata)
+   call mixed_test(n)
  
    ! call cpu_time(start)
  
@@ -176,11 +171,10 @@ program gencanma
    ! LOVO SUBROUTINES
    ! *****************************************************************
 
-   subroutine mixed_test(n,pdata)
+   subroutine mixed_test(n)
       implicit none
 
       integer, intent(in) :: n
-      type(pdata_type), intent(inout) :: pdata
 
       integer :: noutliers,ind
 
@@ -188,25 +182,25 @@ program gencanma
          write(*,*) "LOVO Algorithm for Measles:"
          ind = 1
          pdata%y(:) = pdata%data(2,:)
-         call lovo_algorithm(n,noutliers,pdata%outliers(ind:ind+noutliers-1),pdata)
+         call lovo_algorithm(n,noutliers,pdata%outliers(ind:ind+noutliers-1))
          Open(Unit = 100, File = "output/solutions_mixed_measles.txt", ACCESS = "SEQUENTIAL")
          write(100,1000) pdata%xk(1), pdata%xk(2), pdata%xk(3)
 
-         write(*,*)
-         write(*,*) "LOVO Algorithm for Mumps:"
-         ind = ind + noutliers
-         pdata%y(:) = pdata%data(3,:)
-         call lovo_algorithm(n,noutliers,pdata%outliers(ind:ind+noutliers-1),pdata)
-         Open(Unit = 200, File = "output/solutions_mixed_mumps.txt", ACCESS = "SEQUENTIAL")
-         write(200,1000) pdata%xk(1), pdata%xk(2), pdata%xk(3)
+         ! write(*,*)
+         ! write(*,*) "LOVO Algorithm for Mumps:"
+         ! ind = ind + noutliers
+         ! pdata%y(:) = pdata%data(3,:)
+         ! call lovo_algorithm(n,noutliers,pdata%outliers(ind:ind+noutliers-1))
+         ! Open(Unit = 200, File = "output/solutions_mixed_mumps.txt", ACCESS = "SEQUENTIAL")
+         ! write(200,1000) pdata%xk(1), pdata%xk(2), pdata%xk(3)
 
-         write(*,*)
-         write(*,*) "LOVO Algorithm for Rubella:"
-         ind = ind + noutliers
-         pdata%y(:) = pdata%data(4,:)
-         call lovo_algorithm(n,noutliers,pdata%outliers(ind:ind+noutliers-1),pdata)
-         Open(Unit = 300, File = "output/solutions_mixed_rubella.txt", ACCESS = "SEQUENTIAL")
-         write(300,1000) pdata%xk(1), pdata%xk(2), pdata%xk(3)
+         ! write(*,*)
+         ! write(*,*) "LOVO Algorithm for Rubella:"
+         ! ind = ind + noutliers
+         ! pdata%y(:) = pdata%data(4,:)
+         ! call lovo_algorithm(n,noutliers,pdata%outliers(ind:ind+noutliers-1))
+         ! Open(Unit = 300, File = "output/solutions_mixed_rubella.txt", ACCESS = "SEQUENTIAL")
+         ! write(300,1000) pdata%xk(1), pdata%xk(2), pdata%xk(3)
       enddo
 
       Open(Unit = 500, File = "output/num_mixed_test.txt", ACCESS = "SEQUENTIAL")
@@ -225,31 +219,28 @@ program gencanma
    !*****************************************************************
    !*****************************************************************
 
-   subroutine lovo_algorithm(n,noutliers,outliers,pdata)
+   subroutine lovo_algorithm(n,noutliers,outliers)
       implicit none
 
       integer, intent(in) :: n,noutliers
       integer, intent(inout) :: outliers(noutliers)
-      type(pdata_type), intent(inout) :: pdata
 
       real(kind=8) :: sp,sigmin,epsilon,fxk,fxtrial,theta,alpha,gamma,termination
-      integer :: iter,iter_sub,max_iter,max_iter_sub,i
+      integer :: iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo,i
 
       sigmin = 1.0d0
       epsilon = 1.0d-3
       alpha = 1.0d-8
       gamma = 1.0d+1
-      max_iter = 10000
-      max_iter_sub = 100
-      iter = 0
-      iter_sub = 0
+      max_iter_lovo = 10000
+      max_iter_sub_lovo = 100
+      iter_lovo = 0
+      iter_sub_lovo = 0
       pdata%lovo_order = pdata%samples - noutliers
 
       pdata%xk(1:n) = 1.0d0
 
       call compute_sp(n,pdata%xk,pdata,fxk)
-
-      ! Open(Unit = 100, File = "output/algorithm_output.txt", ACCESS = "SEQUENTIAL")
 
       write(*,*) "--------------------------------------------------"
       write(*,10) "#iter","#init","Sp(xstar)","||gp(xstar)||"
@@ -257,9 +248,9 @@ program gencanma
       write(*,*) "--------------------------------------------------"
 
       do
-         iter = iter + 1
+         iter_lovo = iter_lovo + 1
 
-         call compute_grad_sp(n,x,pdata,pdata%gp)
+         call compute_grad_sp(n,pdata%xk,pdata,pdata%gp)
 
          do i = 1, n
             pdata%gp(i) = max(lbnd(i),min(pdata%xk(i) - pdata%gp(i),ubnd(i)))
@@ -267,16 +258,16 @@ program gencanma
 
          termination = norm2(pdata%gp(1:n) - pdata%xk(1:n))
 
-         write(*,20)  iter,iter_sub,fxk,termination
+         write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination
          20 format (I6,5X,I4,4X,ES14.6,3X,ES14.6)
 
          if (termination .lt. epsilon) exit
-         if (iter .gt. max_iter) exit
+         if (iter_lovo .gt. max_iter_lovo) exit
 
          x(1:n) = pdata%xk(1:n)
          pdata%sigma = sigmin
         
-         iter_sub = 1
+         iter_sub_lovo = 1
 
          do
             if ( nbds .eq. 0 ) then
@@ -296,10 +287,10 @@ program gencanma
             call compute_sp(n,pdata%xtrial,pdata,fxtrial)
 
             if (fxtrial .le. (fxk - alpha * norm2(pdata%xtrial(1:n-1) - pdata%xk(1:n-1))**2)) exit
-            if (iter_sub .gt. max_iter_sub) exit
+            if (iter_sub_lovo .gt. max_iter_sub_lovo) exit
 
             pdata%sigma = gamma * pdata%sigma
-            iter_sub = iter_sub + 1
+            iter_sub_lovo = iter_sub_lovo + 1
 
          enddo
 
@@ -310,7 +301,7 @@ program gencanma
 
       write(*,*) "--------------------------------------------------"
 
-      outliers(:) = int(pdata%indices(pdata%samples - noutliers + 1:))
+      ! outliers(:) = int(pdata%indices(pdata%samples - noutliers + 1:))
 
    end subroutine lovo_algorithm
 
@@ -468,7 +459,7 @@ program gencanma
      integer :: status
      type(pdata_type), pointer :: pdata
      
-   !   call c_f_pointer(pdataptr, pdata)
+     call c_f_pointer(pdataptr, pdata)
    !   pdata%counters(1) = pdata%counters(1) + 1
      
    !   call cutest_ufn(status,n,x,f)
@@ -501,7 +492,7 @@ program gencanma
      integer :: status
      type(pdata_type), pointer :: pdata
      
-   !   call c_f_pointer(pdataptr, pdata)
+     call c_f_pointer(pdataptr, pdata)
    !   pdata%counters(2) = pdata%counters(2) + 1
      
    !   call cutest_ugr(status,n,x,g)
@@ -538,7 +529,7 @@ program gencanma
      integer :: status
      type(pdata_type), pointer :: pdata
  
-   !   call c_f_pointer(pdataptr, pdata)
+     call c_f_pointer(pdataptr, pdata)
    !   pdata%counters(3) = pdata%counters(3) + 1
  
    !   ! Upper triangle

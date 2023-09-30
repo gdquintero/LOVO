@@ -143,8 +143,8 @@ program algencama
    ! process. You should test both choices for the problem at hand.
    corrin = .false.
 
-   inf = 0
-   sup = 10
+   inf = 4
+   sup = 4
 
    allocate(outliers(3*samples*(sup-inf+1)),stat=allocerr)
 
@@ -197,23 +197,23 @@ program algencama
          Open(Unit = 100, File = "output/solutions_mixed_measles.txt", ACCESS = "SEQUENTIAL")
          write(100,1000) xk(1), xk(2), xk(3)
 
-         write(*,*)
-         write(*,*) "LOVO Algorithm for Mumps:"
-         ind = ind + noutliers
-         y(:) = data(3,:)
-         call lovo_algorithm(samples,n,lovo_order,noutliers,t,y,indices,sp_vector,&
-            grad_sp,gp,outliers(ind:ind+noutliers-1))
-         Open(Unit = 200, File = "output/solutions_mixed_mumps.txt", ACCESS = "SEQUENTIAL")
-         write(200,1000) xk(1), xk(2), xk(3)
+      !    write(*,*)
+      !    write(*,*) "LOVO Algorithm for Mumps:"
+      !    ind = ind + noutliers
+      !    y(:) = data(3,:)
+      !    call lovo_algorithm(samples,n,lovo_order,noutliers,t,y,indices,sp_vector,&
+      !       grad_sp,gp,outliers(ind:ind+noutliers-1))
+      !    Open(Unit = 200, File = "output/solutions_mixed_mumps.txt", ACCESS = "SEQUENTIAL")
+      !    write(200,1000) xk(1), xk(2), xk(3)
 
-         write(*,*)
-         write(*,*) "LOVO Algorithm for Rubella:"
-         ind = ind + noutliers
-         y(:) = data(4,:)
-         call lovo_algorithm(samples,n,lovo_order,noutliers,t,y,indices,sp_vector,&
-            grad_sp,gp,outliers(ind:ind+noutliers-1))
-         Open(Unit = 300, File = "output/solutions_mixed_rubella.txt", ACCESS = "SEQUENTIAL")
-         write(300,1000) xk(1), xk(2), xk(3)
+      !    write(*,*)
+      !    write(*,*) "LOVO Algorithm for Rubella:"
+      !    ind = ind + noutliers
+      !    y(:) = data(4,:)
+      !    call lovo_algorithm(samples,n,lovo_order,noutliers,t,y,indices,sp_vector,&
+      !       grad_sp,gp,outliers(ind:ind+noutliers-1))
+      !    Open(Unit = 300, File = "output/solutions_mixed_rubella.txt", ACCESS = "SEQUENTIAL")
+      !    write(300,1000) xk(1), xk(2), xk(3)
       enddo
 
       Open(Unit = 500, File = "output/num_mixed_test.txt", ACCESS = "SEQUENTIAL")
