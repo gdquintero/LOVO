@@ -1,4 +1,3 @@
-
 program algencama
    use sort
    use bmalgencan, only: algencan
