@@ -25,7 +25,7 @@ program algencama
    logical, allocatable :: lind(:),uind(:)
    real(kind=8), allocatable :: g(:),lbnd(:),ubnd(:),x(:)
 
-   integer :: i
+   integer :: i,sam
 
    ! Number of variables
 
@@ -93,7 +93,8 @@ program algencama
 
    pdata%noutliers = 0
    
-   do pdata%samples = pdata%inf, pdata%sup
+   do sam = pdata%inf, pdata%sup
+      pdata%samples = sam
       allocate(pdata%t(pdata%samples),pdata%y(pdata%samples),pdata%indices(pdata%samples),&
       pdata%sp_vector(pdata%samples),stat=allocerr)
 
