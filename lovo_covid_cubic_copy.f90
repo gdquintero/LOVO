@@ -107,25 +107,25 @@ program algencama
       pdata%indices(1:pdata%samples)   = (/(i, i = 1, pdata%samples)/)
       pdata%y(1:pdata%samples)         = pdata%train_set(pdata%n_train - pdata%samples + 1:pdata%n_train)
 
-      ! if (mod(dble(samples),7.d0) .eq. 0) then
-      !    noutliers = noutliers + 1
-      ! endif
+      if (mod(dble(sam),7.d0) .eq. 0) then
+         pdata%noutliers = pdata%noutliers + 1
+      endif
 
       ! call lovo_algorithm(samples,n,lovo_order,noutliers,t,y,indices,sp_vector,grad_sp,gp)
 
-      ! Open(Unit = 100, File = "output/solutions_covid_cubic.txt", ACCESS = "SEQUENTIAL")
-      ! write(100,10) xk(1), xk(2), xk(3)
+      Open(Unit = 100, File = "output/solutions_covid_cubic.txt", ACCESS = "SEQUENTIAL")
+      ! write(100,10) pdata%xk(1), pdata%xk(2), pdata%xk(3)
 
-      ! deallocate(t,y,indices,sp_vector,stat=allocerr)
+      deallocate(pdata%t,pdata%y,pdata%indices,pdata%sp_vector,stat=allocerr)
    
-      ! if ( allocerr .ne. 0 ) then
-      !    write(*,*) 'Deallocation error.'
-      !    stop
-      ! end if
+      if ( allocerr .ne. 0 ) then
+         write(*,*) 'Deallocation error.'
+         stop
+      end if
 
    enddo
 
-   ! 10 format (ES13.6,1X,ES13.6,1X,ES13.6) 
+   10 format (ES13.6,1X,ES13.6,1X,ES13.6) 
    ! close(100)
 
    ! call cpu_time(start)
@@ -227,91 +227,98 @@ program algencama
 
    ! end subroutine lovo_algorithm
 
-   ! !*****************************************************************
-   ! !*****************************************************************
+   !*****************************************************************
+   !*****************************************************************
 
-   ! subroutine compute_sp(samples,lovo_order,n,t,y,x,indices,sp_vector,res)
-   !    implicit none
-   !    integer,       intent(in) :: samples,n,lovo_order
-   !    real(kind=8),  intent(in) :: x(n),t(samples),y(samples)
-   !    real(kind=8),  intent(inout) :: indices(samples),sp_vector(samples)
-   !    real(kind=8),  intent(out) :: res
+   subroutine compute_sp(n,x,pdata,res)
+      implicit none
+      integer,       intent(in) :: n
+      real(kind=8),  intent(in) :: x(n)
+      real(kind=8),  intent(out) :: res
 
-   !    integer :: i,kflag
+      type(pdata_type), intent(inout) :: pdata
 
-   !    sp_vector(:) = 0.0d0
-   !    kflag = 2
-   !    indices(:) = (/(i, i = 1, samples)/)
+      integer :: i,kflag
 
-   !    do i = 1, samples
-   !       call fi(x,i,n,t,y,samples,sp_vector(i))
-   !    end do
+      pdata%sp_vector(:) = 0.0d0
+      kflag = 2
+      pdata%indices(:) = (/(i, i = 1, pdata%samples)/)
+
+      do i = 1, pdata%samples
+         call fi(n,x,i,pdata,pdata%sp_vector(i))
+      end do
       
-   !    ! Sorting
-   !    call DSORT(sp_vector,indices,samples,kflag)
+      ! Sorting
+      call DSORT(pdata%sp_vector,pdata%indices,pdata%samples,kflag)
 
-   !    ! Lovo function
-   !    res = sum(sp_vector(1:lovo_order))
+      ! Lovo function
+      res = sum(pdata%sp_vector(1:pdata%lovo_order))
 
-   ! end subroutine compute_sp
+   end subroutine compute_sp
 
-   ! !*****************************************************************
-   ! !*****************************************************************
+   !*****************************************************************
+   !*****************************************************************
 
-   ! subroutine compute_grad_sp(samples,lovo_order,n,t,y,x,indices,res)
-   !    implicit none
+   subroutine compute_grad_sp(n,x,pdata,res)
+      implicit none
 
-   !    integer,       intent(in) :: samples,n,lovo_order
-   !    real(kind=8),  intent(in) :: indices(samples),x(n),t(samples),y(samples)
-   !    real(kind=8),  intent(out) :: res(n)
+      integer,       intent(in) :: n
+      real(kind=8),  intent(in) :: x(n)
+      real(kind=8),  intent(out) :: res(n)
+      type(pdata_type), intent(in) :: pdata
 
-   !    real(kind=8) :: gaux,ti
-   !    integer :: i,j
+      real(kind=8) :: gaux,ti
+      integer :: i,j
       
-   !    res(:) = 0.0d0
+      res(:) = 0.0d0
 
-   !    do i = 1, lovo_order
-   !       ti = t(int(indices(i)))
-   !       call model(x,int(indices(i)),n,t,y,samples,gaux)
-   !       gaux = gaux - y(int(indices(i)))
+      do i = 1, pdata%lovo_order
+         ti = pdata%t(int(pdata%indices(i)))
+         call model(n,x,int(pdata%indices(i)),pdata,gaux)
+         gaux = gaux - pdata%y(int(pdata%indices(i)))
          
-   !       res(1) = res(1) + gaux * (ti - t(samples))
-   !       res(2) = res(2) + gaux * ((ti - t(samples))**2)
-   !       res(3) = res(3) + gaux * ((ti - t(samples))**3)
-   !    enddo
+         res(1) = res(1) + gaux * (ti - pdata%t(pdata%samples))
+         res(2) = res(2) + gaux * ((ti - pdata%t(pdata%samples))**2)
+         res(3) = res(3) + gaux * ((ti - pdata%t(pdata%samples))**3)
+      enddo
 
-   ! end subroutine compute_grad_sp
+   end subroutine compute_grad_sp
 
-   ! !*****************************************************************
-   ! !*****************************************************************
+   !*****************************************************************
+   !*****************************************************************
 
-   ! subroutine model(x,i,n,t,y,samples,res)
-   !    implicit none 
+   subroutine model(n,x,i,pdata,res)
+      implicit none 
 
-   !    integer,        intent(in) :: n,i,samples
-   !    real(kind=8),   intent(in) :: x(n),t(samples),y(samples)
-   !    real(kind=8),   intent(out) :: res
+      integer,        intent(in) :: n,i
+      real(kind=8),   intent(in) :: x(n)
+      real(kind=8),   intent(out) :: res
+      real(kind=8) :: a,b,c,ti,ebt
 
-   !    res = y(samples) + x(1) * (t(i) - t(samples)) + &
-   !          x(2) * ((t(i) - t(samples))**2) + x(3) * ((t(i) - t(samples))**3)
+      type(pdata_type), intent(in) :: pdata
 
-   ! end subroutine model
+      res = pdata%y(pdata%samples) + x(1) * (pdata%t(i) - pdata%t(pdata%samples)) + &
+      x(2) * ((pdata%t(i) - pdata%t(pdata%samples))**2) + x(3) * ((pdata%t(i) - pdata%t(pdata%samples))**3)
 
-   ! !*****************************************************************
-   ! !*****************************************************************
+   end subroutine model
 
-   ! subroutine fi(x,i,n,t,y,samples,res)
-   !    implicit none
+   !*****************************************************************
+   !*****************************************************************
 
-   !    integer,        intent(in) :: n,i,samples
-   !    real(kind=8),   intent(in) :: x(n),t(samples),y(samples)
-   !    real(kind=8),   intent(out) :: res
+   subroutine fi(n,x,i,pdata,res)
+      implicit none
+
+      integer,        intent(in) :: n,i
+      real(kind=8),   intent(in) :: x(n)
+      real(kind=8),   intent(out) :: res
+
+      type(pdata_type), intent(in) :: pdata
       
-   !    call model(x,i,n,t,y,samples,res)
-   !    res = res - y(i)
-   !    res = 0.5d0 * (res**2)
+      call model(n,x,i,pdata,res)
+      res = res - pdata%y(i)
+      res = 0.5d0 * (res**2)
 
-   ! end subroutine fi
+   end subroutine fi
 
    ! !*****************************************************************
    ! !*****************************************************************
