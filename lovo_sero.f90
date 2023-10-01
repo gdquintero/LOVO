@@ -52,8 +52,8 @@ program algencama
       stop
    end if
 
-   allocate(xtrial(n),xk(n),t(samples),y(samples),data(5,samples),indices(samples),&
-            sp_vector(samples),grad_sp(n),gp(n),stat=allocerr)
+   allocate(xtrial(n),xk(n),t(samples),y(samples),data(5,samples),&
+   indices(samples),sp_vector(samples),grad_sp(n),gp(n),stat=allocerr)
 
    if ( allocerr .ne. 0 ) then
       write(*,*) 'Allocation error.'

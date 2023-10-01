@@ -158,9 +158,9 @@ program algencama
    ! process. You should test both choices for the problem at hand.
    corrin = .false.
 
-   inf = 5
+   inf = 9
    ! sup = n_train
-   sup = 5
+   sup = 9
 
    noutliers = 0
    
@@ -179,6 +179,8 @@ program algencama
       ! if (mod(dble(samples),7.d0) .eq. 0) then
       !    noutliers = noutliers + 1
       ! endif
+
+      noutliers = int(dble(samples) / 7.0d0)
 
       call lovo_algorithm(samples,n,lovo_order,noutliers,t,y,indices,sp_vector,grad_sp,gp)
 

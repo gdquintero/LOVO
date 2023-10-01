@@ -89,9 +89,9 @@ program algencama
 
    pdata%inf = 5
    ! pdata%sup = pdata%n_train
-   pdata%sup = 5
+   pdata%sup = 20
 
-   pdata%noutliers = 0
+   ! pdata%noutliers = 0
    
    do sam = pdata%inf, pdata%sup
       pdata%samples = sam
@@ -107,14 +107,12 @@ program algencama
       pdata%indices(1:pdata%samples)   = (/(i, i = 1, pdata%samples)/)
       pdata%y(1:pdata%samples)         = pdata%train_set(pdata%n_train - pdata%samples + 1:pdata%n_train)
 
-      if (mod(dble(sam),7.d0) .eq. 0) then
-         pdata%noutliers = pdata%noutliers + 1
-      endif
+      pdata%noutliers = int(dble(sam) / 7.0d0)
 
       call lovo_algorithm(n)
 
       Open(Unit = 100, File = "output/solutions_covid_cubic.txt", ACCESS = "SEQUENTIAL")
-      ! write(100,10) pdata%xk(1), pdata%xk(2), pdata%xk(3)
+      write(100,10) pdata%xk(1), pdata%xk(2), pdata%xk(3)
 
       deallocate(pdata%t,pdata%y,pdata%indices,pdata%sp_vector,stat=allocerr)
    
@@ -126,18 +124,18 @@ program algencama
    enddo
 
    10 format (ES13.6,1X,ES13.6,1X,ES13.6) 
-   ! close(100)
+   close(100)
 
-   ! call cpu_time(start)
+   call cpu_time(start)
 
-   ! call cpu_time(finish)
+   call cpu_time(finish)
    
-   ! deallocate(lind,lbnd,uind,ubnd,x,lambda,c,stat=allocerr)
+   deallocate(lind,lbnd,uind,ubnd,x,stat=allocerr)
    
-   ! if ( allocerr .ne. 0 ) then
-   !    write(*,*) 'Deallocation error.'
-   !    stop
-   ! end if
+   if ( allocerr .ne. 0 ) then
+      write(*,*) 'Deallocation error.'
+      stop
+   end if
    
    stop
   
@@ -180,10 +178,6 @@ program algencama
 
          call compute_grad_sp(n,x,pdata,pdata%gp)
 
-         ! do i = 1, n
-         !    gp(i) = max(lbnd(i),min(xk(i) - gp(i),ubnd(i)))
-         ! enddo
-
          termination = norm2(pdata%gp(1:n))
 
          write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination
@@ -213,7 +207,7 @@ program algencama
 
             pdata%xtrial(:) = x(:)
 
-            call compute_sp(n,pdata%xk,pdata,fxtrial)
+            call compute_sp(n,pdata%xtrial,pdata,fxtrial)
 
             if (fxtrial .le. (fxk - alpha * norm2(pdata%xtrial(1:n-1) - pdata%xk(1:n-1))**2)) exit
             if (iter_sub_lovo .gt. max_iter_sub_lovo) exit

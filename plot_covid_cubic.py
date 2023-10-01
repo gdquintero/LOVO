@@ -6,7 +6,7 @@ def cubic(x1,x2,x3,t,ym,tm):
     return ym + x1 * (t - tm) + x2 * (t - tm)**2 + x3 * (t - tm)**3
 
 df_solution = pd.read_table("output/solutions_covid_cubic.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
-df_train_set = pd.read_table("output/covid_train1.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
+df_train_set = pd.read_table("output/covid_train.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
 n_train = int(df_train_set.values[0][0])
 
 x   = np.zeros(3)
@@ -26,3 +26,5 @@ plt.plot(day,y[n_train-20:],"ko")
 plt.plot(t,cubic(*x,t,y[-1],t[-1]))
 plt.savefig("cubic.pdf",bbox_inches = "tight")
 plt.close()
+
+print(x)
