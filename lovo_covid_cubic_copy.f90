@@ -320,210 +320,114 @@ program algencama
 
    end subroutine fi
 
-   ! !*****************************************************************
-   ! !*****************************************************************
+ ! *****************************************************************
+   ! GENCAN SUBROUTINES
+   ! *****************************************************************
+ 
+   subroutine evalf(n,x,f,inform,pdataptr)
+ 
+     implicit none
+ 
+     ! SCALAR ARGUMENTS
+     integer, intent(in) :: n
+     integer, intent(inout) :: inform
+     real(kind=8), intent(out) :: f
+     type(c_ptr), optional, intent(in) :: pdataptr
+ 
+     ! ARRAY ARGUMENTS
+     real(kind=8), intent(in) :: x(n)
+     
+     ! LOCAL SCALARS
+     integer :: status
+     type(pdata_type), pointer :: pdata
+     
+     call c_f_pointer(pdataptr, pdata)
+   !   pdata%counters(1) = pdata%counters(1) + 1
+     
+   !   call cutest_ufn(status,n,x,f)
+   !   if ( status .ne. 0 ) inform = -91
 
-   ! subroutine regularized_taylor(samples,n,lovo_order,sigma,t,y,x,indices,sp_vector,grad_sp,res)
-
-   !    implicit none
-
-   !    integer,       intent(in) :: samples,n,lovo_order
-   !    real(kind=8),  intent(in) :: x(n),sigma,t(samples),y(samples)
-   !    real(kind=8),  intent(inout) :: indices(samples),sp_vector(samples),grad_sp(n)
-   !    real(kind=8),  intent(out) :: res
-
-   !    call compute_sp(samples,lovo_order,n,t,y,x,indices,sp_vector,res)
-   !    call compute_grad_sp(samples,lovo_order,n,t,y,x,indices,grad_sp)
-   !    res = res + dot_product(grad_sp(1:n),x(1:n) - xk(1:n))
-   !    res = res + 0.5d0 * sigma * (norm2(x(1:n) - xk(1:n))**2)
-
-   ! end subroutine regularized_Taylor
-
-   ! !*****************************************************************
-   ! !*****************************************************************
-
-   ! subroutine grad_regularized_taylor(samples,n,lovo_order,sigma,t,y,x,indices,res)
-   !    implicit none
-
-   !    integer,       intent(in) :: samples,n,lovo_order
-   !    real(kind=8),  intent(in) :: x(n),sigma,t(samples),y(samples)
-   !    real(kind=8),  intent(inout) :: indices(samples)
-   !    real(kind=8),  intent(out) :: res(n)
-      
-   !    call compute_grad_sp(samples,lovo_order,n,t,y,x,indices,res)
-   !    res = res + sigma * (x(1:n) - xk(1:n))
-
-   ! end subroutine grad_regularized_taylor
-
-   ! ! *****************************************************************
-   ! ! ALGENCAN SUBROUTINES
-   ! ! *****************************************************************
-
-   ! subroutine evalf(n,x,f,inform,pdataptr)
-
-   ! implicit none
-
-   ! ! SCALAR ARGUMENTS
-   ! integer, intent(in) :: n
-   ! integer, intent(inout) :: inform
-   ! real(kind=8), intent(out) :: f
-   ! type(c_ptr), optional, intent(in) :: pdataptr
-
-   ! ! ARRAY ARGUMENTS
-   ! real(kind=8), intent(in) :: x(n)
-
-   ! ! This routine must compute the objective function.
+     call compute_sp(n,x,pdata,f)
+     call compute_grad_sp(n,x,pdata,pdata%grad_sp)
+     f = f + dot_product(pdata%grad_sp(1:n),x(1:n) - pdata%xk(1:n)) + &
+         0.5d0 * pdata%sigma * (norm2(x(1:n) - pdata%xk(1:n))**2)
    
-   ! ! LOCAL SCALARS
-   ! type(pdata_type), pointer :: pdata
+   end subroutine evalf
+ 
+   ! *****************************************************************
+   ! *****************************************************************
+ 
+   subroutine evalg(n,x,g,inform,pdataptr)
+ 
+     implicit none
+ 
+     ! SCALAR ARGUMENTS
+     integer, intent(in) :: n
+     integer, intent(inout) :: inform
+     type(c_ptr), optional, intent(in) :: pdataptr
    
-   ! call c_f_pointer(pdataptr,pdata)
-   ! pdata%counters(1) = pdata%counters(1) + 1
-   
-   ! call regularized_taylor(samples,n,lovo_order,sigma,t,y,x,indices,sp_vector,grad_sp,f)
-   
-   ! end subroutine evalf
+     ! ARRAY ARGUMENTS
+     real(kind=8), intent(in) :: x(n)
+     real(kind=8), intent(out) :: g(n)
+     
+     ! LOCAL SCALARS
+     integer :: status
+     type(pdata_type), pointer :: pdata
+     
+     call c_f_pointer(pdataptr, pdata)
+   !   pdata%counters(2) = pdata%counters(2) + 1
+     
+   !   call cutest_ugr(status,n,x,g)
+   !   if ( status .ne. 0 ) inform = -92
+ 
+   !   where ( isnan( g(1:n) ) )
+   !      g(1:n) = 0.0d0
+   !   end where
 
-   ! ! *****************************************************************
-   ! ! *****************************************************************
+     call compute_grad_sp(n,x,pdata,g)
+     g = g + pdata%sigma * (x(1:n) - pdata%xk(1:n))
+     
+   end subroutine evalg
+ 
+   ! *****************************************************************
+   ! *****************************************************************
+ 
+   subroutine evalh(n,x,lim,hnnz,hrow,hcol,hval,inform,pdataptr)
+ 
+     implicit none
+ 
+     ! SCALAR ARGUMENTS
+     integer, intent(in) :: lim,n
+     integer, intent(inout) :: inform
+     integer, intent(out) :: hnnz
+     type(c_ptr), optional, intent(in) :: pdataptr
+ 
+     ! ARRAY ARGUMENTS
+     real(kind=8), intent(in) :: x(n)
+     integer, intent(out) :: hcol(lim),hrow(lim)
+     real(kind=8), intent(out) :: hval(lim)
+ 
+     ! LOCAL SCALARS
+     integer :: status
+     type(pdata_type), pointer :: pdata
+ 
+     call c_f_pointer(pdataptr, pdata)
+   !   pdata%counters(3) = pdata%counters(3) + 1
+ 
+   !   ! Upper triangle
+   !   call cutest_ush(status,n,x,hnnz,lim,hval,hrow,hcol)
+   !   if ( status .ne. 0 ) inform = -93
+     
+   !   where ( isnan( hval(1:hnnz) ) )
+   !      hval(1:hnnz) = 0.0d0
+   !   end where
 
-   ! subroutine evalg(n,x,g,inform,pdataptr)
+     hnnz = n
 
-   ! implicit none
-
-   ! ! SCALAR ARGUMENTS
-   ! integer, intent(in) :: n
-   ! integer, intent(inout) :: inform
-   ! type(c_ptr), optional, intent(in) :: pdataptr
-   
-   ! ! ARRAY ARGUMENTS
-   ! real(kind=8), intent(in) :: x(n)
-   ! real(kind=8), intent(out) :: g(n)
-   
-   ! ! This routine must compute the gradient of the objective
-   ! ! function.
-   
-   ! ! LOCAL SCALARS
-   ! type(pdata_type), pointer :: pdata
-   
-   ! call c_f_pointer(pdataptr,pdata)
-   ! pdata%counters(2) = pdata%counters(2) + 1
-   
-   ! call grad_regularized_taylor(samples,n,lovo_order,sigma,t,y,x,indices,g)
-
-   ! end subroutine evalg
-
-   ! ! *****************************************************************
-   ! ! *****************************************************************
-
-   ! subroutine evalc(n,x,m,p,c,inform,pdataptr)
-
-   ! implicit none
-
-   ! ! SCALAR ARGUMENTS
-   ! integer, intent(in) :: m,n,p
-   ! integer, intent(inout) :: inform
-   ! type(c_ptr), optional, intent(in) :: pdataptr
-
-   ! ! ARRAY ARGUMENTS
-   ! real(kind=8), intent(in) :: x(n)
-   ! real(kind=8), intent(out) :: c(m+p)
-
-   ! ! This routine must compute all the m+p constraints.
-   
-   ! ! LOCAL SCALARS
-   ! type(pdata_type), pointer :: pdata
-   
-   
-   ! end subroutine evalc
-
-   ! ! *****************************************************************
-   ! ! *****************************************************************
-
-   ! subroutine evalj(n,x,m,p,ind,sorted,jsta,jlen,lim,jvar,jval,inform,pdataptr)
-
-   ! implicit none
-   
-   ! ! SCALAR ARGUMENTS
-   ! integer, intent(in) :: lim,m,n,p
-   ! integer, intent(inout) :: inform
-   ! type(c_ptr), optional, intent(in) :: pdataptr
-
-   ! ! ARRAY ARGUMENTS
-   ! logical, intent(in) :: ind(m+p)
-   ! real(kind=8), intent(in) :: x(n)
-   ! logical, intent(out) :: sorted(m+p)
-   ! integer, intent(out) :: jsta(m+p),jlen(m+p),jvar(lim)
-   ! real(kind=8), intent(out) :: jval(lim)
-   
-   ! ! This routine must compute the Jacobian of the constraints. In
-   ! ! fact, only gradients of constraints j such that ind(j) =
-   ! ! .true. need to be computed.
-   
-   ! ! LOCAL SCALARS
-   ! integer :: i
-   ! type(pdata_type), pointer :: pdata
-   
-   
-   ! end subroutine evalj
-
-   ! ! *****************************************************************
-   ! ! *****************************************************************
-
-   ! subroutine evalhl(n,x,m,p,lambda,lim,inclf,hlnnz,hlrow,hlcol,hlval,inform,pdataptr)
-
-   ! implicit none
-   
-   ! ! SCALAR ARGUMENTS
-   ! logical, intent(in) :: inclf
-   ! integer, intent(in) :: m,n,lim,p
-   ! integer, intent(out) :: hlnnz
-   ! integer, intent(inout) :: inform
-   ! type(c_ptr), optional, intent(in) :: pdataptr
-
-   ! ! ARRAY ARGUMENTS
-   ! real(kind=8), intent(in) :: lambda(m+p),x(n)
-   ! integer, intent(out) :: hlrow(lim),hlcol(lim)
-   ! real(kind=8), intent(out) :: hlval(lim)
-
-   ! ! This routine must compute the Hessian of the Lagrangian. The
-   ! ! Hessian of the objective function must NOT be included if inclf
-   ! ! = .false.
-   
-   ! ! LOCAL SCALARS
-   ! type(pdata_type), pointer :: pdata
-   
-   ! call c_f_pointer(pdataptr,pdata)
-   ! pdata%counters(5) = pdata%counters(5) + 1
-
-   ! hlnnz = 0
-
-   ! ! If .not. inclf then the Hessian of the objective function must not be included
-   
-   ! if ( inclf ) then
-   !    hlnnz = n
-
-   !    if ( hlnnz .gt. lim ) then
-   !        inform = -95
-   !        return
-   !    end if
-      
-   !    hlrow(1:n) = (/(i, i = 1, n)/)
-   !    hlcol(1:n) = (/(i, i = 1, n)/)
-   !    hlval(1:n) = sigma
-
-   ! end if
-
-   ! ! Note that entries of the Hessian of the Lagrangian can be
-   ! ! repeated. If this is case, them sum of repeated entrances is
-   ! ! considered. This feature simplifies the construction of the
-   ! ! Hessian of the Lagrangian.
-   
-   ! if ( hlnnz + 1 .gt. lim ) then
-   !    inform = -95
-   !    return
-   ! end if
-   
-   ! end subroutine evalhl
+     hrow(1:n) = (/(i, i = 1, n)/)
+     hcol(1:n) = (/(i, i = 1, n)/)
+     hval(1:n) = pdata%sigma
+     
+   end subroutine evalh
   
 end program algencama
