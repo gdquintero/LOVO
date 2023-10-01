@@ -1,6 +1,6 @@
 program algencama
    use sort
-   use bmalgencan, only: algencan
+   use bmgencan, only: gencan, genunc
    use iso_c_binding, only: c_ptr, c_loc,c_f_pointer
 
    implicit none
@@ -68,7 +68,7 @@ program algencama
    read(200,*) pdata%n_test
 
    allocate(pdata%train_set(pdata%n_train),pdata%test_set(pdata%n_test),&
-   pdata%grad_sp(n),pdata%gp(n),stat=allocerr)
+   pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),pdata%gp(n),stat=allocerr)
 
    if ( allocerr .ne. 0 ) then
       write(*,*) 'Allocation error.'
@@ -111,7 +111,7 @@ program algencama
          pdata%noutliers = pdata%noutliers + 1
       endif
 
-      ! call lovo_algorithm(samples,n,lovo_order,noutliers,t,y,indices,sp_vector,grad_sp,gp)
+      call lovo_algorithm(n)
 
       Open(Unit = 100, File = "output/solutions_covid_cubic.txt", ACCESS = "SEQUENTIAL")
       ! write(100,10) pdata%xk(1), pdata%xk(2), pdata%xk(3)
@@ -147,85 +147,90 @@ program algencama
    ! ! LOVO SUBROUTINES
    ! ! *****************************************************************
 
-   ! subroutine lovo_algorithm(samples,n,lovo_order,noutliers,t,y,indices,sp_vector,grad_sp,gp)
-   !    implicit none
+   subroutine lovo_algorithm(n)
+      implicit none
 
-   !    integer,       intent(in) :: samples,noutliers,n
-   !    real(kind=8),  intent(in) :: t(samples),y(samples)
-   !    integer,       intent(inout) :: lovo_order
-   !    real(kind=8),  intent(inout) :: indices(samples),sp_vector(samples),grad_sp(n),gp(n)
+      integer, intent(in) :: n
 
-   !    real(kind=8) :: sp,sigmin,epsilon,fxk,fxtrial,theta,alpha,gamma,termination
-   !    integer :: iter,iter_sub,max_iter,max_iter_sub,i
+      real(kind=8) :: sp,sigmin,epsilon,fxk,fxtrial,theta,alpha,gamma,termination
+      integer :: iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo,i
 
-   !    sigmin = 1.0d0
-   !    epsilon = 1.0d-3
-   !    alpha = 1.0d-8
-   !    gamma = 1.0d+1
-   !    max_iter = 1000
-   !    max_iter_sub = 100
-   !    lovo_order = samples - noutliers
-   !    iter = 0
-   !    iter_sub = 0
+      sigmin = 1.0d0
+      epsilon = 1.0d-3
+      alpha = 1.0d-8
+      gamma = 1.0d+1
+      max_iter_lovo = 1000
+      max_iter_sub_lovo = 100
+      iter_lovo = 0
+      iter_sub_lovo = 0
+      pdata%lovo_order = pdata%samples - pdata%noutliers
 
-   !    xk(1:n) = 1.0d-2
+      pdata%xk(1:n) = 1.0d-2
+      
+      call compute_sp(n,pdata%xk,pdata,fxk)
 
-   !    call compute_sp(samples,lovo_order,n,t,y,xk,indices,sp_vector,fxk)
 
-   !    write(*,*) "--------------------------------------------------"
-   !    write(*,10) "#iter","#init","Sp(xstar)","||g(xstar)||"
-   !    10 format (2X,A5,4X,A5,6X,A9,7X,A12)
-   !    write(*,*) "--------------------------------------------------"
+      write(*,*) "--------------------------------------------------"
+      write(*,10) "#iter","#init","Sp(xstar)","||g(xstar)||"
+      10 format (2X,A5,4X,A5,6X,A9,7X,A12)
+      write(*,*) "--------------------------------------------------"
 
-   !    do
-   !       iter = iter + 1
+      do
+         iter_lovo = iter_lovo + 1
 
-   !       call compute_grad_sp(samples,lovo_order,n,t,y,xk,indices,gp)
+         call compute_grad_sp(n,x,pdata,pdata%gp)
 
-   !       ! do i = 1, n
-   !       !    gp(i) = max(lbnd(i),min(xk(i) - gp(i),ubnd(i)))
-   !       ! enddo
+         ! do i = 1, n
+         !    gp(i) = max(lbnd(i),min(xk(i) - gp(i),ubnd(i)))
+         ! enddo
 
-   !       termination = norm2(gp(1:n))
+         termination = norm2(pdata%gp(1:n))
 
-   !       write(*,20)  iter,iter_sub,fxk,termination
-   !       20 format (I6,5X,I4,4X,ES14.6,3X,ES14.6)
+         write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination
+         20 format (I6,5X,I4,4X,ES14.6,3X,ES14.6)
 
-   !       if (termination .lt. epsilon) exit
-   !       if (iter .gt. max_iter) exit
+         if (termination .lt. epsilon) exit
+         if (iter_lovo .gt. max_iter_lovo) exit
 
-   !       x(1:n) = xk(1:n)
-   !       sigma = sigmin
+         x(1:n) = pdata%xk(1:n)
+         pdata%sigma = sigmin
         
-   !       iter_sub = 1
+         iter_sub_lovo = 1
 
-   !       do
+         do
 
-   !          call algencan(evalf,evalg,evalc,evalj,evalhl,jnnzmax,hlnnzmax, &
-   !             n,x,lind,lbnd,uind,ubnd,m,p,lambda,epsfeas,epscompl,epsopt,maxoutit, &
-   !             scale,rhoauto,rhoini,extallowed,corrin,f,csupn,ssupn,nlpsupn,bdsvio, &
-   !             outiter,totiter,nwcalls,nwtotit,ierr,istop,c_loc(pdata))
+            if ( nbds .eq. 0 ) then
+               ! write(*,*) 'The problem is unconstrained.'
+               call genunc(evalf,evalg,evalh,hnnzmax,hfixstr,n,x,f,g,gpsupn, &
+                  ftarget,eps,maxit,extallowed,iter,ierr,istop,pdata=c_loc(pdata))
+               
+            else
+               ! write(*,*) 'The problem is a bound constrained problem.'
+               call gencan(evalf,evalg,evalh,hnnzmax,hfixstr,n,x,lind,lbnd, &
+                  uind,ubnd,f,g,gpsupn,ftarget,eps,maxit,extallowed,iter,ierr, &
+                  istop,pdata=c_loc(pdata))
+            end if
 
-   !          xtrial(:) = x(:)
+            pdata%xtrial(:) = x(:)
 
-   !          call compute_sp(samples,lovo_order,n,t,y,xtrial,indices,sp_vector,fxtrial)
+            call compute_sp(n,pdata%xk,pdata,fxtrial)
 
-   !          if (fxtrial .le. (fxk - alpha * norm2(xtrial(1:n-1) - xk(1:n-1))**2)) exit
-   !          if (iter_sub .gt. max_iter_sub) exit
+            if (fxtrial .le. (fxk - alpha * norm2(pdata%xtrial(1:n-1) - pdata%xk(1:n-1))**2)) exit
+            if (iter_sub_lovo .gt. max_iter_sub_lovo) exit
 
-   !          sigma = gamma * sigma
-   !          iter_sub = iter_sub + 1
+            pdata%sigma = gamma * pdata%sigma
+            iter_sub_lovo = iter_sub_lovo + 1
 
-   !       enddo
+         enddo
 
-   !       fxk = fxtrial
-   !       xk(:) = xtrial(:)
+         fxk = fxtrial
+         pdata%xk(:) = pdata%xtrial(:)
 
-   !    enddo
+      enddo
 
-   !    write(*,*) "--------------------------------------------------"
+      write(*,*) "--------------------------------------------------"
 
-   ! end subroutine lovo_algorithm
+   end subroutine lovo_algorithm
 
    !*****************************************************************
    !*****************************************************************
