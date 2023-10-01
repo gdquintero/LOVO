@@ -159,7 +159,8 @@ program algencama
    corrin = .false.
 
    inf = 5
-   sup = n_train
+   ! sup = n_train
+   sup = 5
 
    noutliers = 0
    
