@@ -94,9 +94,10 @@ program algencama
    ! pdata%noutliers = 0
    
    do sam = pdata%inf, pdata%sup
+      pdata%noutliers = int(dble(sam) / 7.0d0)
       pdata%samples = sam
       allocate(pdata%t(pdata%samples),pdata%y(pdata%samples),pdata%indices(pdata%samples),&
-      pdata%sp_vector(pdata%samples),pdata%outliers(pdata%samples),stat=allocerr)
+      pdata%sp_vector(pdata%samples),pdata%outliers(pdata%noutliers),stat=allocerr)
 
       if ( allocerr .ne. 0 ) then
          write(*,*) 'Allocation error.'
@@ -107,13 +108,18 @@ program algencama
       pdata%indices(1:pdata%samples)   = (/(i, i = 1, pdata%samples)/)
       pdata%y(1:pdata%samples)         = pdata%train_set(pdata%n_train - pdata%samples + 1:pdata%n_train)
 
-      pdata%noutliers = int(dble(sam) / 7.0d0)
-
       call lovo_algorithm()
 
       Open(Unit = 100, File = "output/solutions_covid_cubic.txt", ACCESS = "SEQUENTIAL")
-      write(100,10) pdata%xk(1), pdata%xk(2), pdata%xk(3)
+      Open(Unit = 200, File = "output/outliers_covid_cubic.txt", ACCESS = "SEQUENTIAL")
 
+      write(100,10) pdata%xk(1), pdata%xk(2), pdata%xk(3)
+      write(200,20) pdata%noutliers
+
+      do i = 1, pdata%noutliers
+          write(200,20) pdata%outliers(i)
+      enddo
+   
       deallocate(pdata%t,pdata%y,pdata%indices,pdata%sp_vector,pdata%outliers,stat=allocerr)
    
       if ( allocerr .ne. 0 ) then
@@ -124,7 +130,10 @@ program algencama
    enddo
 
    10 format (ES13.6,1X,ES13.6,1X,ES13.6) 
+   20 format (I2)
+
    close(100)
+   close(200)
 
    call cpu_time(start)
 
@@ -221,6 +230,8 @@ program algencama
       enddo
 
       write(*,*) "--------------------------------------------------"
+
+      pdata%outliers(:) = int(pdata%indices(pdata%samples - pdata%noutliers + 1:))
 
    end subroutine lovo_algorithm
 

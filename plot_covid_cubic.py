@@ -21,10 +21,35 @@ x[2] = df_solution.values[0][2]
 for i in range(n_train):
     y[i] = df_train_set.values[i+1][0]
 
+with open("output/outliers_covid_cubic.txt") as f:
+    lines = f.readlines()
+    xdata = [line.split()[0] for line in lines]
+
+noutliers = int(xdata[0])
+
+ind_outliers = np.empty(noutliers,dtype=int)
+
+for i in range(noutliers):
+    ind_outliers[i] = int(xdata[i+1])
+
+outliers = np.empty(noutliers)
+
+for i in range(noutliers):
+    outliers[i] = df_train_set[0].values[ind_outliers[i]-1]
+
 
 plt.plot(day,y[n_train-20:],"ko")
 plt.plot(t,cubic(*x,t,y[-1],t[-1]))
-plt.savefig("cubic.pdf",bbox_inches = "tight")
-plt.close()
 
-print(x)
+# for i in range(noutliers):
+#     point1 = [sero_outliers[0,i],models.F(sero_outliers[0,i],*df_sol.iloc[0].values)]
+#     point2 = [sero_outliers[0,i],sero_outliers[1,i]]
+#     x_values = [point1[0], point2[0]]
+#     y_values = [point1[1], point2[1]]
+#     plt.plot(x_values, y_values, 'k', linestyle="--")
+
+# l = plt.plot(df_seropositives[0].values,df_seropositives[ind].values,"ko")
+# plt.setp(l, 'markersize', 6)
+
+plt.savefig("cubic.pdf",bbox_inches = "tight")
+# plt.show()
