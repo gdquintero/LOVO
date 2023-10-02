@@ -352,8 +352,8 @@ program algencama
 
       inhdefstp = .false.
 
-      write(*,10) gsupn, maxval(abs(x - pdata%xk))
-      10 format (ES14.6,2X,ES14.6)
+      write(*,*) gsupn, maxval(abs(x - pdata%xk))
+      
 
       if ( gsupn .le. pdata%theta * maxval(abs(x - pdata%xk))) then
          stp = .true.
