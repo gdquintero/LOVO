@@ -91,7 +91,7 @@ program algencama
    ! pdata%sup = pdata%n_train
    pdata%sup = 20
 
-   pdata%theta = eps
+   
 
    ! pdata%noutliers = 0
    
@@ -173,6 +173,8 @@ program algencama
       iter_sub_lovo = 0
       
       pdata%lovo_order = pdata%samples - pdata%noutliers
+      
+      pdata%theta = 0.5d0
 
       pdata%xk(1:n) = 1.0d-2
       
@@ -352,9 +354,8 @@ program algencama
 
       inhdefstp = .false.
 
-      write(*,*) gsupn, maxval(abs(x - pdata%xk))
+      write(*,*) pdata%xk,x
       
-
       if ( gsupn .le. pdata%theta * maxval(abs(x - pdata%xk))) then
          stp = .true.
       endif
