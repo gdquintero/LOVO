@@ -174,7 +174,7 @@ program algencama
       
       pdata%lovo_order = pdata%samples - pdata%noutliers
       
-      pdata%theta = 0.5d0
+      pdata%theta = 100.d0
 
       pdata%xk(1:n) = 1.0d-2
       
