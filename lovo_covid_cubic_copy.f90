@@ -8,7 +8,7 @@ program algencama
    type :: pdata_type
       integer :: counters(3) = 0
       integer :: samples,inf,sup,lovo_order,n_train,n_test,noutliers
-      real(kind=8) :: sigma
+      real(kind=8) :: sigma,theta
       real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),data(:,:),indices(:),sp_vector(:),grad_sp(:),&
                                    gp(:),train_set(:),test_set(:)
       integer, allocatable :: outliers(:)
@@ -91,6 +91,8 @@ program algencama
    ! pdata%sup = pdata%n_train
    pdata%sup = 20
 
+   pdata%theta = eps
+
    ! pdata%noutliers = 0
    
    do sam = pdata%inf, pdata%sup
@@ -119,8 +121,6 @@ program algencama
       do i = 1, pdata%noutliers
           write(200,20) pdata%outliers(i)
       enddo
-
-      print*, "hi: ", pdata%indices
    
       deallocate(pdata%t,pdata%y,pdata%indices,pdata%sp_vector,pdata%outliers,stat=allocerr)
    
@@ -159,8 +159,9 @@ program algencama
    subroutine lovo_algorithm()
       implicit none
 
-      real(kind=8) :: sp,sigmin,epsilon,fxk,fxtrial,theta,alpha,gamma,termination
+      real(kind=8) :: sp,sigmin,epsilon,fxk,fxtrial,alpha,gamma,termination
       integer :: iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo,i
+      logical :: inhdefstp,stp
 
       sigmin = 1.0d0
       epsilon = 1.0d-3
@@ -170,6 +171,7 @@ program algencama
       max_iter_sub_lovo = 100
       iter_lovo = 0
       iter_sub_lovo = 0
+      
       pdata%lovo_order = pdata%samples - pdata%noutliers
 
       pdata%xk(1:n) = 1.0d-2
@@ -177,19 +179,20 @@ program algencama
       call compute_sp(n,pdata%xk,pdata,fxk)
 
 
-      write(*,*) "--------------------------------------------------"
-      write(*,10) "#iter","#init","Sp(xstar)","||g(xstar)||"
-      10 format (2X,A5,4X,A5,6X,A9,7X,A12)
-      write(*,*) "--------------------------------------------------"
+      ! write(*,*) "--------------------------------------------------"
+      ! write(*,10) "#iter","#init","Sp(xstar)","||g(xstar)||"
+      ! 10 format (2X,A5,4X,A5,6X,A9,7X,A12)
+      ! write(*,*) "--------------------------------------------------"
 
       do
          iter_lovo = iter_lovo + 1
 
          call compute_grad_sp(n,x,pdata,pdata%gp)
 
-         termination = norm2(pdata%gp(1:n))
+         ! termination = norm2(pdata%gp(1:n))
+         termination = maxval(abs(pdata%gp(1:n)))
 
-         write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination
+         ! write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination
          20 format (I6,5X,I4,4X,ES14.6,3X,ES14.6)
 
          if (termination .lt. epsilon) exit
@@ -205,13 +208,13 @@ program algencama
             if ( nbds .eq. 0 ) then
                ! write(*,*) 'The problem is unconstrained.'
                call genunc(evalf,evalg,evalh,hnnzmax,hfixstr,n,x,f,g,gpsupn, &
-                  ftarget,eps,maxit,extallowed,iter,ierr,istop,pdata=c_loc(pdata))
+                  ftarget,eps,maxit,extallowed,iter,ierr,istop,stpsub,pdata=c_loc(pdata))
                
             else
                ! write(*,*) 'The problem is a bound constrained problem.'
                call gencan(evalf,evalg,evalh,hnnzmax,hfixstr,n,x,lind,lbnd, &
                   uind,ubnd,f,g,gpsupn,ftarget,eps,maxit,extallowed,iter,ierr, &
-                  istop,pdata=c_loc(pdata))
+                  istop,stpsub,pdata=c_loc(pdata))
             end if
 
             pdata%xtrial(:) = x(:)
@@ -231,7 +234,7 @@ program algencama
 
       enddo
 
-      write(*,*) "--------------------------------------------------"
+      ! write(*,*) "--------------------------------------------------"
 
       pdata%outliers(:) = int(pdata%indices(pdata%samples - pdata%noutliers + 1:))
 
@@ -333,9 +336,35 @@ program algencama
    ! *****************************************************************
    ! GENCAN SUBROUTINES
    ! *****************************************************************
+
+   subroutine stpsub(n,x,gsupn,inhdefstp,stp,ierr,pdataptr)
+      use iso_c_binding, only: c_ptr
+      implicit none
+      integer, intent(in) :: n
+      real(kind=8), intent(in) :: gsupn
+      real(kind=8), intent(in) :: x(n)
+      logical, intent(out) :: inhdefstp,stp
+      integer, intent(inout) :: ierr
+      type(c_ptr), optional, intent(in) :: pdataptr
+
+      type(pdata_type), pointer :: pdata
+      call c_f_pointer(pdataptr, pdata)
+
+      inhdefstp = .false.
+
+      write(*,10) gsupn, maxval(abs(x - pdata%xk))
+      10 format (ES14.6,2X,ES14.6)
+
+      if ( gsupn .le. pdata%theta * maxval(abs(x - pdata%xk))) then
+         stp = .true.
+      endif
+
+   end subroutine stpsub
+
+   ! *****************************************************************
+   ! *****************************************************************
  
    subroutine evalf(n,x,f,inform,pdataptr)
- 
      implicit none
  
      ! SCALAR ARGUMENTS
@@ -361,6 +390,7 @@ program algencama
      call compute_grad_sp(n,x,pdata,pdata%grad_sp)
      f = f + dot_product(pdata%grad_sp(1:n),x(1:n) - pdata%xk(1:n)) + &
          0.5d0 * pdata%sigma * (norm2(x(1:n) - pdata%xk(1:n))**2)
+         
    
    end subroutine evalf
  
