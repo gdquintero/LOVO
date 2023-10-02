@@ -87,7 +87,7 @@ program algencama
    close(200)
 
 
-   pdata%inf = 5
+   pdata%inf = 20
    ! pdata%sup = pdata%n_train
    pdata%sup = 20
 
@@ -96,7 +96,7 @@ program algencama
    do sam = pdata%inf, pdata%sup
       pdata%samples = sam
       allocate(pdata%t(pdata%samples),pdata%y(pdata%samples),pdata%indices(pdata%samples),&
-      pdata%sp_vector(pdata%samples),stat=allocerr)
+      pdata%sp_vector(pdata%samples),pdata%outliers(pdata%samples),stat=allocerr)
 
       if ( allocerr .ne. 0 ) then
          write(*,*) 'Allocation error.'
@@ -109,12 +109,12 @@ program algencama
 
       pdata%noutliers = int(dble(sam) / 7.0d0)
 
-      call lovo_algorithm(n)
+      call lovo_algorithm()
 
       Open(Unit = 100, File = "output/solutions_covid_cubic.txt", ACCESS = "SEQUENTIAL")
       write(100,10) pdata%xk(1), pdata%xk(2), pdata%xk(3)
 
-      deallocate(pdata%t,pdata%y,pdata%indices,pdata%sp_vector,stat=allocerr)
+      deallocate(pdata%t,pdata%y,pdata%indices,pdata%sp_vector,pdata%outliers,stat=allocerr)
    
       if ( allocerr .ne. 0 ) then
          write(*,*) 'Deallocation error.'
@@ -145,10 +145,8 @@ program algencama
    ! LOVO SUBROUTINES
    ! *****************************************************************
 
-   subroutine lovo_algorithm(n)
+   subroutine lovo_algorithm()
       implicit none
-
-      integer, intent(in) :: n
 
       real(kind=8) :: sp,sigmin,epsilon,fxk,fxtrial,theta,alpha,gamma,termination
       integer :: iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo,i
