@@ -1,7 +1,7 @@
 program algencama
    use sort
    use bmgencan, only: gencan, genunc
-   use iso_c_binding, only: c_ptr, c_loc,c_f_pointer
+   use iso_c_binding, only: c_ptr, c_loc,c_f_pointer 
 
    implicit none
 
