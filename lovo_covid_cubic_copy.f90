@@ -119,6 +119,8 @@ program algencama
       do i = 1, pdata%noutliers
           write(200,20) pdata%outliers(i)
       enddo
+
+      print*, "hi: ", pdata%indices
    
       deallocate(pdata%t,pdata%y,pdata%indices,pdata%sp_vector,pdata%outliers,stat=allocerr)
    

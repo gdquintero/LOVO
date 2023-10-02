@@ -35,23 +35,25 @@ for i in range(noutliers):
 outliers = np.empty((2,noutliers))
 
 for i in range(noutliers):
-    outliers[0,i] = df_train_set[0].values[ind_outliers[i]-1]
-    outliers[1,i] = t[ind_outliers[i]-1]
+    outliers[0,i] = day[ind_outliers[i]-1]
+    outliers[1,i] = y[n_train - 20 + ind_outliers[i]-1]
 
-print(outliers)
 
-plt.plot(day,y[n_train-20:],"ko")
+# plt.plot(day,y[n_train-20:],"ko")
 plt.plot(t,cubic(*x,t,y[-1],t[-1]))
+plt.plot(outliers[0],outliers[1],'ro',mfc='none',ms=10)
 
-# for i in range(noutliers):
-#     point1 = [sero_outliers[0,i],models.F(sero_outliers[0,i],*df_sol.iloc[0].values)]
-#     point2 = [sero_outliers[0,i],sero_outliers[1,i]]
-#     x_values = [point1[0], point2[0]]
-#     y_values = [point1[1], point2[1]]
-#     plt.plot(x_values, y_values, 'k', linestyle="--")
+for i in range(noutliers):
+    point1 = [outliers[0,i],cubic(*x,outliers[0,i],y[-1],t[-1])]
+    point2 = [outliers[0,i],outliers[1,i]]
+    x_values = [point1[0], point2[0]]
+    y_values = [point1[1], point2[1]]
+    plt.plot(x_values, y_values, 'k', linestyle="--")
 
-# l = plt.plot(df_seropositives[0].values,df_seropositives[ind].values,"ko")
-# plt.setp(l, 'markersize', 6)
+
+
+l = plt.plot(day,y[n_train-20:],"ko")
+plt.setp(l, 'markersize', 6)
 
 plt.savefig("cubic.pdf",bbox_inches = "tight")
-# plt.show()
+plt.show()
