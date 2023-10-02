@@ -161,7 +161,6 @@ program algencama
 
       real(kind=8) :: sp,sigmin,epsilon,fxk,fxtrial,alpha,gamma,termination
       integer :: iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo,i
-      logical :: inhdefstp,stp
 
       sigmin = 1.0d0
       epsilon = 1.0d-3
@@ -358,6 +357,8 @@ program algencama
       
       if ( gsupn .le. pdata%theta * maxval(abs(x - pdata%xk))) then
          stp = .true.
+      ! else
+      !    stp = .false.
       endif
 
    end subroutine stpsub
