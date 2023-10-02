@@ -32,11 +32,13 @@ ind_outliers = np.empty(noutliers,dtype=int)
 for i in range(noutliers):
     ind_outliers[i] = int(xdata[i+1])
 
-outliers = np.empty(noutliers)
+outliers = np.empty((2,noutliers))
 
 for i in range(noutliers):
-    outliers[i] = df_train_set[0].values[ind_outliers[i]-1]
+    outliers[0,i] = df_train_set[0].values[ind_outliers[i]-1]
+    outliers[1,i] = t[ind_outliers[i]-1]
 
+print(outliers)
 
 plt.plot(day,y[n_train-20:],"ko")
 plt.plot(t,cubic(*x,t,y[-1],t[-1]))
