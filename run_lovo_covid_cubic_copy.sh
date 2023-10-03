@@ -36,10 +36,3 @@ gfortran -L$PWD sort.o lovo_covid_cubic_copy.o -lgencan -lhsl -lblas -o lovo_cov
 
 ./lovo_covid_cubic_copy
 
-# gfortran -g -fcheck=all \
-# -I$ALGENCAN/sources/algencan/inc lovo_covid_cubic_copy.f90 \
-# -L$ALGENCAN/sources/algencan/lib -lalgencan -L$ALGENCAN/sources/hsl/lib -lhsl \
-# -L$ALGENCAN/sources/blas/lib -lblas sort.o subset.o -o lovo_covid_cubic_copy
-
-# ./lovo_covid_cubic_copy
-

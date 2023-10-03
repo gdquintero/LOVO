@@ -87,9 +87,9 @@ program algencama
    close(200)
 
 
-   pdata%inf = 20
+   pdata%inf = 30
    ! pdata%sup = pdata%n_train
-   pdata%sup = 20
+   pdata%sup = 30
 
    
 
@@ -179,11 +179,11 @@ program algencama
       
       call compute_sp(n,pdata%xk,pdata,fxk)
 
-
-      write(*,*) "--------------------------------------------------"
-      write(*,10) "#iter","#init","Sp(xstar)","||g(xstar)||"
+      Open(Unit = 100, File = "output/output_lovo.txt", ACCESS = "SEQUENTIAL")
+      write(100,*) "--------------------------------------------------"
+      write(100,10) "#iter","#init","Sp(xstar)","||g(xstar)||"
       10 format (2X,A5,4X,A5,6X,A9,7X,A12)
-      write(*,*) "--------------------------------------------------"
+      write(100,*) "--------------------------------------------------"
 
       do
          iter_lovo = iter_lovo + 1
@@ -193,7 +193,7 @@ program algencama
          ! termination = norm2(pdata%gp(1:n))
          termination = maxval(abs(pdata%gp(1:n)))
 
-         write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination
+         write(100,20)  iter_lovo,iter_sub_lovo,fxk,termination
          20 format (I6,5X,I4,4X,ES14.6,3X,ES14.6)
 
          if (termination .lt. epsilon) exit
@@ -235,7 +235,8 @@ program algencama
 
       enddo
 
-      write(*,*) "--------------------------------------------------"
+      write(100,*) "--------------------------------------------------"
+      close(100)
 
       pdata%outliers(:) = int(pdata%indices(pdata%samples - pdata%noutliers + 1:))
 
@@ -353,8 +354,6 @@ program algencama
       if ( .false. ) write(*,*) ierr
 
       inhdefstp = .false.
-
-      ! write(*,*) pdata%xk,x
       
       if ( gsupn .le. pdata%theta * maxval(abs(x - pdata%xk))) then
          stp = .true.

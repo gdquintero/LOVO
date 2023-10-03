@@ -11,8 +11,8 @@ n_train = int(df_train_set.values[0][0])
 
 x   = np.zeros(3)
 y   = np.zeros(n_train)
-day = np.linspace(1,20,20)
-t   = np.linspace(1,20,1000)
+day = np.linspace(1,30,30)
+t   = np.linspace(1,30,1000)
 
 x[0] = df_solution.values[0][0]
 x[1] = df_solution.values[0][1]
@@ -36,10 +36,10 @@ outliers = np.empty((2,noutliers))
 
 for i in range(noutliers):
     outliers[0,i] = day[ind_outliers[i]-1]
-    outliers[1,i] = y[n_train - 20 + ind_outliers[i]-1]
+    outliers[1,i] = y[n_train - 30 + ind_outliers[i]-1]
 
 
-# plt.plot(day,y[n_train-20:],"ko")
+# plt.plot(day,y[n_train-30:],"ko")
 plt.plot(t,cubic(*x,t,y[-1],t[-1]))
 plt.plot(outliers[0],outliers[1],'ro',mfc='none',ms=10)
 
@@ -52,7 +52,7 @@ for i in range(noutliers):
 
 
 
-l = plt.plot(day,y[n_train-20:],"ko")
+l = plt.plot(day,y[n_train-30:],"ko")
 plt.setp(l, 'markersize', 6)
 
 plt.savefig("cubic.pdf",bbox_inches = "tight")
