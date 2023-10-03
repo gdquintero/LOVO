@@ -16,12 +16,12 @@ program algencama
 
    ! LOCAL SCALARS
    logical :: extallowed,hfixstr
-   integer :: allocerr,hnnzmax,ierr,istop,iter,maxit,n,nbds,status
-   real(kind=8) :: bdsvio,eps,f,finish,ftarget,gpsupn,start
+   integer :: allocerr,hnnzmax,ierr,istop,iter,maxit,n,nbds
+   real(kind=8) :: eps,f,finish,ftarget,gpsupn,start
    type(pdata_type), target :: pdata
  
    ! LOCAL ARRAYS
-   character(len=10) :: pname
+   ! character(len=10) :: pname
    logical, allocatable :: lind(:),uind(:)
    real(kind=8), allocatable :: g(:),lbnd(:),ubnd(:),x(:)
 
@@ -159,8 +159,8 @@ program algencama
    subroutine lovo_algorithm()
       implicit none
 
-      real(kind=8) :: sp,sigmin,epsilon,fxk,fxtrial,alpha,gamma,termination
-      integer :: iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo,i
+      real(kind=8) :: sigmin,epsilon,fxk,fxtrial,alpha,gamma,termination
+      integer :: iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo
 
       sigmin = 1.0d0
       epsilon = 1.0d-3
@@ -180,10 +180,10 @@ program algencama
       call compute_sp(n,pdata%xk,pdata,fxk)
 
 
-      ! write(*,*) "--------------------------------------------------"
-      ! write(*,10) "#iter","#init","Sp(xstar)","||g(xstar)||"
-      ! 10 format (2X,A5,4X,A5,6X,A9,7X,A12)
-      ! write(*,*) "--------------------------------------------------"
+      write(*,*) "--------------------------------------------------"
+      write(*,10) "#iter","#init","Sp(xstar)","||g(xstar)||"
+      10 format (2X,A5,4X,A5,6X,A9,7X,A12)
+      write(*,*) "--------------------------------------------------"
 
       do
          iter_lovo = iter_lovo + 1
@@ -193,7 +193,7 @@ program algencama
          ! termination = norm2(pdata%gp(1:n))
          termination = maxval(abs(pdata%gp(1:n)))
 
-         ! write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination
+         write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination
          20 format (I6,5X,I4,4X,ES14.6,3X,ES14.6)
 
          if (termination .lt. epsilon) exit
@@ -235,7 +235,7 @@ program algencama
 
       enddo
 
-      ! write(*,*) "--------------------------------------------------"
+      write(*,*) "--------------------------------------------------"
 
       pdata%outliers(:) = int(pdata%indices(pdata%samples - pdata%noutliers + 1:))
 
@@ -282,7 +282,7 @@ program algencama
       type(pdata_type), intent(in) :: pdata
 
       real(kind=8) :: gaux,ti
-      integer :: i,j
+      integer :: i
       
       res(:) = 0.0d0
 
@@ -307,7 +307,6 @@ program algencama
       integer,        intent(in) :: n,i
       real(kind=8),   intent(in) :: x(n)
       real(kind=8),   intent(out) :: res
-      real(kind=8) :: a,b,c,ti,ebt
 
       type(pdata_type), intent(in) :: pdata
 
@@ -351,14 +350,16 @@ program algencama
       type(pdata_type), pointer :: pdata
       call c_f_pointer(pdataptr, pdata)
 
+      if ( .false. ) write(*,*) ierr
+
       inhdefstp = .false.
 
-      write(*,*) pdata%xk,x
+      ! write(*,*) pdata%xk,x
       
       if ( gsupn .le. pdata%theta * maxval(abs(x - pdata%xk))) then
          stp = .true.
-      ! else
-      !    stp = .false.
+      else
+         stp = .false.
       endif
 
    end subroutine stpsub
@@ -379,8 +380,10 @@ program algencama
      real(kind=8), intent(in) :: x(n)
      
      ! LOCAL SCALARS
-     integer :: status
+   !   integer :: status
      type(pdata_type), pointer :: pdata
+
+     if ( .false. ) write(*,*) inform
      
      call c_f_pointer(pdataptr, pdata)
    !   pdata%counters(1) = pdata%counters(1) + 1
@@ -413,8 +416,10 @@ program algencama
      real(kind=8), intent(out) :: g(n)
      
      ! LOCAL SCALARS
-     integer :: status
+   !   integer :: status
      type(pdata_type), pointer :: pdata
+
+     if ( .false. ) write(*,*) inform
      
      call c_f_pointer(pdataptr, pdata)
    !   pdata%counters(2) = pdata%counters(2) + 1
@@ -448,10 +453,13 @@ program algencama
      real(kind=8), intent(in) :: x(n)
      integer, intent(out) :: hcol(lim),hrow(lim)
      real(kind=8), intent(out) :: hval(lim)
+   
  
      ! LOCAL SCALARS
-     integer :: status
+   !   integer :: status
      type(pdata_type), pointer :: pdata
+
+     if ( .false. ) write(*,*) inform, x(1:n)
  
      call c_f_pointer(pdataptr, pdata)
    !   pdata%counters(3) = pdata%counters(3) + 1

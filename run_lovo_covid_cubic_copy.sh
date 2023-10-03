@@ -27,17 +27,12 @@ ar rcs libhsl.a hsl_zd11d.o hsl_ma57d.o ma57ad.o mc34ad.o mc47ad.o mc59ad.o mc64
 
 gfortran -c -O3 -Wall $ALGENCAN/sources/algencan/lss.f90
 gfortran -c -O3 -Wall $ALGENCAN/sources/algencan/gencan.f90
-gfortran -c -O3 -Wall $ALGENCAN/sources/algencan/memev.f90
-gfortran -c -O3 -Wall $ALGENCAN/sources/algencan/feasgencan.f90
-gfortran -c -O3 -Wall $ALGENCAN/sources/algencan/newtkkt.f90
-gfortran -c -O3 -Wall $ALGENCAN/sources/algencan/algencan.f90
 
-ar rcs libalgencan.a lss.o gencan.o memev.o feasgencan.o newtkkt.o algencan.o
+ar rcs libgencan.a lss.o gencan.o
 
 gfortran -c -O3 -Wall sort.f90
-gfortran -c -O3 -Wall subset.f90
 gfortran -c -O3 -Wall lovo_covid_cubic_copy.f90
-gfortran -L$PWD -lalgencan -lhsl -lblas sort.o subset.o lovo_covid_cubic_copy.o -o lovo_covid_cubic_copy
+gfortran -L$PWD sort.o lovo_covid_cubic_copy.o -lgencan -lhsl -lblas -o lovo_covid_cubic_copy
 
 ./lovo_covid_cubic_copy
 
