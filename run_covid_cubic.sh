@@ -1,6 +1,6 @@
 export ALGENCAN=/home/gustavo/algencan-4.0.0
 
-rm -f cubic_model
+rm -f covid_cubic
 
 gfortran -c -O3 $ALGENCAN/sources/blas/dgemm.f
 gfortran -c -O3 $ALGENCAN/sources/blas/dgemv.f
@@ -31,8 +31,8 @@ gfortran -c -O3 -Wall $ALGENCAN/sources/algencan/gencan.f90
 ar rcs libgencan.a lss.o gencan.o
 
 gfortran -c -O3 -Wall sort.f90
-gfortran -c -O3 -Wall cubic_model.f90
-gfortran -L$PWD sort.o cubic_model.o -lgencan -lhsl -lblas -o cubic_model
+gfortran -c -O3 -Wall covid_cubic.f90
+gfortran -L$PWD sort.o covid_cubic.o -lgencan -lhsl -lblas -o covid_cubic
 
-./cubic_model
+./covid_cubic
 
