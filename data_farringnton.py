@@ -11,11 +11,11 @@ def plot_seropositive(sero,x,y):
     plt.plot(x,y,"ko",ls=":")
 
     if sero == "measles":
-        plt.savefig("sero_measles.pdf",bbox_inches = "tight") 
+        plt.savefig("images/sero_measles.pdf",bbox_inches = "tight") 
     elif sero == "mumps":
-        plt.savefig("sero_mumps.pdf",bbox_inches = "tight")
+        plt.savefig("images/sero_mumps.pdf",bbox_inches = "tight")
     else:
-        plt.savefig("sero_rubella.pdf",bbox_inches = "tight")
+        plt.savefig("images/sero_rubella.pdf",bbox_inches = "tight")
 
     plt.show()
 
@@ -63,7 +63,7 @@ age_midpoint = np.empty(samples)
 age_midpoint[:-1] = (age[:-1] + age[1:]) / 2
 age_midpoint[-1]  = 70
 
-with open("output/seropositives.txt","w") as f:
+with open("data/seropositives.txt","w") as f:
     f.write("%i\n" % samples)
     for i in range(samples):
         f.write("%i %f %f %f %f\n" % (age[i],sero_measles[i],sero_mumps[i],sero_rubella[i],age_midpoint[i]))

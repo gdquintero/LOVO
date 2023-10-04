@@ -60,8 +60,8 @@ program algencama
    extallowed  =     .true.
 
    ! Reading data and storing it in the variables t and y
-   Open(Unit = 100, File = "output/covid_train.txt", ACCESS = "SEQUENTIAL")
-   Open(Unit = 200, File = "output/covid_test.txt", ACCESS = "SEQUENTIAL")
+   Open(Unit = 100, File = "data/covid_train.txt", ACCESS = "SEQUENTIAL")
+   Open(Unit = 200, File = "data/covid_test.txt", ACCESS = "SEQUENTIAL")
 
    ! Set parameters
    read(100,*) pdata%n_train

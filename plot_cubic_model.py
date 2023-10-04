@@ -55,5 +55,5 @@ for i in range(noutliers):
 l = plt.plot(day,y[n_train-30:],"ko")
 plt.setp(l, 'markersize', 6)
 
-plt.savefig("cubic.pdf",bbox_inches = "tight")
+plt.savefig("images/cubic.pdf",bbox_inches = "tight")
 plt.show()
