@@ -174,11 +174,11 @@ program logistic
       
       pdata%theta = 100.d0
 
-      pdata%xk(1:n) = 1.0d-2
+      pdata%xk(1:n) = 1.0d0
       
       call compute_sp(n,pdata%xk,pdata,fxk)
 
-      Open(Unit = 100, File = "output/output_lovo.txt", ACCESS = "SEQUENTIAL")
+      Open(Unit = 100, File = "output/output_covid_logistic.txt", ACCESS = "SEQUENTIAL")
       write(100,*) "--------------------------------------------------"
       write(100,10) "#iter","#init","Sp(xstar)","||g(xstar)||"
       10 format (2X,A5,4X,A5,6X,A9,7X,A12)
