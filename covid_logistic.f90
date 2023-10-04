@@ -1,4 +1,4 @@
-program covid
+program logistic
    use sort
    use bmgencan, only: gencan, genunc
    use iso_c_binding, only: c_ptr, c_loc,c_f_pointer 
@@ -478,4 +478,4 @@ program covid
      
    end subroutine evalh
   
-end program covid
+end program logistic
