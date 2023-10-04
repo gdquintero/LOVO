@@ -281,19 +281,20 @@ program logistic
       real(kind=8),  intent(out) :: res(n)
       type(pdata_type), intent(in) :: pdata
 
-      real(kind=8) :: gaux,ti
+      real(kind=8) :: gaux1,gaux2,ti
       integer :: i
       
       res(:) = 0.0d0
 
       do i = 1, pdata%lovo_order
          ti = pdata%t(int(pdata%indices(i)))
-         call model(n,x,int(pdata%indices(i)),pdata,gaux)
-         gaux = gaux - pdata%y(int(pdata%indices(i)))
-         
-         res(1) = res(1) + gaux * (ti - pdata%t(pdata%samples))
-         res(2) = res(2) + gaux * ((ti - pdata%t(pdata%samples))**2)
-         res(3) = res(3) + gaux * ((ti - pdata%t(pdata%samples))**3)
+         call model(n,x,int(pdata%indices(i)),pdata,gaux1)
+         gaux1 = gaux1 - pdata%y(int(pdata%indices(i)))
+         gaux2 = 1.0d0 / (x(3) - x(1) + (x(1) * exp(x(2) * ti)))**2
+
+         res(1) = res(1) + gaux1 * gaux2 * (x(3)**2) * exp(x(2) * ti) 
+         res(2) = res(2) + gaux1 * gaux2 * x(1) * x(3) * ti * exp(x(2) * ti) * (x(3) - x(1))
+         res(3) = res(3) + gaux1 * gaux2 * (x(1)**2) * exp(x(2) * ti) * (exp(x(2) * ti) - 1.0d0)
       enddo
 
    end subroutine compute_grad_sp
@@ -310,8 +311,8 @@ program logistic
 
       type(pdata_type), intent(in) :: pdata
 
-      res = pdata%y(pdata%samples) + x(1) * (pdata%t(i) - pdata%t(pdata%samples)) + &
-      x(2) * ((pdata%t(i) - pdata%t(pdata%samples))**2) + x(3) * ((pdata%t(i) - pdata%t(pdata%samples))**3)
+      res = (x(1) * x(2) * exp(x(2) * pdata%t(i)))
+      res = res / (x(3) - x(1) + (x(1) * exp(x(2) * pdata%t(i))))
 
    end subroutine model
 
