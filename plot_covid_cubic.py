@@ -43,12 +43,12 @@ for i in range(noutliers):
 plt.plot(t,cubic(*x,t,y[-1],t[-1]))
 plt.plot(outliers[0],outliers[1],'ro',mfc='none',ms=10)
 
-for i in range(noutliers):
-    point1 = [outliers[0,i],cubic(*x,outliers[0,i],y[-1],t[-1])]
-    point2 = [outliers[0,i],outliers[1,i]]
-    x_values = [point1[0], point2[0]]
-    y_values = [point1[1], point2[1]]
-    plt.plot(x_values, y_values, 'k', linestyle="--")
+# for i in range(noutliers):
+#     point1 = [outliers[0,i],cubic(*x,outliers[0,i],y[-1],t[-1])]
+#     point2 = [outliers[0,i],outliers[1,i]]
+#     x_values = [point1[0], point2[0]]
+#     y_values = [point1[1], point2[1]]
+#     plt.plot(x_values, y_values, 'k', linestyle="--")
 
 
 
