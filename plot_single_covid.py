@@ -3,7 +3,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import models
 
-df_solution = pd.read_table("output/solutions_covid_cubic.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
+df_solution_cubic = pd.read_table("output/solutions_covid_cubic.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
+df_solution_logistic = pd.read_table("output/solutions_covid_logistic.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
 df_train_set = pd.read_table("data/covid_train.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
 df_test_set = pd.read_table("data/covid_test.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
 n_train = int(df_train_set.values[0][0])
@@ -51,7 +52,8 @@ for i in range(noutliers):
 
 plt.plot(days,y[n_train - previous_days:],"ko")
 plt.plot(days_later,y_later,"o")
-plt.plot(t,models.cubic(*x,t,y[-1],days[-1]))
+# plt.plot(t,models.cubic(*x,t,y[-1],days[-1]))
+plt.plot(t,models.logistic(*x,t))
 plt.plot(outliers[0],outliers[1],'ro',mfc='none',ms=10)
 
 # for i in range(noutliers):
