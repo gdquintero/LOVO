@@ -87,8 +87,8 @@ program covid
    close(200)
 
 
-   pdata%inf = 5
-   pdata%sup = 10
+   pdata%inf = 20
+   pdata%sup = 30
    ! pdata%sup = pdata%n_train
 
    Open(Unit = 100, File = "output/inf_sup_covid.txt", ACCESS = "SEQUENTIAL")
