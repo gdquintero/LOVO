@@ -4,12 +4,12 @@ import pandas as pd
 import models
 
 # Reading the necessary data
-df_solution_cubic = pd.read_table("output/solutions_covid_cubic.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
-df_solution_logistic = pd.read_table("output/solutions_covid_logistic.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
-df_train_set = pd.read_table("data/covid_train.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
-df_test_set = pd.read_table("data/covid_test.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
-n_train = int(df_train_set.values[0][0])
-n_test = int(df_test_set.values[0][0])
+df_solution_cubic       = pd.read_table("output/solutions_covid_cubic.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
+df_solution_logistic    = pd.read_table("output/solutions_covid_logistic.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
+df_train_set            = pd.read_table("data/covid_train.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
+df_test_set             = pd.read_table("data/covid_test.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
+n_train                 = int(df_train_set.values[0][0])
+n_test                  = int(df_test_set.values[0][0])
 
 with open("output/inf_sup_covid.txt") as f:
     lines = f.readlines()
