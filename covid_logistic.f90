@@ -86,11 +86,14 @@ program logistic
    close(100)
    close(200)
 
-
    pdata%inf = 20
-   ! pdata%sup = pdata%n_train
    pdata%sup = 20
+   ! pdata%sup = pdata%n_train
 
+   Open(Unit = 100, File = "output/inf_sup_covid.txt", ACCESS = "SEQUENTIAL")
+   write(100,*) pdata%inf
+   write(100,*) pdata%sup
+   close(100)
 
    ! pdata%noutliers = 0
    

@@ -86,7 +86,6 @@ program covid
    close(100)
    close(200)
 
-
    pdata%inf = 20
    pdata%sup = 20
    ! pdata%sup = pdata%n_train
