@@ -87,9 +87,9 @@ program logistic
    close(200)
 
 
-   pdata%inf = 30
+   pdata%inf = 20
    ! pdata%sup = pdata%n_train
-   pdata%sup = 30
+   pdata%sup = 20
 
 
    ! pdata%noutliers = 0
@@ -109,10 +109,10 @@ program logistic
       pdata%indices(1:pdata%samples)   = (/(i, i = 1, pdata%samples)/)
       pdata%y(1:pdata%samples)         = pdata%train_set(pdata%n_train - pdata%samples + 1:pdata%n_train)
 
-      call lovo_algorithm()
+      call lovo_algorithm(sam)
 
-      Open(Unit = 100, File = "output/solutions_covid_cubic.txt", ACCESS = "SEQUENTIAL")
-      Open(Unit = 200, File = "output/outliers_covid_cubic.txt", ACCESS = "SEQUENTIAL")
+      Open(Unit = 100, File = "output/solutions_covid_logistic.txt", ACCESS = "SEQUENTIAL")
+      Open(Unit = 200, File = "output/outliers_covid_logistic.txt", ACCESS = "SEQUENTIAL")
 
       write(100,10) pdata%xk(1), pdata%xk(2), pdata%xk(3)
       write(200,20) pdata%noutliers
@@ -155,8 +155,10 @@ program logistic
    ! LOVO SUBROUTINES
    ! *****************************************************************
 
-   subroutine lovo_algorithm()
+   subroutine lovo_algorithm(sam)
       implicit none
+
+      integer, intent(in) :: sam
 
       real(kind=8) :: sigmin,epsilon,fxk,fxtrial,alpha,gamma,termination
       integer :: iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo
@@ -178,11 +180,13 @@ program logistic
       
       call compute_sp(n,pdata%xk,pdata,fxk)
 
-      Open(Unit = 100, File = "output/output_covid_logistic.txt", ACCESS = "SEQUENTIAL")
-      write(100,*) "--------------------------------------------------"
-      write(100,10) "#iter","#init","Sp(xstar)","||g(xstar)||"
+      write(*,*)
+      write(*,99) "Main algorithm with", sam, "previous days"
+      99 format (1X,A19,1X,I2,1X,A13)
+      write(*,*) "--------------------------------------------------"
+      write(*,10) "#iter","#init","Sp(xstar)","||g(xstar)||"
       10 format (2X,A5,4X,A5,6X,A9,7X,A12)
-      write(100,*) "--------------------------------------------------"
+      write(*,*) "--------------------------------------------------"
 
       do
          iter_lovo = iter_lovo + 1
@@ -192,7 +196,7 @@ program logistic
          ! termination = norm2(pdata%gp(1:n))
          termination = maxval(abs(pdata%gp(1:n)))
 
-         write(100,20)  iter_lovo,iter_sub_lovo,fxk,termination
+         write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination
          20 format (I6,5X,I4,4X,ES14.6,3X,ES14.6)
 
          if (termination .lt. epsilon) exit
@@ -234,8 +238,7 @@ program logistic
 
       enddo
 
-      write(100,*) "--------------------------------------------------"
-      close(100)
+      write(*,*) "--------------------------------------------------"
 
       pdata%outliers(:) = int(pdata%indices(pdata%samples - pdata%noutliers + 1:))
 
@@ -290,10 +293,10 @@ program logistic
          ti = pdata%t(int(pdata%indices(i)))
          call model(n,x,int(pdata%indices(i)),pdata,gaux1)
          gaux1 = gaux1 - pdata%y(int(pdata%indices(i)))
-         gaux2 = 1.0d0 / (x(3) - x(1) + (x(1) * exp(x(2) * ti)))**2
+         gaux2 = 1.0d0 / (x(3) + x(1) * (exp(x(2) * ti) - 1.0d0))**2
 
          res(1) = res(1) + gaux1 * gaux2 * (x(3)**2) * exp(x(2) * ti) 
-         res(2) = res(2) + gaux1 * gaux2 * x(1) * x(3) * ti * exp(x(2) * ti) * (x(3) - x(1))
+         res(2) = res(2) + gaux1 * gaux2 * ti * x(1) * x(3) * exp(x(2) * ti) * (x(3) - x(1))
          res(3) = res(3) + gaux1 * gaux2 * (x(1)**2) * exp(x(2) * ti) * (exp(x(2) * ti) - 1.0d0)
       enddo
 
@@ -311,8 +314,8 @@ program logistic
 
       type(pdata_type), intent(in) :: pdata
 
-      res = (x(1) * x(2) * exp(x(2) * pdata%t(i)))
-      res = res / (x(3) - x(1) + (x(1) * exp(x(2) * pdata%t(i))))
+      res = (x(1) * x(3) * exp(x(2) * pdata%t(i)))
+      res = res / (x(3) + x(1) * (exp(x(2) * pdata%t(i)) - 1.0d0))
 
    end subroutine model
 
