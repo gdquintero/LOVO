@@ -3,6 +3,9 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import models
 
+def plot_models(opt):
+    return 0
+
 # Reading the necessary data
 df_solution_cubic       = pd.read_table("output/solutions_covid_cubic.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
 df_solution_logistic    = pd.read_table("output/solutions_covid_logistic.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
@@ -51,16 +54,16 @@ with open("output/outliers_covid_cubic.txt") as f:
 
 noutliers = int(xdata[0])
 
-ind_outliers_cubic = np.empty(noutliers,dtype=int)
+ind_outliers = np.empty(noutliers,dtype=int)
 
 for i in range(noutliers):
-    ind_outliers_cubic[i] = int(xdata[i+1])
+    ind_outliers[i] = int(xdata[i+1])
 
 outliers = np.empty((2,noutliers))
 
 for i in range(noutliers):
-    outliers[0,i] = days[ind_outliers_cubic[i]-1]
-    outliers[1,i] = y[n_train - previous_days + ind_outliers_cubic[i]-1]
+    outliers[0,i] = days[ind_outliers[i]-1]
+    outliers[1,i] = y[n_train - previous_days + ind_outliers[i]-1]
 
 plt.plot(days,y[n_train - previous_days:],"ko")
 plt.plot(days_later,y_later,"o")
