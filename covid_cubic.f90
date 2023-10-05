@@ -87,9 +87,9 @@ program covid
    close(200)
 
 
-   pdata%inf = 20
+   pdata%inf = 5
    ! pdata%sup = pdata%n_train
-   pdata%sup = 20
+   pdata%sup = 10
 
    Open(Unit = 100, File = "output/inf_sup_covid.txt", ACCESS = "SEQUENTIAL")
    write(100,*) pdata%inf
@@ -113,7 +113,7 @@ program covid
       pdata%indices(1:pdata%samples)   = (/(i, i = 1, pdata%samples)/)
       pdata%y(1:pdata%samples)         = pdata%train_set(pdata%n_train - pdata%samples + 1:pdata%n_train)
 
-      call lovo_algorithm()
+      call lovo_algorithm(sam)
 
       Open(Unit = 100, File = "output/solutions_covid_cubic.txt", ACCESS = "SEQUENTIAL")
       Open(Unit = 200, File = "output/outliers_covid_cubic.txt", ACCESS = "SEQUENTIAL")
@@ -159,9 +159,9 @@ program covid
    ! LOVO SUBROUTINES
    ! *****************************************************************
 
-   subroutine lovo_algorithm()
+   subroutine lovo_algorithm(sam)
       implicit none
-
+      integer, intent(in) :: sam
       real(kind=8) :: sigmin,epsilon,fxk,fxtrial,alpha,gamma,termination
       integer :: iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo
 
@@ -182,11 +182,13 @@ program covid
       
       call compute_sp(n,pdata%xk,pdata,fxk)
 
-      Open(Unit = 100, File = "output/output_covid_cubic.txt", ACCESS = "SEQUENTIAL")
-      write(100,*) "--------------------------------------------------"
-      write(100,10) "#iter","#init","Sp(xstar)","||g(xstar)||"
+      write(*,*)
+      write(*,99) "Main algorithm with", sam, "previous days"
+      99 format (1X,A19,1X,I2,1X,A13)
+      write(*,*) "--------------------------------------------------"
+      write(*,10) "#iter","#init","Sp(xstar)","||g(xstar)||"
       10 format (2X,A5,4X,A5,6X,A9,7X,A12)
-      write(100,*) "--------------------------------------------------"
+      write(*,*) "--------------------------------------------------"
 
       do
          iter_lovo = iter_lovo + 1
@@ -196,7 +198,7 @@ program covid
          ! termination = norm2(pdata%gp(1:n))
          termination = maxval(abs(pdata%gp(1:n)))
 
-         write(100,20)  iter_lovo,iter_sub_lovo,fxk,termination
+         write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination
          20 format (I6,5X,I4,4X,ES14.6,3X,ES14.6)
 
          if (termination .lt. epsilon) exit
@@ -238,8 +240,7 @@ program covid
 
       enddo
 
-      write(100,*) "--------------------------------------------------"
-      close(100)
+      write(*,*) "--------------------------------------------------"
 
       pdata%outliers(:) = int(pdata%indices(pdata%samples - pdata%noutliers + 1:))
 
