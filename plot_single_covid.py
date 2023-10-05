@@ -1,9 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-
-def cubic(x1,x2,x3,t,ym,tm):
-    return ym + x1 * (t - tm) + x2 * (t - tm)**2 + x3 * (t - tm)**3
+import models
 
 df_solution = pd.read_table("output/solutions_covid_cubic.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
 df_train_set = pd.read_table("data/covid_train.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
@@ -53,7 +51,7 @@ for i in range(noutliers):
 
 plt.plot(days,y[n_train - previous_days:],"ko")
 plt.plot(days_later,y_later,"o")
-plt.plot(t,cubic(*x,t,y[-1],days[-1]))
+plt.plot(t,models.cubic(*x,t,y[-1],days[-1]))
 plt.plot(outliers[0],outliers[1],'ro',mfc='none',ms=10)
 
 # for i in range(noutliers):
@@ -66,5 +64,5 @@ plt.plot(outliers[0],outliers[1],'ro',mfc='none',ms=10)
 # l = plt.plot(day,y[n_train-20:],"ko")
 # plt.setp(l, 'markersize', 6)
 
-plt.savefig("images/cubic.pdf",bbox_inches = "tight")
+plt.savefig("images/single_covid.pdf",bbox_inches = "tight")
 plt.show()

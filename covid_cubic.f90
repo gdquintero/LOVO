@@ -88,8 +88,8 @@ program covid
 
 
    pdata%inf = 5
-   ! pdata%sup = pdata%n_train
    pdata%sup = 10
+   ! pdata%sup = pdata%n_train
 
    Open(Unit = 100, File = "output/inf_sup_covid.txt", ACCESS = "SEQUENTIAL")
    write(100,*) pdata%inf

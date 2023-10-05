@@ -27,7 +27,7 @@ def plot_mixed(ind,t,inf,df_seropositives,df_mixed):
     # plt.show()
     plt.close()
 
-df_seropositives = pd.read_table("output/seropositives.txt",delimiter=" ",header=None,skiprows=1)
+df_seropositives = pd.read_table("data/seropositives.txt",delimiter=" ",header=None,skiprows=1)
 df_mixed_measles = pd.read_table("output/solutions_mixed_measles.txt",delimiter=" ",header=None,skiprows=0)
 df_mixed_mumps   = pd.read_table("output/solutions_mixed_mumps.txt",delimiter=" ",header=None,skiprows=0)
 df_mixed_rubella = pd.read_table("output/solutions_mixed_rubella.txt",delimiter=" ",header=None,skiprows=0)
