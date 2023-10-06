@@ -5,7 +5,7 @@ import models
 
 def plot_models(opt=3):
     plt.plot(days,y[n_train - previous_days:],"ko")
-    plt.plot(days_later,y_later,"o")
+    plt.plot(days_later,y_later,"o",color="grey")
 
     if opt == 1:
         plt.plot(t,models.cubic(*x_cubic,t,y[-1],days[-1]))
@@ -19,7 +19,9 @@ def plot_models(opt=3):
         plt.plot(t,models.cubic(*x_cubic,t,y[-1],days[-1]))
         plt.plot(t,models.logistic(*x_logistic,t))
 
+    plt.savefig("images/single_covid.pdf",bbox_inches = "tight")
     plt.show()
+    plt.close()
 
 # Reading the necessary data
 df_solution_cubic       = pd.read_table("output/solutions_covid_cubic.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
@@ -89,7 +91,9 @@ for i in range(noutliers):
     outliers[1,0,i] = days[ind_outliers[i]-1]
     outliers[1,1,i] = y[n_train - previous_days + ind_outliers[i]-1]
 
-plot_models()
+plot_models(1)
+plot_models(2)
+plot_models(3)
 
 # plt.plot(days,y[n_train - previous_days:],"ko")
 # plt.plot(days_later,y_later,"o")
