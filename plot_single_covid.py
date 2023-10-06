@@ -118,8 +118,8 @@ for i in range(noutliers):
 
 # plot_models(1)
 # plot_models(2)
-plot_models(3)
-# plot_models()
+# plot_models(3)
+plot_models()
 
 # plt.plot(days,y[n_train - previous_days:],"ko")
 # plt.plot(days_later,y_later,"o")
