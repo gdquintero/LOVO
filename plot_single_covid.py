@@ -10,16 +10,18 @@ def plot_models(opt=3):
     if opt == 1:
         plt.plot(t,models.cubic(*x_cubic,t,y[-1],days[-1]))
         plt.plot(outliers[0,0,:],outliers[0,1,:],'ro',mfc='none',ms=10)
+        plt.savefig("images/single_covid_cubic.pdf",bbox_inches = "tight")
 
     elif opt == 2:
         plt.plot(t,models.logistic(*x_logistic,t))
         plt.plot(outliers[1,0,:],outliers[1,1,:],'ro',mfc='none',ms=10)
+        plt.savefig("images/single_covid_logistic.pdf",bbox_inches = "tight")
 
     else:
         plt.plot(t,models.cubic(*x_cubic,t,y[-1],days[-1]))
         plt.plot(t,models.logistic(*x_logistic,t))
+        plt.savefig("images/covid_cubic_logistic.pdf",bbox_inches = "tight")
 
-    plt.savefig("images/single_covid.pdf",bbox_inches = "tight")
     plt.show()
     plt.close()
 
