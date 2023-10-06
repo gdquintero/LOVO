@@ -114,8 +114,8 @@ program logistic
 
       call lovo_algorithm(sam)
 
-      Open(Unit = 100, File = "output/solutions_covid_logistic.txt", ACCESS = "SEQUENTIAL")
-      Open(Unit = 200, File = "output/outliers_covid_logistic.txt", ACCESS = "SEQUENTIAL")
+      Open(Unit = 100, File = "output/solutions_covid_der_logistic.txt", ACCESS = "SEQUENTIAL")
+      Open(Unit = 200, File = "output/outliers_covid_der_logistic.txt", ACCESS = "SEQUENTIAL")
 
       write(100,10) pdata%xk(1), pdata%xk(2), pdata%xk(3)
       write(200,20) pdata%noutliers
@@ -169,8 +169,8 @@ program logistic
       sigmin = 1.0d0
       epsilon = 1.0d-3
       alpha = 1.0d-8
-      gamma = 1.0d+1
-      max_iter_lovo = 1000
+      gamma = 1.0d0
+      max_iter_lovo = 10000
       max_iter_sub_lovo = 100
       iter_lovo = 0
       iter_sub_lovo = 0
@@ -179,7 +179,7 @@ program logistic
       
       pdata%theta = 100.d0
 
-      pdata%xk(1:n) = (/2.5d0,0.1d0,5.0d0/)
+      pdata%xk(1:n) = 1.0d0
       
       call compute_sp(n,pdata%xk,pdata,fxk)
 
