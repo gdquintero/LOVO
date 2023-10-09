@@ -179,7 +179,7 @@ program logistic
       
       pdata%theta = 100.d0
 
-      pdata%xk(1:n) = 1.0d0
+      pdata%xk(1:n) = (/0.5d0,1.d0,1.d0/)
       
       call compute_sp(n,pdata%xk,pdata,fxk)
 
