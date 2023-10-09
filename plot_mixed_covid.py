@@ -9,11 +9,15 @@ def plot_models(opt=None):
     # plt.ylim(min(min(y[n_train - inf:]),min(y_later))-0.5,max(max(y[n_train - inf:]),max(y_later))+0.5)
 
     if opt == 1:
-        plt.plot(t,models.cubic(*x[0,:],t,y[-1],previous_days[-1]))
+        for i in range(sup-inf):
+            plt.plot(t,models.cubic(*df_solution_cubic.values[i][:],t,y[-1],previous_days[-1]))
+
         plt.savefig("images/single_covid_cubic.pdf",bbox_inches = "tight")
 
     elif opt == 2:
-        plt.plot(t,models.logistic(*x[1,:],t))
+        for i in range(sup-inf):
+            plt.plot(t,models.logistic(*df_solution_logistic.values[i][:],t))
+
         plt.savefig("images/single_covid_logistic.pdf",bbox_inches = "tight")
 
     else:
@@ -39,21 +43,11 @@ inf = int(xdata[0])
 sup = int(xdata[1])
 
 # Arrays allocation
-x               = np.zeros((3,3))
 y               = np.zeros(n_train)
 y_later         = np.zeros(n_test)
 previous_days   = np.linspace(1,sup,sup)
 later_days      = np.linspace(sup + 1,sup + n_test,n_test)
 t               = np.linspace(1,sup + n_test,1000)
-
-# Solution with cubic model
-x[0,:] = df_solution_cubic.values[0][:]
-
-# Solution with logistic model
-x[1,:] = df_solution_logistic.values[0][:]
-
-# Solution with logistic derivative model
-# x[2,:] = df_solution_der_logistic.values[0][:]
 
 # Observation in the previous days considered
 for i in range(n_train):
@@ -63,5 +57,7 @@ for i in range(n_train):
 for i in range(n_test):
     y_later[i] = df_test_set.values[i+1][0]
 
-plot_models(1)
+
+
+plot_models(2)
 
