@@ -56,19 +56,13 @@ days_later      = np.linspace(1 + previous_days,previous_days + n_test,n_test)
 t               = np.linspace(1,previous_days + n_test,1000)
 
 # Solution with cubic model
-x[0,0] = df_solution_cubic.values[0][0]
-x[0,1] = df_solution_cubic.values[0][1]
-x[0,2] = df_solution_cubic.values[0][2]
+x[0,:] = df_solution_cubic.values[0][:]
 
 # Solution with logistic model
-x[1,0] = df_solution_logistic.values[0][0]
-x[1,1] = df_solution_logistic.values[0][1]
-x[1,2] = df_solution_logistic.values[0][2]
+x[1,:] = df_solution_logistic.values[0][:]
 
 # Solution with logistic derivative model
-x[2,0] = df_solution_der_logistic.values[0][0]
-x[2,1] = df_solution_der_logistic.values[0][1]
-x[2,2] = df_solution_der_logistic.values[0][2]
+x[2,:] = df_solution_der_logistic.values[0][:]
 
 # Observation in the previous days considered
 for i in range(n_train):
