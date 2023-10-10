@@ -9,23 +9,23 @@ def plot_models(opt=None):
     plt.ylim(min(min(y[n_train - previous_days:]),min(y_later))-0.5,max(max(y[n_train - previous_days:]),max(y_later))+0.5)
 
     if opt == 1:
-        plt.plot(t,models.cubic(*x[0,:],t,y[-1],days[-1]))
+        plt.plot(t,models.cubic(*df_solution_cubic.values[0][:],t,y[-1],days[-1]))
         plt.plot(outliers[0,0,:],outliers[0,1,:],'ro',mfc='none',ms=10)
         plt.savefig("images/single_covid_cubic.pdf",bbox_inches = "tight")
 
     elif opt == 2:
-        plt.plot(t,models.logistic(*x[1,:],t))
+        plt.plot(t,models.logistic(*df_solution_logistic.values[0][:],t))
         plt.plot(outliers[1,0,:],outliers[1,1,:],'ro',mfc='none',ms=10)
         plt.savefig("images/single_covid_logistic.pdf",bbox_inches = "tight")
     
     elif opt == 3:
-        plt.plot(t,models.der_logistic(*x[2,:],t))
+        plt.plot(t,models.der_logistic(*df_solution_der_logistic.values[0][:],t))
         plt.plot(outliers[2,0,:],outliers[2,1,:],'ro',mfc='none',ms=10)
         plt.savefig("images/single_covid_der_logistic.pdf",bbox_inches = "tight")
 
     else:
-        plt.plot(t,models.cubic(*x[0,:],t,y[-1],days[-1]))
-        plt.plot(t,models.logistic(*x[1,:],t))
+        plt.plot(t,models.cubic(*df_solution_cubic.values[0][:],t,y[-1],days[-1]))
+        plt.plot(t,models.logistic(*df_solution_logistic.values[0][:],t))
         plt.savefig("images/covid_all_models.pdf",bbox_inches = "tight")
 
     plt.show()
@@ -48,21 +48,11 @@ with open("output/inf_sup_covid.txt") as f:
 previous_days = int(xdata[0])
 
 # Arrays allocation
-x               = np.zeros((3,3))
 y               = np.zeros(n_train)
 y_later         = np.zeros(n_test)
 days            = np.linspace(1,previous_days,previous_days)
 days_later      = np.linspace(1 + previous_days,previous_days + n_test,n_test)
-t               = np.linspace(1,previous_days + n_test,1000)
-
-# Solution with cubic model
-x[0,:] = df_solution_cubic.values[0][:]
-
-# Solution with logistic model
-x[1,:] = df_solution_logistic.values[0][:]
-
-# Solution with logistic derivative model
-x[2,:] = df_solution_der_logistic.values[0][:]
+t               = np.linspace(1,30 + n_test,1000)
 
 # Observation in the previous days considered
 for i in range(n_train):
@@ -98,18 +88,18 @@ for i in range(noutliers):
     outliers[1,0,i] = days[ind_outliers[i]-1]
     outliers[1,1,i] = y[n_train - previous_days + ind_outliers[i]-1]
 
-with open("output/outliers_covid_der_logistic.txt") as f:
-    lines = f.readlines()
-    xdata = [line.split()[0] for line in lines]
+# with open("output/outliers_covid_der_logistic.txt") as f:
+#     lines = f.readlines()
+#     xdata = [line.split()[0] for line in lines]
 
-for i in range(noutliers):
-    ind_outliers[i] = int(xdata[i+1])
+# for i in range(noutliers):
+#     ind_outliers[i] = int(xdata[i+1])
 
-for i in range(noutliers):
-    outliers[2,0,i] = days[ind_outliers[i]-1]
-    outliers[2,1,i] = y[n_train - previous_days + ind_outliers[i]-1]
+# for i in range(noutliers):
+#     outliers[2,0,i] = days[ind_outliers[i]-1]
+#     outliers[2,1,i] = y[n_train - previous_days + ind_outliers[i]-1]
 
-plot_models(1)
+# plot_models(1)
 plot_models(2)
 # plot_models()
 
