@@ -52,7 +52,7 @@ y               = np.zeros(n_train)
 y_later         = np.zeros(n_test)
 days            = np.linspace(1,previous_days,previous_days)
 days_later      = np.linspace(1 + previous_days,previous_days + n_test,n_test)
-t               = np.linspace(1,30 + n_test,1000)
+t               = np.linspace(1,previous_days + n_test,1000)
 
 # Observation in the previous days considered
 for i in range(n_train):

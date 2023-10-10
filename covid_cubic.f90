@@ -87,7 +87,7 @@ program covid
    close(200)
 
    pdata%inf = 20
-   pdata%sup = 25
+   pdata%sup = 30
    ! pdata%sup = pdata%n_train
 
    Open(Unit = 100, File = "output/inf_sup_covid.txt", ACCESS = "SEQUENTIAL")
@@ -96,9 +96,10 @@ program covid
    close(100)
 
    ! pdata%noutliers = 0
-   
+   ! pdata%noutliers = int(pdata%sup / 2.0d0) - 2
    do sam = pdata%inf, pdata%sup
       pdata%noutliers = int(dble(sam) / 7.0d0)
+      
       pdata%samples = sam
       allocate(pdata%t(pdata%samples),pdata%y(pdata%samples),pdata%indices(pdata%samples),&
       pdata%sp_vector(pdata%samples),pdata%outliers(pdata%noutliers),stat=allocerr)
