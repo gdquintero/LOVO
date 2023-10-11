@@ -25,14 +25,14 @@ program covid
    logical, allocatable :: lind(:),uind(:)
    real(kind=8), allocatable :: g(:),lbnd(:),ubnd(:),x(:)
 
-   real(kind=8), allocatable :: plot_solutions(:)
-   integer :: i,sam,h = 1000
+   real(kind=8), allocatable :: data_plot(:,:)
+   integer :: i,sam,h = 100
 
    ! Number of variables
 
    n = 3
 
-   allocate(g(n),lind(n),lbnd(n),uind(n),ubnd(n),x(n),plot_abscissa(h),plot_ordinate(h),stat=allocerr)
+   allocate(g(n),lind(n),lbnd(n),uind(n),ubnd(n),x(n),data_plot(h,2),stat=allocerr)
    if ( allocerr .ne. 0 ) then
       write(*,*) 'Allocation error.'
       stop
@@ -87,8 +87,8 @@ program covid
    close(100)
    close(200)
 
-   pdata%inf = 10
-   pdata%sup = 10
+   pdata%inf = 20
+   pdata%sup = 25
    ! pdata%sup = pdata%n_train
 
    Open(Unit = 100, File = "output/inf_sup_covid.txt", ACCESS = "SEQUENTIAL")
@@ -96,8 +96,7 @@ program covid
    write(100,*) pdata%sup
    close(100)
 
-   Open(Unit = 998, File = "output/plot_abscissa.txt", ACCESS = "SEQUENTIAL")
-   Open(Unit = 999, File = "output/plot_ordinate.txt", ACCESS = "SEQUENTIAL")
+   Open(Unit = 999, File = "output/plot_covid_cubic.txt", ACCESS = "SEQUENTIAL")
    
    ! pdata%noutliers = 0
    ! pdata%noutliers = int(pdata%sup / 2.0d0) - 2
@@ -117,7 +116,7 @@ program covid
       pdata%indices(1:pdata%samples)   = (/(i, i = 1, pdata%samples)/)
       pdata%y(1:pdata%samples)         = pdata%train_set(pdata%n_train - pdata%samples + 1:pdata%n_train)
 
-      call lovo_algorithm(sam)
+      call lovo_algorithm()
 
       Open(Unit = 100, File = "output/solutions_covid_cubic.txt", ACCESS = "SEQUENTIAL")
       Open(Unit = 200, File = "output/outliers_covid_cubic.txt", ACCESS = "SEQUENTIAL")
@@ -129,7 +128,11 @@ program covid
           write(200,20) pdata%outliers(i)
       enddo
 
-      call plot(n,h,x,pdata%y(pdata%samples),pdata%t(pdata%samples),plot_solutions)
+      call plot(n,h,x,pdata%y(pdata%samples),pdata%t(pdata%samples),data_plot)
+
+      do i = 1, h
+         write(999,30) data_plot(i,1),data_plot(i,2) 
+      enddo
    
       deallocate(pdata%t,pdata%y,pdata%indices,pdata%sp_vector,pdata%outliers,stat=allocerr)
    
@@ -142,6 +145,7 @@ program covid
 
    10 format (ES13.6,1X,ES13.6,1X,ES13.6) 
    20 format (I2)
+   30 format (ES13.6,1X,ES13.6)
 
    close(100)
    close(200)
@@ -165,9 +169,9 @@ program covid
    ! LOVO SUBROUTINES
    ! *****************************************************************
 
-   subroutine lovo_algorithm(sam)
+   subroutine lovo_algorithm()
       implicit none
-      integer, intent(in) :: sam
+
       real(kind=8) :: sigmin,epsilon,fxk,fxtrial,alpha,gamma,termination
       integer :: iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo
 
@@ -255,23 +259,22 @@ program covid
    !*****************************************************************
    !*****************************************************************
 
-   subroutine plot(n,h,x,ym,tm,plot_solutions)
+   subroutine plot(n,h,x,ym,tm,data_plot)
       implicit none
 
       integer,       intent(in) :: n,h
       real(kind=8),  intent(in) :: x(n),ym,tm
-      real(kind=8),  intent(out):: plot_solutions(h)
-      integer :: i
-      real(kind=8) :: delta_x,t
+      real(kind=8),  intent(out):: data_plot(h,2)
+      real(kind=8) :: delta_x
 
       delta_x = (tm - 1) / (h - 1)
+      data_plot = 0.0d0
       
       do i = 1, h
-         t = 1 + (i - 1) * delta_x
-
+         data_plot(i,1) = 1 + (i - 1) * delta_x
+         data_plot(i,2) = ym + x(1) * (data_plot(i,1) - tm) + &
+         x(2) * ((data_plot(i,1) - tm)**2) + x(3) * ((data_plot(i,1) - tm)**3)
       enddo
-
-      
 
    end subroutine plot
 
