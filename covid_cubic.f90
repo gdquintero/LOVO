@@ -25,14 +25,13 @@ program covid
    logical, allocatable :: lind(:),uind(:)
    real(kind=8), allocatable :: g(:),lbnd(:),ubnd(:),x(:)
 
-   real(kind=8), allocatable :: data_plot(:,:)
-   integer :: i,sam,h = 100
+   integer :: i,sam
 
    ! Number of variables
 
    n = 3
 
-   allocate(g(n),lind(n),lbnd(n),uind(n),ubnd(n),x(n),data_plot(h,2),stat=allocerr)
+   allocate(g(n),lind(n),lbnd(n),uind(n),ubnd(n),x(n),stat=allocerr)
    if ( allocerr .ne. 0 ) then
       write(*,*) 'Allocation error.'
       stop
@@ -95,8 +94,6 @@ program covid
    write(100,*) pdata%inf
    write(100,*) pdata%sup
    close(100)
-
-   Open(Unit = 999, File = "output/plot_covid_cubic.txt", ACCESS = "SEQUENTIAL")
    
    ! pdata%noutliers = 0
    ! pdata%noutliers = int(pdata%sup / 2.0d0) - 2
@@ -128,12 +125,6 @@ program covid
           write(200,20) pdata%outliers(i)
       enddo
 
-      call plot(n,h,x,pdata%y(pdata%samples),pdata%t(pdata%samples),data_plot)
-
-      do i = 1, h
-         write(999,30) data_plot(i,1),data_plot(i,2) 
-      enddo
-   
       deallocate(pdata%t,pdata%y,pdata%indices,pdata%sp_vector,pdata%outliers,stat=allocerr)
    
       if ( allocerr .ne. 0 ) then
@@ -145,7 +136,6 @@ program covid
 
    10 format (ES13.6,1X,ES13.6,1X,ES13.6) 
    20 format (I2)
-   30 format (ES13.6,1X,ES13.6)
 
    close(100)
    close(200)
@@ -192,13 +182,13 @@ program covid
       
       call compute_sp(n,pdata%xk,pdata,fxk)
 
-      ! write(*,*)
-      ! write(*,99) "Main algorithm with", sam, "previous days"
-      ! 99 format (1X,A19,1X,I2,1X,A13)
-      ! write(*,*) "--------------------------------------------------"
-      ! write(*,10) "#iter","#init","Sp(xstar)","||g(xstar)||"
-      ! 10 format (2X,A5,4X,A5,6X,A9,7X,A12)
-      ! write(*,*) "--------------------------------------------------"
+      write(*,*)
+      write(*,99) "Main algorithm with", sam, "previous days"
+      99 format (1X,A19,1X,I2,1X,A13)
+      write(*,*) "--------------------------------------------------"
+      write(*,10) "#iter","#init","Sp(xstar)","||g(xstar)||"
+      10 format (2X,A5,4X,A5,6X,A9,7X,A12)
+      write(*,*) "--------------------------------------------------"
 
       do
          iter_lovo = iter_lovo + 1
@@ -208,8 +198,8 @@ program covid
          ! termination = norm2(pdata%gp(1:n))
          termination = maxval(abs(pdata%gp(1:n)))
 
-         ! write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination
-         ! 20 format (I6,5X,I4,4X,ES14.6,3X,ES14.6)
+         write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination
+         20 format (I6,5X,I4,4X,ES14.6,3X,ES14.6)
 
          if (termination .lt. epsilon) exit
          if (iter_lovo .gt. max_iter_lovo) exit
@@ -250,33 +240,11 @@ program covid
 
       enddo
 
-      ! write(*,*) "--------------------------------------------------"
+      write(*,*) "--------------------------------------------------"
 
       pdata%outliers(:) = int(pdata%indices(pdata%samples - pdata%noutliers + 1:))
 
    end subroutine lovo_algorithm
-
-   !*****************************************************************
-   !*****************************************************************
-
-   subroutine plot(n,h,x,ym,tm,data_plot)
-      implicit none
-
-      integer,       intent(in) :: n,h
-      real(kind=8),  intent(in) :: x(n),ym,tm
-      real(kind=8),  intent(out):: data_plot(h,2)
-      real(kind=8) :: delta_x
-
-      delta_x = (tm - 1) / (h - 1)
-      data_plot = 0.0d0
-      
-      do i = 1, h
-         data_plot(i,1) = 1 + (i - 1) * delta_x
-         data_plot(i,2) = ym + x(1) * (data_plot(i,1) - tm) + &
-         x(2) * ((data_plot(i,1) - tm)**2) + x(3) * ((data_plot(i,1) - tm)**3)
-      enddo
-
-   end subroutine plot
 
    !*****************************************************************
    !*****************************************************************
