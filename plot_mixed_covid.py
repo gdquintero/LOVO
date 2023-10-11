@@ -18,7 +18,7 @@ def plot_models(opt=None):
     elif opt == 2:
         for i in range(sup - inf + 1):
             t = np.linspace(n-i,sup + n_test,h)
-            plt.plot(t,models.logistic(*df_solution_logistic.values[i][:],t-n+i),label="days = " + str(inf+i))
+            plt.plot(t,models.logistic(*df_solution_logistic.values[i][:],t-n+i+1),label="days = " + str(inf+i))
             
         plt.savefig("images/mixed_covid_logistic.pdf",bbox_inches = "tight")
 
