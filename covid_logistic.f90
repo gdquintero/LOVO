@@ -86,7 +86,7 @@ program logistic
    close(100)
    close(200)
 
-   pdata%inf = 20
+   pdata%inf = 30
    pdata%sup = 30
    ! pdata%sup = pdata%n_train
 
@@ -96,9 +96,10 @@ program logistic
    close(100)
 
    ! pdata%noutliers = 0
-   ! pdata%noutliers = int(pdata%sup / 2.0d0)
+
    do sam = pdata%inf, pdata%sup
-      pdata%noutliers = int(dble(sam) / 7.0d0)
+      pdata%noutliers = 3*int(dble(sam) / 7.0d0)
+
       pdata%samples = sam
       allocate(pdata%t(pdata%samples),pdata%y(pdata%samples),pdata%indices(pdata%samples),&
       pdata%sp_vector(pdata%samples),pdata%outliers(pdata%noutliers),stat=allocerr)
@@ -179,7 +180,8 @@ program logistic
       
       pdata%theta = 100.d0
 
-      pdata%xk(1:n) = (/2.5d0,0.1d0,5.0d0/)
+      pdata%xk(1:n) = (/3.d0,0.1d0,5.0d0/)
+      ! pdata%xk(1:n) = (/1.d0,2.d0,3.d0/)
       
       call compute_sp(n,pdata%xk,pdata,fxk)
 

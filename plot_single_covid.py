@@ -5,6 +5,9 @@ import models
 
 
 def plot_models(opt=None):
+    plt.rcParams.update({'font.size': 14})
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif')
     plt.plot(days,y[n_train - previous_days:],"ko")
     plt.plot(days_later,y_later,"o",color="grey")
     plt.ylim(min(min(y[n_train - previous_days:]),min(y_later))-0.5,max(max(y[n_train - previous_days:]),max(y_later))+0.5)
@@ -12,22 +15,22 @@ def plot_models(opt=None):
     if opt == 1:
         plt.plot(t,models.cubic(*df_solution_cubic.values[0][:],t,y[-1],days[-1]))
         plt.plot(outliers[0,0,:],outliers[0,1,:],'ro',mfc='none',ms=10)
-        plt.savefig("images/single_covid_cubic.pdf",bbox_inches = "tight")
+        # plt.savefig("images/single_covid_cubic.pdf",bbox_inches = "tight")
 
     elif opt == 2:
         plt.plot(t,models.logistic(*df_solution_logistic.values[0][:],t))
         plt.plot(outliers[1,0,:],outliers[1,1,:],'ro',mfc='none',ms=10)
-        plt.savefig("images/single_covid_logistic.pdf",bbox_inches = "tight")
+        # plt.savefig("images/single_covid_logistic.pdf",bbox_inches = "tight")
     
     elif opt == 3:
         plt.plot(t,models.der_logistic(*df_solution_der_logistic.values[0][:],t))
         plt.plot(outliers[2,0,:],outliers[2,1,:],'ro',mfc='none',ms=10)
-        plt.savefig("images/single_covid_der_logistic.pdf",bbox_inches = "tight")
+        # plt.savefig("images/single_covid_der_logistic.pdf",bbox_inches = "tight")
 
     else:
         plt.plot(t,models.cubic(*df_solution_cubic.values[0][:],t,y[-1],days[-1]))
         plt.plot(t,models.logistic(*df_solution_logistic.values[0][:],t))
-        plt.savefig("images/covid_all_models.pdf",bbox_inches = "tight")
+        # plt.savefig("images/covid_all_models.pdf",bbox_inches = "tight")
 
     plt.show()
     plt.close()
@@ -100,6 +103,6 @@ for i in range(noutliers):
 #     outliers[2,0,i] = days[ind_outliers[i]-1]
 #     outliers[2,1,i] = y[n_train - previous_days + ind_outliers[i]-1]
 
-# plot_models(1)
+plot_models(1)
 plot_models(2)
 # plot_models()

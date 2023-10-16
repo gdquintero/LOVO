@@ -1,12 +1,10 @@
 program prueba
     implicit none
 
-    CHARACTER(len=255) :: cwd
+    integer :: i
 
-    call getwd(cwd)
-
-    write(*,*) trim(cwd)
-
-    ! Open(Unit = 100, File = "/output/covid_train.txt", ACCESS = "SEQUENTIAL")
+    do i = 1, 15
+        print*, mod(dble(i),7.0d0)
+    enddo
 
 end program prueba

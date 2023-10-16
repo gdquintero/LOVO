@@ -4,8 +4,10 @@ import pandas as pd
 import models
 
 def plot_models(opt=None):
-    plt.plot(np.linspace(1,sup,sup),y[len(y)-sup:],"ko")
-    plt.plot(later_days,y_later,"o",color="grey")
+    plt.rcParams.update({'font.size': 14})
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif')
+    plt.xlim(-3,max(later_days)+0.5)
     plt.ylim(min(min(y[len(y)-sup:]),min(y_later))-0.5,max(max(y[len(y)-sup:]),max(y_later))+0.5)
 
     if opt == 1:
@@ -13,16 +15,14 @@ def plot_models(opt=None):
             t = np.linspace(n-i,sup + n_test,h)
             plt.plot(t,models.cubic(*df_solution_cubic.values[i][:],t,y[-1],previous_days[-1]),label="days = " + str(inf+i))
 
-        plt.savefig("images/mixed_covid_cubic.pdf",bbox_inches = "tight")
-
     elif opt == 2:
         for i in range(sup - inf + 1):
             t = np.linspace(n-i,sup + n_test,h)
             plt.plot(t,models.logistic(*df_solution_logistic.values[i][:],t-n+i+1),label="days = " + str(inf+i))
-            
-        plt.savefig("images/mixed_covid_logistic.pdf",bbox_inches = "tight")
 
 
+    plt.plot(np.linspace(1,sup,sup),y[len(y)-sup:],"ko")
+    plt.plot(later_days,y_later,"o",color="grey")
     plt.legend()
     plt.show()
     plt.close()
