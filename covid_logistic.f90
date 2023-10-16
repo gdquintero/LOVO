@@ -86,9 +86,9 @@ program logistic
    close(100)
    close(200)
 
-   pdata%inf = 30
-   pdata%sup = 30
-   ! pdata%sup = pdata%n_train
+   pdata%inf = 5
+   ! pdata%sup = 30
+   pdata%sup = pdata%n_train
 
    Open(Unit = 100, File = "output/inf_sup_covid.txt", ACCESS = "SEQUENTIAL")
    write(100,*) pdata%inf
@@ -98,7 +98,7 @@ program logistic
    ! pdata%noutliers = 0
 
    do sam = pdata%inf, pdata%sup
-      pdata%noutliers = 3*int(dble(sam) / 7.0d0)
+      pdata%noutliers = 1*int(dble(sam) / 7.0d0)
 
       pdata%samples = sam
       allocate(pdata%t(pdata%samples),pdata%y(pdata%samples),pdata%indices(pdata%samples),&
@@ -150,6 +150,8 @@ program logistic
       write(*,*) 'Deallocation error.'
       stop
    end if
+
+   call export(pdata)
    
    stop
   
@@ -248,6 +250,65 @@ program logistic
       pdata%outliers(:) = int(pdata%indices(pdata%samples - pdata%noutliers + 1:))
 
    end subroutine lovo_algorithm
+
+   !*****************************************************************
+   !*****************************************************************
+   subroutine export(pdata)
+      implicit none
+
+      type(pdata_type), intent(in) :: pdata
+
+      real(kind=8) ::  y_true,y_pred
+      real(kind=8), allocatable :: xsol(:),accuracy(:,:)
+      integer :: i,j 
+
+      Open(Unit = 100, File = "output/solutions_covid_logistic.txt", ACCESS = "SEQUENTIAL")
+      Open(Unit = 200, File = "output/accuracy_covid_logistic.txt", ACCESS = "SEQUENTIAL")
+
+      allocate(xsol(3),accuracy(pdata%n_train - pdata%inf + 1,pdata%n_test),stat=allocerr)
+
+      if ( allocerr .ne. 0 ) then
+            write(*,*) 'Allocation error.'
+            stop
+      end if
+
+      do i = 1, pdata%sup - pdata%inf + 1
+         read(100,*) xsol
+         do j = 1, pdata%n_test
+               y_true = pdata%test_set(j)
+               call logistic_model(xsol,pdata%inf+i+j-1,3,y_pred)
+               call percentage_error(y_true,y_pred,accuracy(i,j))
+         enddo
+         write(200,10) accuracy(i,:)
+      enddo
+
+      10 format (10F8.2)
+
+      close(100)
+      close(200)
+      deallocate(xsol,accuracy)
+   end subroutine export
+
+   subroutine logistic_model(x,t,n,res)
+      implicit none
+
+      integer,        intent(in) :: n,t
+      real(kind=8),   intent(in) :: x(n)
+      real(kind=8),   intent(out):: res
+
+      res = x(1) * x(3) * exp(x(2) * t) / (x(3) + x(1) * (exp(x(2) * t) - 1.0))
+   end subroutine logistic_model
+
+   subroutine percentage_error(y_true,y_pred,res)
+      implicit none
+
+      real(kind=8),  intent(in) :: y_true,y_pred
+      real(kind=8),  intent(out) :: res
+
+      res = (y_pred - y_true) / y_true
+      res = abs(res) * 100
+
+   end subroutine percentage_error
 
    !*****************************************************************
    !*****************************************************************
