@@ -279,10 +279,10 @@ program logistic
                call logistic_model(xsol,pdata%inf+i+j-1,3,y_pred)
                call percentage_error(y_true,y_pred,accuracy(i,j))
          enddo
-         write(200,10) accuracy(i,:)
+         write(200,10) i,accuracy(i,:)
       enddo
 
-      10 format (10F8.2)
+      10 format (I2,1X,10F8.2)
 
       close(100)
       close(200)
