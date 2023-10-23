@@ -3,9 +3,9 @@ import pandas as pd
 # Dataframe of COVID-19 in Brazil
 df = pd.read_excel("data/dados_full_brasil.xlsx")
 
-# ind_excel = 122 # 2 de mayo 2020
-# ind_excel = 152 # 1 de junio 2020
-ind_excel = 183 # 2 de julio 2020
+ind_excel = 122 # 2 de mayo 2020
+# ind_excel = 517 # 1 de junio 2020
+# ind_excel = 183 # 2 de julio 2020
 
 initial_date = ind_excel - 2
 total_days = 40

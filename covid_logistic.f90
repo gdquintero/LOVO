@@ -95,10 +95,10 @@ program logistic
    write(100,*) pdata%sup
    close(100)
 
-   ! pdata%noutliers = 0
+   pdata%noutliers = 0
 
    do sam = pdata%inf, pdata%sup
-      pdata%noutliers = 1*int(dble(sam) / 7.0d0)
+      ! pdata%noutliers = 1*int(dble(sam) / 7.0d0)
 
       pdata%samples = sam
       allocate(pdata%t(pdata%samples),pdata%y(pdata%samples),pdata%indices(pdata%samples),&
