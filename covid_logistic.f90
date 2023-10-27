@@ -26,6 +26,7 @@ program logistic
    real(kind=8), allocatable :: g(:),lbnd(:),ubnd(:),x(:)
 
    integer :: i,sam
+   real(kind=8) :: fobj
 
    ! Number of variables
 
@@ -113,13 +114,15 @@ program logistic
       pdata%indices(1:pdata%samples)   = (/(i, i = 1, pdata%samples)/)
       pdata%y(1:pdata%samples)         = pdata%train_set(pdata%n_train - pdata%samples + 1:pdata%n_train)
 
-      call lovo_algorithm(sam)
+      call lovo_algorithm(fobj)
 
       Open(Unit = 100, File = "output/solutions_covid_logistic.txt", ACCESS = "SEQUENTIAL")
       Open(Unit = 200, File = "output/outliers_covid_logistic.txt", ACCESS = "SEQUENTIAL")
+      Open(Unit = 300, File = "output/lovo_covid_logistic.txt", ACCESS = "SEQUENTIAL")
 
       write(100,10) pdata%xk(1), pdata%xk(2), pdata%xk(3)
       write(200,20) pdata%noutliers
+      write(300,30) fobj
 
       do i = 1, pdata%noutliers
           write(200,20) pdata%outliers(i)
@@ -136,9 +139,11 @@ program logistic
 
    10 format (ES13.6,1X,ES13.6,1X,ES13.6) 
    20 format (I2)
+   30 format (ES13.6)
 
    close(100)
    close(200)
+   close(300)
 
    call cpu_time(start)
 
@@ -161,12 +166,12 @@ program logistic
    ! LOVO SUBROUTINES
    ! *****************************************************************
 
-   subroutine lovo_algorithm(sam)
+   subroutine lovo_algorithm(fxtrial)
       implicit none
 
-      integer, intent(in) :: sam
+      real(kind=8), intent(out) :: fxtrial
 
-      real(kind=8) :: sigmin,epsilon,fxk,fxtrial,alpha,gamma,termination
+      real(kind=8) :: sigmin,epsilon,fxk,alpha,gamma,termination
       integer :: iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo
 
       sigmin = 1.0d0

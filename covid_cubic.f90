@@ -25,7 +25,8 @@ program covid
    logical, allocatable :: lind(:),uind(:)
    real(kind=8), allocatable :: g(:),lbnd(:),ubnd(:),x(:)
 
-   integer :: i,sam
+   integer :: i,j,sam
+   real(kind=8), allocatable :: fobj(:)
 
    ! Number of variables
 
@@ -90,12 +91,22 @@ program covid
    ! pdata%sup = 10
    pdata%sup = pdata%n_train
 
+   allocate(fobj(pdata%n_train - pdata%inf),stat=allocerr)
+
+   if ( allocerr .ne. 0 ) then
+      write(*,*) 'Allocation error.'
+      stop
+   end if
+
+   fobj(:) = 0.0d0
+
    Open(Unit = 100, File = "output/inf_sup_covid.txt", ACCESS = "SEQUENTIAL")
    write(100,*) pdata%inf
    write(100,*) pdata%sup
    close(100)
    
    pdata%noutliers = 0
+   j = 1
 
    do sam = pdata%inf, pdata%sup
       ! pdata%noutliers = 1*int(dble(sam) / 7.0d0)
@@ -113,7 +124,9 @@ program covid
       pdata%indices(1:pdata%samples)   = (/(i, i = 1, pdata%samples)/)
       pdata%y(1:pdata%samples)         = pdata%train_set(pdata%n_train - pdata%samples + 1:pdata%n_train)
 
-      call lovo_algorithm()
+      call lovo_algorithm(fobj(j))
+
+      j = j + 1
 
       Open(Unit = 100, File = "output/solutions_covid_cubic.txt", ACCESS = "SEQUENTIAL")
       Open(Unit = 200, File = "output/outliers_covid_cubic.txt", ACCESS = "SEQUENTIAL")
@@ -151,7 +164,9 @@ program covid
       stop
    end if
 
-   call export(pdata)
+   call export(pdata,fobj)
+
+   print*, fobj
    
    stop
   
@@ -161,10 +176,11 @@ program covid
    ! LOVO SUBROUTINES
    ! *****************************************************************
 
-   subroutine lovo_algorithm()
+   subroutine lovo_algorithm(fxtrial)
       implicit none
-
-      real(kind=8) :: sigmin,epsilon,fxk,fxtrial,alpha,gamma,termination
+      
+      real(kind=8), intent(out) :: fxtrial
+      real(kind=8) :: sigmin,epsilon,fxk,alpha,gamma,termination
       integer :: iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo
 
       sigmin = 1.0d0
@@ -250,10 +266,11 @@ program covid
 
    !*****************************************************************
    !*****************************************************************
-   subroutine export(pdata)
+   subroutine export(pdata,fobj)
       implicit none
 
       type(pdata_type), intent(in) :: pdata
+      real(kind=8),     intent(in) :: fobj(pdata%n_train-pdata%inf)
 
       real(kind=8) ::  y_true,y_pred
       real(kind=8), allocatable :: xsol(:),accuracy(:,:)
