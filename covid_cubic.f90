@@ -291,10 +291,10 @@ program covid
              call cubic_model(xsol,pdata%inf+i+j-1,pdata%inf+i-1,pdata%train_set(pdata%n_train),3,y_pred)
              call percentage_error(y_true,y_pred,accuracy(i,j))
          enddo
-         write(200,10) i,accuracy(i,:),fobj(i)
+         write(200,10) pdata%inf+i-1,fobj(i),accuracy(i,:)
      enddo
 
-     10 format (I2,1X,10F8.2,1X,ES14.4)
+     10 format (I2,1X,ES14.4,1X,10F8.2)
 
      close(100)
      close(200)
