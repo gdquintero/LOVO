@@ -9,7 +9,7 @@ def plot_models(opt=None):
     plt.rc('font', family='serif')
     plt.xlim(-3,max(later_days)+0.5)
     plt.ylim(min(min(y[len(y)-sup:]),min(y_later))-0.5,max(max(y[len(y)-sup:]),max(y_later))+0.5)
-
+    
     if opt == 1:
         for i in range(sup - inf + 1):
             t = np.linspace(n-i,sup + n_test,h)

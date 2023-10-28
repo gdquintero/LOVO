@@ -105,11 +105,10 @@ program covid
    write(100,*) pdata%sup
    close(100)
    
-   pdata%noutliers = 0
    j = 1
 
    do sam = pdata%inf, pdata%sup
-      ! pdata%noutliers = 1*int(dble(sam) / 7.0d0)
+      pdata%noutliers = 0*int(dble(sam) / 7.0d0)
       
       pdata%samples = sam
       allocate(pdata%t(pdata%samples),pdata%y(pdata%samples),pdata%indices(pdata%samples),&
@@ -268,7 +267,7 @@ program covid
       implicit none
 
       type(pdata_type), intent(in) :: pdata
-      real(kind=8),     intent(in) :: fobj(pdata%n_train-pdata%inf)
+      real(kind=8),     intent(in) :: fobj(pdata%n_train-pdata%inf+1)
 
       real(kind=8) ::  y_true,y_pred
       real(kind=8), allocatable :: xsol(:),accuracy(:,:)

@@ -25,8 +25,8 @@ program logistic
    logical, allocatable :: lind(:),uind(:)
    real(kind=8), allocatable :: g(:),lbnd(:),ubnd(:),x(:)
 
-   integer :: i,sam
-   real(kind=8) :: fobj
+   integer :: i,j,sam
+   real(kind=8), allocatable :: fobj(:)
 
    ! Number of variables
 
@@ -91,15 +91,24 @@ program logistic
    ! pdata%sup = 30
    pdata%sup = pdata%n_train
 
+   allocate(fobj(pdata%sup - pdata%inf + 1),stat=allocerr)
+
+   if ( allocerr .ne. 0 ) then
+      write(*,*) 'Allocation error.'
+      stop
+   end if
+
+   fobj(:) = 0.0d0
+
    Open(Unit = 100, File = "output/inf_sup_covid.txt", ACCESS = "SEQUENTIAL")
    write(100,*) pdata%inf
    write(100,*) pdata%sup
    close(100)
 
-   pdata%noutliers = 0
+   j = 1
 
    do sam = pdata%inf, pdata%sup
-      ! pdata%noutliers = 1*int(dble(sam) / 7.0d0)
+      pdata%noutliers = 0*int(dble(sam) / 7.0d0)
 
       pdata%samples = sam
       allocate(pdata%t(pdata%samples),pdata%y(pdata%samples),pdata%indices(pdata%samples),&
@@ -114,15 +123,15 @@ program logistic
       pdata%indices(1:pdata%samples)   = (/(i, i = 1, pdata%samples)/)
       pdata%y(1:pdata%samples)         = pdata%train_set(pdata%n_train - pdata%samples + 1:pdata%n_train)
 
-      call lovo_algorithm(fobj)
+      call lovo_algorithm(fobj(j))
+
+      j = j + 1
 
       Open(Unit = 100, File = "output/solutions_covid_logistic.txt", ACCESS = "SEQUENTIAL")
       Open(Unit = 200, File = "output/outliers_covid_logistic.txt", ACCESS = "SEQUENTIAL")
-      Open(Unit = 300, File = "output/lovo_covid_logistic.txt", ACCESS = "SEQUENTIAL")
 
       write(100,10) pdata%xk(1), pdata%xk(2), pdata%xk(3)
       write(200,20) pdata%noutliers
-      write(300,30) fobj
 
       do i = 1, pdata%noutliers
           write(200,20) pdata%outliers(i)
@@ -139,11 +148,9 @@ program logistic
 
    10 format (ES13.6,1X,ES13.6,1X,ES13.6) 
    20 format (I2)
-   30 format (ES13.6)
 
    close(100)
    close(200)
-   close(300)
 
    call cpu_time(start)
 
@@ -156,7 +163,7 @@ program logistic
       stop
    end if
 
-   call export(pdata)
+   call export(pdata,fobj)
    
    stop
   
@@ -170,11 +177,10 @@ program logistic
       implicit none
 
       real(kind=8), intent(out) :: fxtrial
-
       real(kind=8) :: sigmin,epsilon,fxk,alpha,gamma,termination
       integer :: iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo
 
-      sigmin = 1.0d0
+      sigmin = 1.0d+1
       epsilon = 1.0d-3
       alpha = 1.0d-8
       gamma = 1.0d+1
@@ -258,11 +264,11 @@ program logistic
 
    !*****************************************************************
    !*****************************************************************
-   subroutine export(pdata)
+   subroutine export(pdata,fobj)
       implicit none
 
       type(pdata_type), intent(in) :: pdata
-
+      real(kind=8),     intent(in) :: fobj(pdata%n_train-pdata%inf+1)
       real(kind=8) ::  y_true,y_pred
       real(kind=8), allocatable :: xsol(:),accuracy(:,:)
       integer :: i,j 
@@ -284,10 +290,10 @@ program logistic
                call logistic_model(xsol,pdata%inf+i+j-1,3,y_pred)
                call percentage_error(y_true,y_pred,accuracy(i,j))
          enddo
-         write(200,10) i,accuracy(i,:)
+         write(200,10) i,accuracy(i,:),fobj(i)
       enddo
 
-      10 format (I2,1X,10F8.2)
+      10 format (I2,1X,10F8.2,1X,ES14.4)
 
       close(100)
       close(200)
