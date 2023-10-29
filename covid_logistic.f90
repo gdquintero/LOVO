@@ -87,9 +87,9 @@ program logistic
    close(100)
    close(200)
 
-   pdata%inf = 5
-   ! pdata%sup = 30
-   pdata%sup = pdata%n_train
+   pdata%inf = 17
+   pdata%sup = 17
+   ! pdata%sup = pdata%n_train
 
    allocate(fobj(pdata%sup - pdata%inf + 1),stat=allocerr)
 
@@ -108,7 +108,7 @@ program logistic
    j = 1
 
    do sam = pdata%inf, pdata%sup
-      pdata%noutliers = 0*int(dble(sam) / 7.0d0)
+      pdata%noutliers = 3*int(dble(sam) / 7.0d0)
 
       pdata%samples = sam
       allocate(pdata%t(pdata%samples),pdata%y(pdata%samples),pdata%indices(pdata%samples),&
@@ -290,10 +290,10 @@ program logistic
                call logistic_model(xsol,pdata%inf+i+j-1,3,y_pred)
                call percentage_error(y_true,y_pred,accuracy(i,j))
          enddo
-         write(200,10) pdata%inf+i-1,fobj(i),accuracy(i,:)
+         write(200,10) pdata%inf+i-1,fobj(i),accuracy(i,:),sum(accuracy(i,:))/pdata%n_test
      enddo
 
-     10 format (I2,1X,ES14.4,1X,10F8.2)
+     10 format (I2,1X,ES14.4,1X,11F8.2)
 
       close(100)
       close(200)

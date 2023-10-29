@@ -14,18 +14,13 @@ def plot_models(opt=None):
 
     if opt == 1:
         plt.plot(t,models.cubic(*df_solution_cubic.values[0][:],t,y[-1],days[-1]))
-        plt.plot(outliers[0,0,:],outliers[0,1,:],'ro',mfc='none',ms=10)
+        plt.plot(outliers_covid[0,:],outliers_covid[1,:],'ro',mfc='none',ms=10)
         # plt.savefig("images/single_covid_cubic.pdf",bbox_inches = "tight")
 
     elif opt == 2:
         plt.plot(t,models.logistic(*df_solution_logistic.values[0][:],t))
-        plt.plot(outliers[1,0,:],outliers[1,1,:],'ro',mfc='none',ms=10)
+        plt.plot(outliers_logistic[0,:],outliers_logistic[1,:],'ro',mfc='none',ms=10)
         # plt.savefig("images/single_covid_logistic.pdf",bbox_inches = "tight")
-    
-    elif opt == 3:
-        plt.plot(t,models.der_logistic(*df_solution_der_logistic.values[0][:],t))
-        plt.plot(outliers[2,0,:],outliers[2,1,:],'ro',mfc='none',ms=10)
-        # plt.savefig("images/single_covid_der_logistic.pdf",bbox_inches = "tight")
 
     else:
         plt.plot(t,models.cubic(*df_solution_cubic.values[0][:],t,y[-1],days[-1]))
@@ -70,27 +65,31 @@ with open("output/outliers_covid_cubic.txt") as f:
     lines = f.readlines()
     xdata = [line.split()[0] for line in lines]
 
-noutliers       = int(xdata[0])
-outliers        = np.empty((3,2,noutliers))
-ind_outliers    = np.empty(noutliers,dtype=int)
+noutliers_covid     = int(xdata[0])
+outliers_covid      = np.empty((2,noutliers_covid))
+ind_outliers_covid  = np.empty(noutliers_covid,dtype=int)
 
-for i in range(noutliers):
-    ind_outliers[i] = int(xdata[i+1])
+for i in range(noutliers_covid):
+    ind_outliers_covid[i] = int(xdata[i+1])
 
-for i in range(noutliers):
-    outliers[0,0,i] = days[ind_outliers[i]-1]
-    outliers[0,1,i] = y[n_train - previous_days + ind_outliers[i]-1]
+for i in range(noutliers_covid):
+    outliers_covid[0,i] = days[ind_outliers_covid[i]-1]
+    outliers_covid[1,i] = y[n_train - previous_days + ind_outliers_covid[i]-1]
 
 with open("output/outliers_covid_logistic.txt") as f:
     lines = f.readlines()
     xdata = [line.split()[0] for line in lines]
 
-for i in range(noutliers):
-    ind_outliers[i] = int(xdata[i+1])
+noutliers_logistic      = int(xdata[0])
+outliers_logistic       = np.empty((2,noutliers_logistic))
+ind_outliers_logistic   = np.empty(noutliers_logistic,dtype=int)
 
-for i in range(noutliers):
-    outliers[1,0,i] = days[ind_outliers[i]-1]
-    outliers[1,1,i] = y[n_train - previous_days + ind_outliers[i]-1]
+for i in range(noutliers_logistic):
+    ind_outliers_logistic[i] = int(xdata[i+1])
+
+for i in range(noutliers_logistic):
+    outliers_logistic[0,i] = days[ind_outliers_logistic[i]-1]
+    outliers_logistic[1,i] = y[n_train - previous_days + ind_outliers_logistic[i]-1]
 
 # with open("output/outliers_covid_der_logistic.txt") as f:
 #     lines = f.readlines()
