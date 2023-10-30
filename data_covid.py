@@ -1,15 +1,15 @@
 import pandas as pd
 
 # Dataframe of COVID-19 in Brazil
-df = pd.read_excel("data/dados_full_brasil.xlsx")
+df = pd.read_excel("data/dados_italia.xlsx")
 
-ind_excel = 122 # 2 de mayo 2020
-# ind_excel = 517 # 1 de junio 2020
-# ind_excel = 183 # 2 de julio 2020
+# ind_excel = 122 # 2 de mayo 2020
+# ind_excel = 548 # 2 de julio 2021
+ind_excel = 2 # 1 de octubre 2020 UK
 
 initial_date = ind_excel - 2
-total_days = 40
-n_train = 30
+total_days = 70
+n_train = 60
 n_test = 10
 
 with open("data/covid_train.txt","w") as f:
