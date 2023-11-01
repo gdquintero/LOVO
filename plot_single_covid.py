@@ -9,8 +9,9 @@ def plot_models(opt=None):
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
     plt.plot(days,y[n_train - previous_days:],"ko")
-    plt.plot(days_later,y_later,"o",color="grey")
+    plt.plot(days_later,y_later,"^",color="grey")
     plt.ylim(min(min(y[n_train - previous_days:]),min(y_later))-0.5,max(max(y[n_train - previous_days:]),max(y_later))+0.5)
+
 
     if opt == 1:
         plt.plot(t,models.cubic(*df_solution_cubic.values[0][:],t,y[-1],days[-1]))
