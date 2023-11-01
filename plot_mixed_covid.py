@@ -22,7 +22,7 @@ def plot_models(opt=None):
 
 
     plt.plot(np.linspace(1,sup,sup),y[len(y)-sup:],"ko")
-    plt.plot(later_days,y_later,"o",color="grey")
+    plt.plot(later_days,y_later,"^",color="grey")
     plt.legend()
     plt.show()
     plt.close()
@@ -59,5 +59,5 @@ for i in range(n_test):
     y_later[i] = df_test_set.values[i+1][0]
 
 plot_models(1)
-# plot_models(2)
+plot_models(2)
 
