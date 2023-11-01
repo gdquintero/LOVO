@@ -1,13 +1,15 @@
 import pandas as pd
 
-# Dataframe of COVID-19
-df = pd.read_excel("data/colombia.xlsx")
-
 # ind_excel = 122 # 2 de mayo 2020
-ind_excel = 305 # 1 de nov 2020
+# ind_excel = 305 # 1 de nov 2020 Colombia
+
+country = "data/spain.xlsx"
+ind_excel = 731 # 1 de ene 2022 España
+
+df = pd.read_excel(country)
 
 initial_date = ind_excel - 2
-n_train = 30
+n_train = 60
 n_test = 10
 total_days = n_train + n_test
 
