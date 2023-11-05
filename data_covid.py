@@ -1,14 +1,11 @@
 import pandas as pd
-
-# country = "data/spain.xlsx"
-# country = "data/colombia.xlsx"
-# country = "data/brasil.xlsx"
-country = "data/uk.xlsx"
+countries = ["ar.xlsx","br.xlsx","co.xlsx","es.xlsx","uk.xlsx","us.xlsx"]
+country = countries[5]
 ind_excel = 122 # 2 de mayo 2020
-# ind_excel = 305 # 1 de nov 2020 Colombia
-# ind_excel = 731 # 1 de ene 2022 España
+# ind_excel = 305 # 1 de nov 2020
+# ind_excel = 731 # 1 de ene 2022
 
-df = pd.read_excel(country)
+df = pd.read_excel("data/"+country)
 
 initial_date = ind_excel - 2
 n_train = 30
