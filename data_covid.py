@@ -1,9 +1,8 @@
 import pandas as pd
 
+country = "data/spain.xlsx"
 # ind_excel = 122 # 2 de mayo 2020
 # ind_excel = 305 # 1 de nov 2020 Colombia
-
-country = "data/spain.xlsx"
 ind_excel = 731 # 1 de ene 2022 España
 
 df = pd.read_excel(country)
