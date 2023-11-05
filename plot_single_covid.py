@@ -102,6 +102,6 @@ for i in range(noutliers_logistic):
 #     outliers[2,0,i] = days[ind_outliers[i]-1]
 #     outliers[2,1,i] = y[n_train - previous_days + ind_outliers[i]-1]
 
-# plot_models(1)
+plot_models(1)
 plot_models(2)
 # plot_models()

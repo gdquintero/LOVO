@@ -87,8 +87,8 @@ program covid
    close(100)
    close(200)
 
-   pdata%inf = 40
-   pdata%sup = 60
+   pdata%inf = 10
+   pdata%sup = 30
    ! pdata%sup = pdata%n_train
 
    allocate(fobj(pdata%sup - pdata%inf + 1),stat=allocerr)

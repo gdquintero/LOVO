@@ -1,9 +1,19 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.cm as mplcm
+import matplotlib.colors as colors
 import pandas as pd
 import models
 
 def plot_models(opt=None):
+    NUM_COLORS = sup - inf + 1
+    cm = plt.get_cmap('gist_rainbow')
+    cNorm  = colors.Normalize(vmin=0, vmax=NUM_COLORS-1)
+    scalarMap = mplcm.ScalarMappable(norm=cNorm, cmap=cm)
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.set_prop_cycle(color=[scalarMap.to_rgba(i) for i in range(NUM_COLORS)])
+
     plt.rcParams.update({'font.size': 14})
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
@@ -22,7 +32,7 @@ def plot_models(opt=None):
 
 
     plt.plot(np.linspace(1,sup,sup),y[len(y)-sup:],"ko")
-    plt.plot(later_days,y_later,"^",color="grey")
+    plt.plot(later_days,y_later,"k^")
     plt.legend()
     plt.show()
     plt.close()
@@ -58,6 +68,6 @@ for i in range(n_train):
 for i in range(n_test):
     y_later[i] = df_test_set.values[i+1][0]
 
-# plot_models(1)
-plot_models(2)
+plot_models(1)
+# plot_models(2)
 
