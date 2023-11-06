@@ -34,3 +34,5 @@ with open("data/covid_test.txt","w") as f:
             f.write("%f\n" % 0.0)
         else:
             f.write("%f\n" % x)
+
+
