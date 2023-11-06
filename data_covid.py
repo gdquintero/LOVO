@@ -1,12 +1,11 @@
 import pandas as pd
-countries = ["ar.xlsx","br.xlsx","co.xlsx","es.xlsx","pa.xlsx","uk.xlsx","us.xlsx"]
-country = countries[1]
-# ind_excel = 100 # 10 abr 2020
-ind_excel = 122 # 2 de mayo 2020
-# ind_excel = 166 # 15 jun 2020
-# ind_excel = 206 # 25 jul 2020
-# ind_excel = 550 # 2 de jul 2021
-# ind_excel = 731 # 1 de ene 2022
+countries = ["ar.xlsx","br.xlsx","co.xlsx","es.xlsx","it.xlsx","pa.xlsx","uk.xlsx","us.xlsx"]
+country = countries[4]
+# ind_excel = 100 # 10 abr 2020 desorden panama
+# ind_excel = 122 # 2 de mayo 2020 subida brasil
+# ind_excel = 166 # 15 jun 2020 estados unidos con outliers
+ind_excel = 216 # 4 de agosto italia 
+
 
 df = pd.read_excel("data/"+country)
 
