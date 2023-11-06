@@ -8,9 +8,7 @@ def plot_models(opt=None):
     plt.rcParams.update({'font.size': 14})
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
-    plt.plot(days,y[n_train - previous_days:],"ko")
-    plt.plot(days_later,y_later,"^",color="grey")
-    plt.ylim(min(min(y[n_train - previous_days:]),min(y_later))-0.5,max(max(y[n_train - previous_days:]),max(y_later))+0.5)
+    plt.ylim(min(min(y[n_train - sup:]),min(y_later))-0.5,max(max(y[n_train - sup:]),max(y_later))+0.5)
 
 
     if opt == 1:
@@ -28,6 +26,9 @@ def plot_models(opt=None):
         plt.plot(t,models.logistic(*df_solution_logistic.values[0][:],t))
         # plt.savefig("images/covid_all_models.pdf",bbox_inches = "tight")
 
+    plt.plot(np.linspace(1,sup,sup),y[len(y)-sup:],"ko")
+    # plt.plot(later_days,y_later,"^",color="grey")
+    plt.plot(days_later,y_later,"k^",mfc='none')
     plt.show()
     plt.close()
 
@@ -43,15 +44,14 @@ with open("output/inf_sup_covid.txt") as f:
     lines = f.readlines()
     xdata = [line.split()[0] for line in lines]
 
-# Numbers of previous days considered in model fitting
-previous_days = int(xdata[0])
+sup = int(xdata[1])
 
 # Arrays allocation
 y               = np.zeros(n_train)
 y_later         = np.zeros(n_test)
-days            = np.linspace(1,previous_days,previous_days)
-days_later      = np.linspace(1 + previous_days,previous_days + n_test,n_test)
-t               = np.linspace(1,previous_days + n_test,1000)
+days            = np.linspace(1,sup,sup)
+days_later      = np.linspace(1 + sup,sup + n_test,n_test)
+t               = np.linspace(1,sup + n_test,1000)
 
 # Observation in the previous days considered
 for i in range(n_train):
@@ -74,7 +74,7 @@ for i in range(noutliers_covid):
 
 for i in range(noutliers_covid):
     outliers_covid[0,i] = days[ind_outliers_covid[i]-1]
-    outliers_covid[1,i] = y[n_train - previous_days + ind_outliers_covid[i]-1]
+    outliers_covid[1,i] = y[n_train - sup + ind_outliers_covid[i]-1]
 
 with open("output/outliers_covid_logistic.txt") as f:
     lines = f.readlines()
@@ -89,7 +89,7 @@ for i in range(noutliers_logistic):
 
 for i in range(noutliers_logistic):
     outliers_logistic[0,i] = days[ind_outliers_logistic[i]-1]
-    outliers_logistic[1,i] = y[n_train - previous_days + ind_outliers_logistic[i]-1]
+    outliers_logistic[1,i] = y[n_train - sup + ind_outliers_logistic[i]-1]
 
 # with open("output/outliers_covid_der_logistic.txt") as f:
 #     lines = f.readlines()
@@ -100,7 +100,7 @@ for i in range(noutliers_logistic):
 
 # for i in range(noutliers):
 #     outliers[2,0,i] = days[ind_outliers[i]-1]
-#     outliers[2,1,i] = y[n_train - previous_days + ind_outliers[i]-1]
+#     outliers[2,1,i] = y[n_train - sup + ind_outliers[i]-1]
 
 plot_models(1)
 plot_models(2)

@@ -12,7 +12,7 @@ def plot_models(opt=None):
     scalarMap = mplcm.ScalarMappable(norm=cNorm, cmap=cm)
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    ax.set_prop_cycle(color=[scalarMap.to_rgba(i) for i in range(NUM_COLORS)])
+    ax.set_prop_cycle(color=[scalarMap.to_rgba(NUM_COLORS-i) for i in range(NUM_COLORS)])
 
     plt.rcParams.update({'font.size': 14})
     plt.rc('text', usetex=True)
@@ -32,7 +32,8 @@ def plot_models(opt=None):
 
 
     plt.plot(np.linspace(1,sup,sup),y[len(y)-sup:],"ko")
-    plt.plot(later_days,y_later,"k^")
+    # plt.plot(later_days,y_later,"^",color="grey")
+    plt.plot(later_days,y_later,"k^",mfc='none')
     plt.legend()
     plt.show()
     plt.close()
