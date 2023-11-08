@@ -5,8 +5,8 @@ country = countries[1]
 
 df = pd.read_excel("data/"+country+".xlsx")
 
-ind_excel_init  = 91
-ind_excel_end   = 365
+ind_excel_init  = 91 # 01-04-2020
+ind_excel_end   = 365 # 31-12-2020
 init_date       = ind_excel_init - 2
 end_date        = ind_excel_end - 2
 
