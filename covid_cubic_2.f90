@@ -9,7 +9,7 @@ program covid
       integer :: counters(3) = 0
       integer :: samples,inf,sup,lovo_order,n_train,n_test,noutliers
       real(kind=8) :: sigma,theta
-      real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),data(:,:),indices(:),sp_vector(:),grad_sp(:),&
+      real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),indices(:),sp_vector(:),grad_sp(:),&
                                    gp(:),train_set(:),test_set(:)
       integer, allocatable :: outliers(:)
    end type pdata_type
@@ -18,6 +18,7 @@ program covid
    logical :: extallowed,hfixstr
    integer :: allocerr,hnnzmax,ierr,istop,iter,maxit,n,nbds
    real(kind=8) :: eps,f,finish,ftarget,gpsupn,start
+   real(kind=8), allocatable :: data_train(:,:),data_test(:,:),covid_data(:)
    type(pdata_type), target :: pdata
  
    ! LOCAL ARRAYS
@@ -25,18 +26,35 @@ program covid
    logical, allocatable :: lind(:),uind(:)
    real(kind=8), allocatable :: g(:),lbnd(:),ubnd(:),x(:)
 
-   integer :: i,j,sam
+   integer :: i,j,sam,n_data
    real(kind=8), allocatable :: fobj(:)
 
    ! Number of variables
 
    n = 3
 
-   allocate(g(n),lind(n),lbnd(n),uind(n),ubnd(n),x(n),stat=allocerr)
+   ! Set parameters 
+   pdata%n_train  = 10
+   pdata%n_test   = 5
+
+   Open(Unit = 100, File = "data/covid.txt", ACCESS = "SEQUENTIAL")
+   read(100,*) n_data
+
+   allocate(g(n),lind(n),lbnd(n),uind(n),ubnd(n),x(n),data_train(100,pdata%n_train),&
+            data_test(100,pdata%n_test),covid_data(n_data),stat=allocerr)
+
    if ( allocerr .ne. 0 ) then
       write(*,*) 'Allocation error.'
       stop
    end if
+
+   do i = 1, n_data
+      read(100,*) covid_data(i)
+   enddo
+
+   close(100)
+
+   call mount_dataset(pdata,covid_data)
  
    lbnd(1:n) = - 1.0d+20
    ubnd(1:n) = 1.0d+20
@@ -60,14 +78,6 @@ program covid
    hfixstr     =     .true.
    extallowed  =     .true.
 
-   ! Reading data and storing it in the variables t and y
-   Open(Unit = 100, File = "data/covid_train.txt", ACCESS = "SEQUENTIAL")
-   Open(Unit = 200, File = "data/covid_test.txt", ACCESS = "SEQUENTIAL")
-
-   ! Set parameters
-   read(100,*) pdata%n_train
-   read(200,*) pdata%n_test
-
    allocate(pdata%train_set(pdata%n_train),pdata%test_set(pdata%n_test),&
    pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),pdata%gp(n),stat=allocerr)
 
@@ -76,36 +86,35 @@ program covid
       stop
    end if
 
-   do i = 1, pdata%n_train
-      read(100,*) pdata%train_set(i)
-   enddo
+   ! do i = 1, pdata%n_train
+   !    read(100,*) pdata%train_set(i)
+   ! enddo
 
-   do i = 1, pdata%n_test
-      read(200,*) pdata%test_set(i)
-   enddo
+   ! do i = 1, pdata%n_test
+   !    read(200,*) pdata%test_set(i)
+   ! enddo
 
-   close(100)
-   close(200)
+   ! close(100)
 
-   pdata%inf = 17
-   pdata%sup = 17
-   ! pdata%sup = pdata%n_train
+   ! pdata%inf = 17
+   ! pdata%sup = 17
+   ! ! pdata%sup = pdata%n_train
 
-   allocate(fobj(pdata%sup - pdata%inf + 1),stat=allocerr)
+   ! allocate(fobj(pdata%sup - pdata%inf + 1),stat=allocerr)
 
-   if ( allocerr .ne. 0 ) then
-      write(*,*) 'Allocation error.'
-      stop
-   end if
+   ! if ( allocerr .ne. 0 ) then
+   !    write(*,*) 'Allocation error.'
+   !    stop
+   ! end if
 
-   fobj(:) = 0.0d0
+   ! fobj(:) = 0.0d0
 
-   Open(Unit = 100, File = "output/inf_sup_covid.txt", ACCESS = "SEQUENTIAL")
-   write(100,*) pdata%inf
-   write(100,*) pdata%sup
-   close(100)
+   ! Open(Unit = 100, File = "output/inf_sup_covid.txt", ACCESS = "SEQUENTIAL")
+   ! write(100,*) pdata%inf
+   ! write(100,*) pdata%sup
+   ! close(100)
    
-   j = 1
+   ! j = 1
 
    ! do sam = pdata%inf, pdata%sup
    !    pdata%noutliers = 3*int(dble(sam) / 7.0d0)
@@ -260,6 +269,23 @@ program covid
       pdata%outliers(:) = int(pdata%indices(pdata%samples - pdata%noutliers + 1:))
 
    end subroutine lovo_algorithm
+
+   !*****************************************************************
+   !*****************************************************************
+   subroutine mount_dataset(pdata,covid_data)
+      implicit none
+
+      type(pdata_type), intent(in) :: pdata
+      real(kind=8), intent(out) :: covid_data(:)
+
+      integer :: i
+
+      do i = 1, 100
+         data_train(i,:) = covid_data()
+      enddo
+
+
+   end subroutine mount_dataset
 
    !*****************************************************************
    !*****************************************************************
