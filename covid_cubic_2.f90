@@ -26,7 +26,7 @@ program covid
    logical, allocatable :: lind(:),uind(:)
    real(kind=8), allocatable :: g(:),lbnd(:),ubnd(:),x(:)
 
-   integer :: i,j,sam,n_data
+   integer :: i,j,k,sam,n_data
    real(kind=8), allocatable :: fobj(:)
 
    ! Number of variables
@@ -86,91 +86,48 @@ program covid
       stop
    end if
 
-   ! do i = 1, pdata%n_train
-   !    read(100,*) pdata%train_set(i)
-   ! enddo
+   pdata%samples = pdata%n_train
+   pdata%noutliers = 1*int(dble(pdata%samples) / 7.0d0)
 
-   ! do i = 1, pdata%n_test
-   !    read(200,*) pdata%test_set(i)
-   ! enddo
+   allocate(pdata%t(pdata%samples),pdata%y(pdata%samples),pdata%indices(pdata%samples),&
+            pdata%sp_vector(pdata%samples),pdata%outliers(pdata%noutliers),stat=allocerr)
 
-   ! close(100)
+   if ( allocerr .ne. 0 ) then
+      write(*,*) 'Allocation error.'
+      stop
+   end if
 
-   ! pdata%inf = 17
-   ! pdata%sup = 17
-   ! ! pdata%sup = pdata%n_train
+   do k = 1, 100
 
-   ! allocate(fobj(pdata%sup - pdata%inf + 1),stat=allocerr)
+      pdata%train_set(:)   = data_train(k,:)
+      pdata%test_set(:)    = data_test(k,:)
+      pdata%t(:)           = (/(i, i = 1, pdata%samples)/)
+      pdata%indices(:)     = (/(i, i = 1, pdata%samples)/)
+      pdata%y(:)           = pdata%train_set(:)
 
-   ! if ( allocerr .ne. 0 ) then
-   !    write(*,*) 'Allocation error.'
-   !    stop
-   ! end if
+      call lovo_algorithm()
 
-   ! fobj(:) = 0.0d0
+      print*, k,"%"
 
-   ! Open(Unit = 100, File = "output/inf_sup_covid.txt", ACCESS = "SEQUENTIAL")
-   ! write(100,*) pdata%inf
-   ! write(100,*) pdata%sup
-   ! close(100)
-   
-   ! j = 1
+   enddo
 
-   ! do sam = pdata%inf, pdata%sup
-   !    pdata%noutliers = 3*int(dble(sam) / 7.0d0)
+   call cpu_time(start)
+
+   call cpu_time(finish)
+
+   deallocate(pdata%t,pdata%y,pdata%indices,pdata%sp_vector,pdata%outliers,stat=allocerr)
       
-   !    pdata%samples = sam
-   !    allocate(pdata%t(pdata%samples),pdata%y(pdata%samples),pdata%indices(pdata%samples),&
-   !    pdata%sp_vector(pdata%samples),pdata%outliers(pdata%noutliers),stat=allocerr)
-
-   !    if ( allocerr .ne. 0 ) then
-   !       write(*,*) 'Allocation error.'
-   !       stop
-   !    end if
-
-   !    pdata%t(1:pdata%samples)         = (/(i, i = 1, pdata%samples)/)
-   !    pdata%indices(1:pdata%samples)   = (/(i, i = 1, pdata%samples)/)
-   !    pdata%y(1:pdata%samples)         = pdata%train_set(pdata%n_train - pdata%samples + 1:pdata%n_train)
-
-   !    call lovo_algorithm(fobj(j))
-
-   !    j = j + 1
-
-   !    Open(Unit = 100, File = "output/solutions_covid_cubic.txt", ACCESS = "SEQUENTIAL")
-   !    Open(Unit = 200, File = "output/outliers_covid_cubic.txt", ACCESS = "SEQUENTIAL")
-
-   !    write(100,10) pdata%xk(1), pdata%xk(2), pdata%xk(3)
-   !    write(200,20) pdata%noutliers
-
-   !    do i = 1, pdata%noutliers
-   !        write(200,20) pdata%outliers(i)
-   !    enddo
-
-   !    deallocate(pdata%t,pdata%y,pdata%indices,pdata%sp_vector,pdata%outliers,stat=allocerr)
+   if ( allocerr .ne. 0 ) then
+      write(*,*) 'Deallocation error.'
+      stop
+   end if
    
-   !    if ( allocerr .ne. 0 ) then
-   !       write(*,*) 'Deallocation error.'
-   !       stop
-   !    end if
-
-   ! enddo
-
-   ! 10 format (ES13.6,1X,ES13.6,1X,ES13.6) 
-   ! 20 format (I2)
-
-   ! close(100)
-   ! close(200)
-
-   ! call cpu_time(start)
-
-   ! call cpu_time(finish)
+   deallocate(lind,lbnd,uind,ubnd,x,stat=allocerr)
    
-   ! deallocate(lind,lbnd,uind,ubnd,x,stat=allocerr)
-   
-   ! if ( allocerr .ne. 0 ) then
-   !    write(*,*) 'Deallocation error.'
-   !    stop
-   ! end if
+   if ( allocerr .ne. 0 ) then
+      write(*,*) 'Deallocation error.'
+      stop
+   end if
 
    ! call export(pdata,fobj)
    
@@ -182,11 +139,11 @@ program covid
    ! LOVO SUBROUTINES
    ! *****************************************************************
 
-   subroutine lovo_algorithm(fxtrial)
+   subroutine lovo_algorithm()
       implicit none
       
-      real(kind=8), intent(out) :: fxtrial
-      real(kind=8) :: sigmin,epsilon,fxk,alpha,gamma,termination
+      ! real(kind=8), intent(out) :: fxtrial
+      real(kind=8) :: sigmin,epsilon,fxk,alpha,gamma,termination,fxtrial
       integer :: iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo
 
       sigmin = 1.0d0
@@ -206,13 +163,13 @@ program covid
       
       call compute_sp(n,pdata%xk,pdata,fxk)
 
-      write(*,*)
-      write(*,99) "Main algorithm with", sam, "previous days"
-      99 format (1X,A19,1X,I2,1X,A13)
-      write(*,*) "--------------------------------------------------"
-      write(*,10) "#iter","#init","Sp(xstar)","||g(xstar)||"
-      10 format (2X,A5,4X,A5,6X,A9,7X,A12)
-      write(*,*) "--------------------------------------------------"
+      ! write(*,*)
+      ! write(*,99) "Main algorithm with", sam, "previous days"
+      ! 99 format (1X,A19,1X,I2,1X,A13)
+      ! write(*,*) "--------------------------------------------------"
+      ! write(*,10) "#iter","#init","Sp(xstar)","||g(xstar)||"
+      ! 10 format (2X,A5,4X,A5,6X,A9,7X,A12)
+      ! write(*,*) "--------------------------------------------------"
 
       do
          iter_lovo = iter_lovo + 1
@@ -222,8 +179,8 @@ program covid
          ! termination = norm2(pdata%gp(1:n))
          termination = maxval(abs(pdata%gp(1:n)))
 
-         write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination
-         20 format (I6,5X,I4,4X,ES14.6,3X,ES14.6)
+         ! write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination
+         ! 20 format (I6,5X,I4,4X,ES14.6,3X,ES14.6)
 
          if (termination .lt. epsilon) exit
          if (iter_lovo .gt. max_iter_lovo) exit
@@ -264,7 +221,7 @@ program covid
 
       enddo
 
-      write(*,*) "--------------------------------------------------"
+      ! write(*,*) "--------------------------------------------------"
 
       pdata%outliers(:) = int(pdata%indices(pdata%samples - pdata%noutliers + 1:))
 
