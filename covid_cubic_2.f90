@@ -54,7 +54,7 @@ program covid
 
    close(100)
 
-   call mount_dataset(pdata,covid_data)
+   call mount_dataset(pdata,covid_data,data_train(:,:),data_test(:,:))
  
    lbnd(1:n) = - 1.0d+20
    ubnd(1:n) = 1.0d+20
@@ -272,18 +272,19 @@ program covid
 
    !*****************************************************************
    !*****************************************************************
-   subroutine mount_dataset(pdata,covid_data)
+   subroutine mount_dataset(pdata,covid_data,data_train,data_test)
       implicit none
 
       type(pdata_type), intent(in) :: pdata
-      real(kind=8), intent(out) :: covid_data(:)
+      real(kind=8), intent(in) :: covid_data(:)
+      real(kind=8), intent(out) :: data_train(:,:),data_test(:,:)
 
       integer :: i
 
       do i = 1, 100
-         data_train(i,:) = covid_data()
+         data_train(i,:) = covid_data(i:i+pdata%n_train-1)
+         data_test(i,:) = covid_data(i+pdata%n_train:i+pdata%n_train+pdata%n_test-1)    
       enddo
-
 
    end subroutine mount_dataset
 
