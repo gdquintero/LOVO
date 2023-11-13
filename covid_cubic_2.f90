@@ -106,10 +106,15 @@ program covid
       pdata%y(:)           = pdata%train_set(:)
 
       call lovo_algorithm()
+      Open(Unit = 100, File = "output/solutions_covid_cubic_100.txt", ACCESS = "SEQUENTIAL")
+      write(100,10) pdata%xk(1), pdata%xk(2), pdata%xk(3)
 
       print*, k,"%"
 
    enddo
+
+   10 format (ES13.6,1X,ES13.6,1X,ES13.6) 
+   close(100)
 
    call cpu_time(start)
 
@@ -141,8 +146,7 @@ program covid
 
    subroutine lovo_algorithm()
       implicit none
-      
-      ! real(kind=8), intent(out) :: fxtrial
+
       real(kind=8) :: sigmin,epsilon,fxk,alpha,gamma,termination,fxtrial
       integer :: iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo
 
@@ -247,11 +251,10 @@ program covid
 
    !*****************************************************************
    !*****************************************************************
-   subroutine export(pdata,fobj)
+   subroutine export(pdata)
       implicit none
 
       type(pdata_type), intent(in) :: pdata
-      real(kind=8),     intent(in) :: fobj(pdata%n_train-pdata%inf+1)
 
       real(kind=8) ::  y_true,y_pred
       real(kind=8), allocatable :: xsol(:),accuracy(:,:)
@@ -275,7 +278,7 @@ program covid
              call cubic_model(xsol,pdata%inf+i+j-1,pdata%inf+i-1,pdata%train_set(pdata%n_train),3,y_pred)
              call percentage_error(y_true,y_pred,accuracy(i,j))
          enddo
-         write(200,10) pdata%inf+i-1,fobj(i),accuracy(i,:),sum(accuracy(i,:))/pdata%n_test
+         write(200,10) pdata%inf+i-1,accuracy(i,:),sum(accuracy(i,:))/pdata%n_test
      enddo
 
      10 format (I2,1X,ES14.4,1X,11F8.2)
