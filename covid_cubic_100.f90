@@ -36,7 +36,7 @@ program covid
    ! Set parameters 
    pdata%n_train  = 10
    pdata%n_test   = 5
-   pdata%days_test = 5
+   pdata%days_test = 1
 
    Open(Unit = 100, File = "data/covid.txt", ACCESS = "SEQUENTIAL")
    read(100,*) n_data
@@ -262,7 +262,7 @@ program covid
 
 
       Open(Unit = 100, File = "output/solutions_covid_cubic_100.txt", ACCESS = "SEQUENTIAL")
-      Open(Unit = 200, File = "output/accuracy_covid_cubic.txt", ACCESS = "SEQUENTIAL")
+      Open(Unit = 200, File = "output/accuracy_covid_cubic_100.txt", ACCESS = "SEQUENTIAL")
 
       allocate(xsol(3),accuracy(pdata%days_test,pdata%n_test),stat=allocerr)
 

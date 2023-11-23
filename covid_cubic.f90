@@ -87,8 +87,8 @@ program covid
    close(100)
    close(200)
 
-   pdata%inf = 17
-   pdata%sup = 17
+   pdata%inf = 10
+   pdata%sup = 10
    ! pdata%sup = pdata%n_train
 
    allocate(fobj(pdata%sup - pdata%inf + 1),stat=allocerr)
@@ -108,7 +108,7 @@ program covid
    j = 1
 
    do sam = pdata%inf, pdata%sup
-      pdata%noutliers = 3*int(dble(sam) / 7.0d0)
+      pdata%noutliers = 1*int(dble(sam) / 7.0d0)
       
       pdata%samples = sam
       allocate(pdata%t(pdata%samples),pdata%y(pdata%samples),pdata%indices(pdata%samples),&
