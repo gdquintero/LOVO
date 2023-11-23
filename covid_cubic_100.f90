@@ -276,7 +276,7 @@ program covid
 
          do j = 1, pdata%n_test
              y_true = pdata%data_test(i,j)
-             call cubic_model(xsol,pdata%n_train+j,pdata%n_train,pdata%data_test(i,pdata%n_train),3,y_pred)
+             call cubic_model(xsol,pdata%n_train+j,pdata%n_train,pdata%data_train(i,pdata%n_train),3,y_pred)
              call percentage_error(y_true,y_pred,accuracy(i,j))
          enddo
          print*, accuracy(i,:)
