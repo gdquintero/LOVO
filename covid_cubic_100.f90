@@ -7,10 +7,10 @@ program covid
 
    type :: pdata_type
       integer :: counters(3) = 0
-      integer :: samples,inf,sup,lovo_order,n_train,n_test,noutliers
+      integer :: samples,lovo_order,n_train,n_test,noutliers,days_test
       real(kind=8) :: sigma,theta
       real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),indices(:),sp_vector(:),grad_sp(:),&
-                                   gp(:),train_set(:),test_set(:)
+                                   gp(:),train_set(:),test_set(:),data_test(:,:),data_train(:,:)
       integer, allocatable :: outliers(:)
    end type pdata_type
 
@@ -18,7 +18,7 @@ program covid
    logical :: extallowed,hfixstr
    integer :: allocerr,hnnzmax,ierr,istop,iter,maxit,n,nbds
    real(kind=8) :: eps,f,finish,ftarget,gpsupn,start
-   real(kind=8), allocatable :: data_train(:,:),data_test(:,:),covid_data(:)
+   real(kind=8), allocatable :: covid_data(:)
    type(pdata_type), target :: pdata
  
    ! LOCAL ARRAYS
@@ -36,12 +36,13 @@ program covid
    ! Set parameters 
    pdata%n_train  = 10
    pdata%n_test   = 5
+   pdata%days_test = 5
 
    Open(Unit = 100, File = "data/covid.txt", ACCESS = "SEQUENTIAL")
    read(100,*) n_data
 
-   allocate(g(n),lind(n),lbnd(n),uind(n),ubnd(n),x(n),data_train(100,pdata%n_train),&
-            data_test(100,pdata%n_test),covid_data(n_data),stat=allocerr)
+   allocate(g(n),lind(n),lbnd(n),uind(n),ubnd(n),x(n),pdata%data_train(100,pdata%n_train),&
+            pdata%data_test(100,pdata%n_test),covid_data(n_data),stat=allocerr)
 
    if ( allocerr .ne. 0 ) then
       write(*,*) 'Allocation error.'
@@ -54,7 +55,7 @@ program covid
 
    close(100)
 
-   call mount_dataset(pdata,covid_data,data_train(:,:),data_test(:,:))
+   call mount_dataset(pdata,covid_data)
  
    lbnd(1:n) = - 1.0d+20
    ubnd(1:n) = 1.0d+20
@@ -97,10 +98,10 @@ program covid
       stop
    end if
 
-   do k = 1, 100
+   do k = 1, pdata%days_test
 
-      pdata%train_set(:)   = data_train(k,:)
-      pdata%test_set(:)    = data_test(k,:)
+      pdata%train_set(:)   = pdata%data_train(k,:)
+      pdata%test_set(:)    = pdata%data_test(k,:)
       pdata%t(:)           = (/(i, i = 1, pdata%samples)/)
       pdata%indices(:)     = (/(i, i = 1, pdata%samples)/)
       pdata%y(:)           = pdata%train_set(:)
@@ -109,7 +110,7 @@ program covid
       Open(Unit = 100, File = "output/solutions_covid_cubic_100.txt", ACCESS = "SEQUENTIAL")
       write(100,10) pdata%xk(1), pdata%xk(2), pdata%xk(3)
 
-      print*, k,"%"
+      ! print*, k,"%"
 
    enddo
 
@@ -134,7 +135,7 @@ program covid
       stop
    end if
 
-   ! call export(pdata,fobj)
+   call export(pdata)
    
    stop
   
@@ -233,18 +234,17 @@ program covid
 
    !*****************************************************************
    !*****************************************************************
-   subroutine mount_dataset(pdata,covid_data,data_train,data_test)
+   subroutine mount_dataset(pdata,covid_data)
       implicit none
 
-      type(pdata_type), intent(in) :: pdata
+      type(pdata_type), intent(inout) :: pdata
       real(kind=8), intent(in) :: covid_data(:)
-      real(kind=8), intent(out) :: data_train(:,:),data_test(:,:)
 
       integer :: i
 
       do i = 1, 100
-         data_train(i,:) = covid_data(i:i+pdata%n_train-1)
-         data_test(i,:) = covid_data(i+pdata%n_train:i+pdata%n_train+pdata%n_test-1)    
+         pdata%data_train(i,:) = covid_data(i:i+pdata%n_train-1)
+         pdata%data_test(i,:) = covid_data(i+pdata%n_train:i+pdata%n_train+pdata%n_test-1)    
       enddo
 
    end subroutine mount_dataset
@@ -261,31 +261,33 @@ program covid
       integer :: i,j 
 
 
-      Open(Unit = 100, File = "output/solutions_covid_cubic.txt", ACCESS = "SEQUENTIAL")
+      Open(Unit = 100, File = "output/solutions_covid_cubic_100.txt", ACCESS = "SEQUENTIAL")
       Open(Unit = 200, File = "output/accuracy_covid_cubic.txt", ACCESS = "SEQUENTIAL")
 
-      allocate(xsol(3),accuracy(pdata%n_train - pdata%inf + 1,pdata%n_test),stat=allocerr)
+      allocate(xsol(3),accuracy(pdata%days_test,pdata%n_test),stat=allocerr)
 
       if ( allocerr .ne. 0 ) then
           write(*,*) 'Allocation error.'
           stop
       end if
 
-      do i = 1, pdata%sup - pdata%inf + 1
+      do i = 1, pdata%days_test
          read(100,*) xsol
+
          do j = 1, pdata%n_test
-             y_true = pdata%test_set(j)
-             call cubic_model(xsol,pdata%inf+i+j-1,pdata%inf+i-1,pdata%train_set(pdata%n_train),3,y_pred)
+             y_true = pdata%data_test(i,j)
+             call cubic_model(xsol,pdata%n_train+j,pdata%n_train,pdata%data_test(i,pdata%n_train),3,y_pred)
              call percentage_error(y_true,y_pred,accuracy(i,j))
          enddo
-         write(200,10) pdata%inf+i-1,accuracy(i,:),sum(accuracy(i,:))/pdata%n_test
+         print*, accuracy(i,:)
+         ! write(200,10) pdata%inf+i-1,accuracy(i,:),sum(accuracy(i,:))/pdata%n_test
      enddo
 
-     10 format (I2,1X,ES14.4,1X,11F8.2)
+   !   10 format (I2,1X,ES14.4,1X,11F8.2)
 
      close(100)
      close(200)
-     deallocate(xsol,accuracy)
+     deallocate(xsol)
    end subroutine export
 
    subroutine cubic_model(x,t,tm,ym,n,res)
