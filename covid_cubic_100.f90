@@ -34,9 +34,9 @@ program covid
    n = 3
 
    ! Set parameters 
-   pdata%n_train  = 10
+   pdata%n_train  = 20
    pdata%n_test   = 5
-   pdata%days_test = 1
+   pdata%days_test = 100
 
    Open(Unit = 100, File = "data/covid.txt", ACCESS = "SEQUENTIAL")
    read(100,*) n_data
@@ -110,7 +110,7 @@ program covid
       Open(Unit = 100, File = "output/solutions_covid_cubic_100.txt", ACCESS = "SEQUENTIAL")
       write(100,10) pdata%xk(1), pdata%xk(2), pdata%xk(3)
 
-      ! print*, k,"%"
+      print*, k * 100/pdata%days_test,"%"
 
    enddo
 
@@ -262,7 +262,7 @@ program covid
 
 
       Open(Unit = 100, File = "output/solutions_covid_cubic_100.txt", ACCESS = "SEQUENTIAL")
-      Open(Unit = 200, File = "output/accuracy_covid_cubic_100.txt", ACCESS = "SEQUENTIAL")
+      Open(Unit = 200, File = "output/mean_percentage_error.txt", ACCESS = "SEQUENTIAL")
 
       allocate(xsol(3),accuracy(pdata%days_test,pdata%n_test),stat=allocerr)
 
@@ -279,11 +279,11 @@ program covid
              call cubic_model(xsol,pdata%n_train+j,pdata%n_train,pdata%data_train(i,pdata%n_train),3,y_pred)
              call percentage_error(y_true,y_pred,accuracy(i,j))
          enddo
-         print*, accuracy(i,:)
+         write(200,10) sum(accuracy(i,:))/pdata%n_test
          ! write(200,10) pdata%inf+i-1,accuracy(i,:),sum(accuracy(i,:))/pdata%n_test
      enddo
 
-   !   10 format (I2,1X,ES14.4,1X,11F8.2)
+     10 format (F8.2)
 
      close(100)
      close(200)
