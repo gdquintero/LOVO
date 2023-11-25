@@ -34,7 +34,7 @@ program covid
    n = 3
 
    ! Set parameters 
-   pdata%n_train  = 20
+   pdata%n_train  = 30
    pdata%n_test   = 5
    pdata%days_test = 100
 
@@ -88,7 +88,7 @@ program covid
    end if
 
    pdata%samples = pdata%n_train
-   pdata%noutliers = 1*int(dble(pdata%samples) / 7.0d0)
+   pdata%noutliers = 3*int(dble(pdata%samples) / 7.0d0)
 
    allocate(pdata%t(pdata%samples),pdata%y(pdata%samples),pdata%indices(pdata%samples),&
             pdata%sp_vector(pdata%samples),pdata%outliers(pdata%noutliers),stat=allocerr)
