@@ -88,7 +88,7 @@ program covid
    end if
 
    pdata%samples = pdata%n_train
-   pdata%noutliers = 0*int(dble(pdata%samples) / 7.0d0)
+   pdata%noutliers = 3*int(dble(pdata%samples) / 7.0d0)
 
    allocate(pdata%t(pdata%samples),pdata%y(pdata%samples),pdata%indices(pdata%samples),&
             pdata%sp_vector(pdata%samples),pdata%outliers(pdata%noutliers),stat=allocerr)
