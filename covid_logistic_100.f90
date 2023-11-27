@@ -107,7 +107,7 @@ program covid
       pdata%y(:)           = pdata%train_set(:)
 
       call lovo_algorithm()
-      Open(Unit = 100, File = "output/solutions_covid_cubic_100.txt", ACCESS = "SEQUENTIAL")
+      Open(Unit = 100, File = "output/solutions_covid_logistic_100.txt", ACCESS = "SEQUENTIAL")
       write(100,10) pdata%xk(1), pdata%xk(2), pdata%xk(3)
 
       print*, k * 100/pdata%days_test,"%"
@@ -151,7 +151,7 @@ program covid
       real(kind=8) :: sigmin,epsilon,fxk,alpha,gamma,termination,fxtrial
       integer :: iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo
 
-      sigmin = 1.0d0
+      sigmin = 1.0d+1
       epsilon = 1.0d-3
       alpha = 1.0d-8
       gamma = 1.0d+1
@@ -164,7 +164,7 @@ program covid
       
       pdata%theta = 100.d0
 
-      pdata%xk(1:n) = 1.0d-2
+      pdata%xk(1:n) = 1.0d0
       
       call compute_sp(n,pdata%xk,pdata,fxk)
 
@@ -261,7 +261,7 @@ program covid
       integer :: i,j 
 
 
-      Open(Unit = 100, File = "output/solutions_covid_cubic_100.txt", ACCESS = "SEQUENTIAL")
+      Open(Unit = 100, File = "output/solutions_covid_logistic_100.txt", ACCESS = "SEQUENTIAL")
       Open(Unit = 200, File = "output/mean_percentage_error.txt", ACCESS = "SEQUENTIAL")
 
       allocate(xsol(3),accuracy(pdata%days_test,pdata%n_test),stat=allocerr)
@@ -276,7 +276,7 @@ program covid
 
          do j = 1, pdata%n_test
              y_true = pdata%data_test(i,j)
-             call cubic_model(xsol,pdata%n_train+j,pdata%n_train,pdata%data_train(i,pdata%n_train),3,y_pred)
+             call logistic_model(xsol,pdata%n_train+j,3,y_pred)
              call percentage_error(y_true,y_pred,accuracy(i,j))
          enddo
          write(200,10) sum(accuracy(i,:))/pdata%n_test
@@ -290,16 +290,15 @@ program covid
      deallocate(xsol)
    end subroutine export
 
-   subroutine cubic_model(x,t,tm,ym,n,res)
+   subroutine logistic_model(x,t,n,res)
       implicit none
 
-      integer,        intent(in) :: n,t,tm
-      real(kind=8),   intent(in) :: x(n),ym
-      real(kind=8),   intent(out) :: res
+      integer,        intent(in) :: n,t
+      real(kind=8),   intent(in) :: x(n)
+      real(kind=8),   intent(out):: res
 
-      res = ym + x(1) * (t - tm) + x(2) * (t - tm)**2 + x(3) * (t - tm)**3
-
-  end subroutine cubic_model
+      res = x(1) * x(3) * exp(x(2) * t) / (x(3) + x(1) * (exp(x(2) * t) - 1.0))
+   end subroutine logistic_model
 
   subroutine percentage_error(y_true,y_pred,res)
    implicit none
@@ -352,19 +351,20 @@ end subroutine percentage_error
       real(kind=8),  intent(out) :: res(n)
       type(pdata_type), intent(in) :: pdata
 
-      real(kind=8) :: gaux,ti
+      real(kind=8) :: gaux1,gaux2,ti
       integer :: i
       
       res(:) = 0.0d0
 
       do i = 1, pdata%lovo_order
          ti = pdata%t(int(pdata%indices(i)))
-         call model(n,x,int(pdata%indices(i)),pdata,gaux)
-         gaux = gaux - pdata%y(int(pdata%indices(i)))
-         
-         res(1) = res(1) + gaux * (ti - pdata%t(pdata%samples))
-         res(2) = res(2) + gaux * ((ti - pdata%t(pdata%samples))**2)
-         res(3) = res(3) + gaux * ((ti - pdata%t(pdata%samples))**3)
+         call model(n,x,int(pdata%indices(i)),pdata,gaux1)
+         gaux1 = gaux1 - pdata%y(int(pdata%indices(i)))
+         gaux2 = 1.0d0 / (x(3) + x(1) * (exp(x(2) * ti) - 1.0d0))**2
+
+         res(1) = res(1) + gaux1 * gaux2 * (x(3)**2) * exp(x(2) * ti) 
+         res(2) = res(2) + gaux1 * gaux2 * ti * x(1) * x(3) * exp(x(2) * ti) * (x(3) - x(1))
+         res(3) = res(3) + gaux1 * gaux2 * (x(1)**2) * exp(x(2) * ti) * (exp(x(2) * ti) - 1.0d0)
       enddo
 
    end subroutine compute_grad_sp
@@ -381,8 +381,8 @@ end subroutine percentage_error
 
       type(pdata_type), intent(in) :: pdata
 
-      res = pdata%y(pdata%samples) + x(1) * (pdata%t(i) - pdata%t(pdata%samples)) + &
-      x(2) * ((pdata%t(i) - pdata%t(pdata%samples))**2) + x(3) * ((pdata%t(i) - pdata%t(pdata%samples))**3)
+      res = (x(1) * x(3) * exp(x(2) * pdata%t(i)))
+      res = res / (x(3) + x(1) * (exp(x(2) * pdata%t(i)) - 1.0d0))
 
    end subroutine model
 
