@@ -34,7 +34,7 @@ program covid
    n = 3
 
    ! Set parameters 
-   pdata%n_train  = 30
+   pdata%n_train  = 10
    pdata%n_test   = 5
    pdata%days_test = 100
 
