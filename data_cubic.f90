@@ -2,13 +2,28 @@ program data_cubic
     implicit none
 
     real(kind=8) :: seed
+    real(kind=8), dimension(4) :: xsol
+    integer :: m
 
     seed = 123456.0d0
+    m = 50
+    xsol(:) = (/2.0d0,1.0d0,0.1d0,-0.1d0/)
 
     print*, drand(seed)
     print*, drand(seed)
 
     contains
+
+    function poly(x,t,n)
+        implicit none
+
+        real(kind=8) :: poly
+        integer :: n
+        real(kind=8) :: x(n),t
+
+        poly = x(1) + x(2) * t + x(3) * (t**2) + x(4) * (t**3)
+
+    end function poly
 
     function drand(ix)
 
