@@ -1,4 +1,4 @@
-program covid
+program cubic
    use sort
    use bmgencan, only: gencan, genunc
    use iso_c_binding, only: c_ptr, c_loc,c_f_pointer 
@@ -17,7 +17,7 @@ program covid
    ! LOCAL SCALARS
    logical :: extallowed,hfixstr
    integer :: allocerr,hnnzmax,ierr,istop,iter,maxit,n,nbds
-   real(kind=8) :: eps,f,finish,ftarget,gpsupn,start
+   real(kind=8) :: eps,f,ftarget,gpsupn
    type(pdata_type), target :: pdata
  
    ! LOCAL ARRAYS
@@ -25,8 +25,8 @@ program covid
    logical, allocatable :: lind(:),uind(:)
    real(kind=8), allocatable :: g(:),lbnd(:),ubnd(:),x(:)
 
-   integer :: i,j,sam
-   real(kind=8), allocatable :: fobj(:)
+   integer :: i
+   real(kind=8) ::  fobj
 
    ! Number of variables
 
@@ -66,10 +66,11 @@ program covid
    ! Set parameters
    read(100,*) pdata%samples
 
-   allocate(pdata%data(2,pdata%samples),pdata%t(pdata%samples),pdata%y(pdata%samples),stat=allocerr)
+   allocate(pdata%xtrial(n),pdata%xk(n),pdata%t(pdata%samples),pdata%y(pdata%samples),pdata%data(2,pdata%samples),&
+   pdata%indices(pdata%samples),pdata%sp_vector(pdata%samples),pdata%grad_sp(n),pdata%gp(n),stat=allocerr)
 
    if ( allocerr .ne. 0 ) then
-      write(*,*) 'Allocation error in main program'
+      write(*,*) 'Allocation error.'
       stop
    end if
 
@@ -79,6 +80,9 @@ program covid
       pdata%y(i) = pdata%data(2,i)
    enddo
 
+   pdata%noutliers = 5
+
+   call lovo_algorithm(fobj)
    
    
    stop
@@ -97,9 +101,9 @@ program covid
       integer :: iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo
 
       sigmin = 1.0d0
+      gamma = 1.0d0
       epsilon = 1.0d-3
       alpha = 1.0d-8
-      gamma = 1.0d+1
       max_iter_lovo = 1000
       max_iter_sub_lovo = 100
       iter_lovo = 0
@@ -113,9 +117,6 @@ program covid
       
       call compute_sp(n,pdata%xk,pdata,fxk)
 
-      write(*,*)
-      write(*,99) "Main algorithm with", sam, "previous days"
-      99 format (1X,A19,1X,I2,1X,A13)
       write(*,*) "--------------------------------------------------"
       write(*,10) "#iter","#init","Sp(xstar)","||g(xstar)||"
       10 format (2X,A5,4X,A5,6X,A9,7X,A12)
@@ -173,11 +174,9 @@ program covid
 
       write(*,*) "--------------------------------------------------"
 
-      pdata%outliers(:) = int(pdata%indices(pdata%samples - pdata%noutliers + 1:))
+      ! pdata%outliers(:) = int(pdata%indices(pdata%samples - pdata%noutliers + 1:))
 
    end subroutine lovo_algorithm
-
-   
 
    !*****************************************************************
    !*****************************************************************
@@ -228,10 +227,11 @@ program covid
          ti = pdata%t(int(pdata%indices(i)))
          call model(n,x,int(pdata%indices(i)),pdata,gaux)
          gaux = gaux - pdata%y(int(pdata%indices(i)))
-         
-         res(1) = res(1) + gaux * (ti - pdata%t(pdata%samples))
-         res(2) = res(2) + gaux * ((ti - pdata%t(pdata%samples))**2)
-         res(3) = res(3) + gaux * ((ti - pdata%t(pdata%samples))**3)
+
+         res(1) = res(1) + gaux
+         res(2) = res(2) + gaux * (ti - 3.d0)
+         res(3) = res(3) + gaux * ((ti - 3.d0)**2)
+         res(4) = res(4) + gaux * ((ti - 3.d0)**3)
       enddo
 
    end subroutine compute_grad_sp
@@ -416,4 +416,4 @@ program covid
      
    end subroutine evalh
   
-end program covid
+end program cubic
