@@ -9,8 +9,8 @@ program data_cubic
     m = 50
     a1 = -0.01d0
     b1 = 0.01d0
-    a2 = 1.d0
-    b2 = 2.d0
+    a2 = 0.5d0
+    b2 = 1.0d0
 
     seed = 123456.0d0
     xsol(:) = (/2.0d0,1.0d0,0.1d0,-0.1d0/)

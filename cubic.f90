@@ -84,6 +84,10 @@ program cubic
 
    call lovo_algorithm(fobj)
    
+   Open(Unit = 100, File = "output/solution_cubic.txt", ACCESS = "SEQUENTIAL")
+   write(100,10) pdata%xk(1), pdata%xk(2), pdata%xk(3), pdata%xk(4)
+
+   10 format (ES13.6,1X,ES13.6,1X,ES13.6,1X,ES13.6) 
    
    stop
   
@@ -113,7 +117,7 @@ program cubic
       
       pdata%theta = 100.d0
 
-      pdata%xk(1:n) = 1.0d-2
+      pdata%xk(1:n) = 1.0d0
       
       call compute_sp(n,pdata%xk,pdata,fxk)
 
@@ -177,6 +181,7 @@ program cubic
       ! pdata%outliers(:) = int(pdata%indices(pdata%samples - pdata%noutliers + 1:))
 
    end subroutine lovo_algorithm
+
 
    !*****************************************************************
    !*****************************************************************
