@@ -1,18 +1,19 @@
 program data_cubic
     implicit none
 
-    real(kind=8) :: seed
+    real(kind=8) :: seed1,seed2
     real(kind=8) :: a1,b1,a2,b2,t,r,ran1,ran2
     real(kind=8), dimension(4) :: xsol
     integer :: m,i
 
-    m = 50
+    m = 100
     a1 = -0.01d0
     b1 = 0.01d0
     a2 = 0.5d0
     b2 = 1.0d0
 
-    seed = 123456.0d0
+    seed1 = 123456.0d0
+    seed2 = 1234.d0
     xsol(:) = (/2.0d0,1.0d0,0.1d0,-0.1d0/)
 
     Open(Unit = 100, File = "data/cubic.txt", ACCESS = "SEQUENTIAL")
@@ -21,14 +22,14 @@ program data_cubic
 
     do i = 1, m
         t = (i-1) * 6.d0 / (m-1)
-        ran1 = drand(seed)
+        ran1 = drand(seed1)
 
         if (ran1 .lt. 0.1d0) then
-            ran2 = drand(seed)
+            ran2 = drand(seed2)
 
             r = a2 + (b2 - a2) * ran2
 
-            if (ran2 .lt. 0.3d0) then
+            if (ran2 .lt. 0.2d0) then
                 write(100,*) t, poly(xsol,t,4) + r
             else
                 write(100,*) t, poly(xsol,t,4) - r

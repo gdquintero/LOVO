@@ -80,14 +80,21 @@ program cubic
       pdata%y(i) = pdata%data(2,i)
    enddo
 
-   pdata%noutliers = 5
+   pdata%inf = 0
+   pdata%sup = int(pdata%samples * 0.1d0) + 5
 
-   call lovo_algorithm(fobj)
-   
-   Open(Unit = 100, File = "output/solution_cubic.txt", ACCESS = "SEQUENTIAL")
-   write(100,10) pdata%xk(1), pdata%xk(2), pdata%xk(3), pdata%xk(4)
+   do i = pdata%inf, pdata%sup
 
-   10 format (ES13.6,1X,ES13.6,1X,ES13.6,1X,ES13.6) 
+      pdata%noutliers = i
+
+      call lovo_algorithm(fobj)
+      
+      Open(Unit = 100, File = "output/solution_cubic.txt", ACCESS = "SEQUENTIAL")
+      write(100,10) pdata%xk(1), pdata%xk(2), pdata%xk(3), pdata%xk(4), fobj
+
+   enddo
+
+   10 format (ES13.6,1X,ES13.6,1X,ES13.6,1X,ES13.6,1X,ES13.6) 
    
    stop
   
