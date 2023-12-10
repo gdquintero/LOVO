@@ -7,10 +7,10 @@ program covid
 
    type :: pdata_type
       integer :: counters(3) = 0
-      integer :: samples,inf,sup,lovo_order,n_train,n_test,noutliers
+      integer :: samples,inf,sup,lovo_order,noutliers
       real(kind=8) :: sigma,theta
       real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),data(:,:),indices(:),sp_vector(:),grad_sp(:),&
-                                   gp(:),train_set(:),test_set(:)
+                                   gp(:)
       integer, allocatable :: outliers(:)
    end type pdata_type
 
@@ -30,7 +30,7 @@ program covid
 
    ! Number of variables
 
-   n = 3
+   n = 4
 
    allocate(g(n),lind(n),lbnd(n),uind(n),ubnd(n),x(n),stat=allocerr)
    if ( allocerr .ne. 0 ) then
@@ -61,109 +61,25 @@ program covid
    extallowed  =     .true.
 
    ! Reading data and storing it in the variables t and y
-   Open(Unit = 100, File = "data/covid_train.txt", ACCESS = "SEQUENTIAL")
-   Open(Unit = 200, File = "data/covid_test.txt", ACCESS = "SEQUENTIAL")
+   Open(Unit = 100, File = "data/cubic.txt", ACCESS = "SEQUENTIAL")
 
    ! Set parameters
-   read(100,*) pdata%n_train
-   read(200,*) pdata%n_test
+   read(100,*) pdata%samples
 
-   allocate(pdata%train_set(pdata%n_train),pdata%test_set(pdata%n_test),&
-   pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),pdata%gp(n),stat=allocerr)
+   allocate(pdata%data(2,pdata%samples),pdata%t(pdata%samples),pdata%y(pdata%samples),stat=allocerr)
 
    if ( allocerr .ne. 0 ) then
-      write(*,*) 'Allocation error.'
+      write(*,*) 'Allocation error in main program'
       stop
    end if
 
-   do i = 1, pdata%n_train
-      read(100,*) pdata%train_set(i)
+   do i = 1, pdata%samples
+      read(100,*) pdata%data(:,i)
+      pdata%t(i) = pdata%data(1,i)
+      pdata%y(i) = pdata%data(2,i)
    enddo
 
-   do i = 1, pdata%n_test
-      read(200,*) pdata%test_set(i)
-   enddo
-
-   close(100)
-   close(200)
-
-   pdata%inf = 10
-   pdata%sup = 10
-   ! pdata%sup = pdata%n_train
-
-   allocate(fobj(pdata%sup - pdata%inf + 1),stat=allocerr)
-
-   if ( allocerr .ne. 0 ) then
-      write(*,*) 'Allocation error.'
-      stop
-   end if
-
-   fobj(:) = 0.0d0
-
-   Open(Unit = 100, File = "output/inf_sup_covid.txt", ACCESS = "SEQUENTIAL")
-   write(100,*) pdata%inf
-   write(100,*) pdata%sup
-   close(100)
    
-   j = 1
-
-   do sam = pdata%inf, pdata%sup
-      pdata%noutliers = 1*int(dble(sam) / 7.0d0)
-      
-      pdata%samples = sam
-      allocate(pdata%t(pdata%samples),pdata%y(pdata%samples),pdata%indices(pdata%samples),&
-      pdata%sp_vector(pdata%samples),pdata%outliers(pdata%noutliers),stat=allocerr)
-
-      if ( allocerr .ne. 0 ) then
-         write(*,*) 'Allocation error.'
-         stop
-      end if
-
-      pdata%t(1:pdata%samples)         = (/(i, i = 1, pdata%samples)/)
-      pdata%indices(1:pdata%samples)   = (/(i, i = 1, pdata%samples)/)
-      pdata%y(1:pdata%samples)         = pdata%train_set(pdata%n_train - pdata%samples + 1:pdata%n_train)
-
-      call lovo_algorithm(fobj(j))
-
-      j = j + 1
-
-      Open(Unit = 100, File = "output/solutions_covid_cubic.txt", ACCESS = "SEQUENTIAL")
-      Open(Unit = 200, File = "output/outliers_covid_cubic.txt", ACCESS = "SEQUENTIAL")
-
-      write(100,10) pdata%xk(1), pdata%xk(2), pdata%xk(3)
-      write(200,20) pdata%noutliers
-
-      do i = 1, pdata%noutliers
-          write(200,20) pdata%outliers(i)
-      enddo
-
-      deallocate(pdata%t,pdata%y,pdata%indices,pdata%sp_vector,pdata%outliers,stat=allocerr)
-   
-      if ( allocerr .ne. 0 ) then
-         write(*,*) 'Deallocation error.'
-         stop
-      end if
-
-   enddo
-
-   10 format (ES13.6,1X,ES13.6,1X,ES13.6) 
-   20 format (I2)
-
-   close(100)
-   close(200)
-
-   call cpu_time(start)
-
-   call cpu_time(finish)
-   
-   deallocate(lind,lbnd,uind,ubnd,x,stat=allocerr)
-   
-   if ( allocerr .ne. 0 ) then
-      write(*,*) 'Deallocation error.'
-      stop
-   end if
-
-   call export(pdata,fobj)
    
    stop
   
@@ -261,67 +177,7 @@ program covid
 
    end subroutine lovo_algorithm
 
-   !*****************************************************************
-   !*****************************************************************
-   subroutine export(pdata,fobj)
-      implicit none
-
-      type(pdata_type), intent(in) :: pdata
-      real(kind=8),     intent(in) :: fobj(pdata%n_train-pdata%inf+1)
-
-      real(kind=8) ::  y_true,y_pred
-      real(kind=8), allocatable :: xsol(:),accuracy(:,:)
-      integer :: i,j 
-
-
-      Open(Unit = 100, File = "output/solutions_covid_cubic.txt", ACCESS = "SEQUENTIAL")
-      Open(Unit = 200, File = "output/accuracy_covid_cubic.txt", ACCESS = "SEQUENTIAL")
-
-      allocate(xsol(3),accuracy(pdata%n_train - pdata%inf + 1,pdata%n_test),stat=allocerr)
-
-      if ( allocerr .ne. 0 ) then
-          write(*,*) 'Allocation error.'
-          stop
-      end if
-
-      do i = 1, pdata%sup - pdata%inf + 1
-         read(100,*) xsol
-         do j = 1, pdata%n_test
-             y_true = pdata%test_set(j)
-             call cubic_model(xsol,pdata%inf+i+j-1,pdata%inf+i-1,pdata%train_set(pdata%n_train),3,y_pred)
-             call percentage_error(y_true,y_pred,accuracy(i,j))
-         enddo
-         write(200,10) pdata%inf+i-1,fobj(i),accuracy(i,:),sum(accuracy(i,:))/pdata%n_test
-     enddo
-
-     10 format (I2,1X,ES14.4,1X,11F8.2)
-
-     close(100)
-     close(200)
-     deallocate(xsol,accuracy)
-   end subroutine export
-
-   subroutine cubic_model(x,t,tm,ym,n,res)
-      implicit none
-
-      integer,        intent(in) :: n,t,tm
-      real(kind=8),   intent(in) :: x(n),ym
-      real(kind=8),   intent(out) :: res
-
-      res = ym + x(1) * (t - tm) + x(2) * (t - tm)**2 + x(3) * (t - tm)**3
-
-  end subroutine cubic_model
-
-  subroutine percentage_error(y_true,y_pred,res)
-   implicit none
-
-   real(kind=8),  intent(in) :: y_true,y_pred
-   real(kind=8),  intent(out) :: res
-
-   res = (y_pred - y_true) / y_true
-   res = abs(res) * 100
-
-end subroutine percentage_error
+   
 
    !*****************************************************************
    !*****************************************************************
@@ -392,8 +248,8 @@ end subroutine percentage_error
 
       type(pdata_type), intent(in) :: pdata
 
-      res = pdata%y(pdata%samples) + x(1) * (pdata%t(i) - pdata%t(pdata%samples)) + &
-      x(2) * ((pdata%t(i) - pdata%t(pdata%samples))**2) + x(3) * ((pdata%t(i) - pdata%t(pdata%samples))**3)
+      res = x(1) + x(2) * (pdata%t(i) - 3.d0) + &
+      x(3) * ((pdata%t(i) - 3.d0)**2) + x(4) * ((pdata%t(i) - 3.d0)**3)
 
    end subroutine model
 

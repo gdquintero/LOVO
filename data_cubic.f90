@@ -17,6 +17,8 @@ program data_cubic
 
     Open(Unit = 100, File = "data/cubic.txt", ACCESS = "SEQUENTIAL")
 
+    write(100,*) m
+
     do i = 1, m
         t = (i-1) * 6.d0 / (m-1)
         ran1 = drand(seed)
