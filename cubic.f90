@@ -17,7 +17,7 @@ program cubic
    ! LOCAL SCALARS
    logical :: extallowed,hfixstr
    integer :: allocerr,hnnzmax,ierr,istop,iter,maxit,n,nbds
-   real(kind=8) :: eps,f,ftarget,gpsupn
+   real(kind=8) :: eps,f,ftarget,gpsupn,start,finish
    type(pdata_type), target :: pdata
  
    ! LOCAL ARRAYS
@@ -87,14 +87,19 @@ program cubic
 
       pdata%noutliers = i
 
+      pdata%counters(:) = 0
+
+      call cpu_time(start)
       call lovo_algorithm(fobj)
+      call cpu_time(finish)
       
       Open(Unit = 100, File = "output/solution_cubic.txt", ACCESS = "SEQUENTIAL")
-      write(100,10) pdata%xk(1), pdata%xk(2), pdata%xk(3), pdata%xk(4), fobj
+      write(100,10) pdata%xk(1),pdata%xk(2),pdata%xk(3),pdata%xk(4),fobj,pdata%counters(3),&
+      pdata%counters(1),pdata%counters(2),finish-start
 
    enddo
 
-   10 format (ES13.6,1X,ES13.6,1X,ES13.6,1X,ES13.6,1X,ES13.6) 
+   10 format (F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,I3,1X,I5,1X,I5,1X,F5.3) 
    
    stop
   
@@ -112,7 +117,7 @@ program cubic
       integer :: iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo
 
       sigmin = 1.0d0
-      gamma = 1.0d0
+      gamma = 1.0d+1
       epsilon = 1.0d-3
       alpha = 1.0d-8
       max_iter_lovo = 1000
@@ -124,14 +129,14 @@ program cubic
       
       pdata%theta = 100.d0
 
-      pdata%xk(1:n) = 1.0d0
+      pdata%xk(1:n) = (/-1.0d0,-3.0d0,-1.d0,2.d0/)
       
       call compute_sp(n,pdata%xk,pdata,fxk)
 
-      write(*,*) "--------------------------------------------------"
-      write(*,10) "#iter","#init","Sp(xstar)","||g(xstar)||"
-      10 format (2X,A5,4X,A5,6X,A9,7X,A12)
-      write(*,*) "--------------------------------------------------"
+      ! write(*,*) "--------------------------------------------------"
+      ! write(*,10) "#iter","#init","Sp(xstar)","||g(xstar)||"
+      ! 10 format (2X,A5,4X,A5,6X,A9,7X,A12)
+      ! write(*,*) "--------------------------------------------------"
 
       do
          iter_lovo = iter_lovo + 1
@@ -141,8 +146,8 @@ program cubic
          ! termination = norm2(pdata%gp(1:n))
          termination = maxval(abs(pdata%gp(1:n)))
 
-         write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination
-         20 format (I6,5X,I4,4X,ES14.6,3X,ES14.6)
+         ! write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination
+         ! 20 format (I6,5X,I4,4X,ES14.6,3X,ES14.6)
 
          if (termination .lt. epsilon) exit
          if (iter_lovo .gt. max_iter_lovo) exit
@@ -183,9 +188,11 @@ program cubic
 
       enddo
 
-      write(*,*) "--------------------------------------------------"
+      ! write(*,*) "--------------------------------------------------"
 
       ! pdata%outliers(:) = int(pdata%indices(pdata%samples - pdata%noutliers + 1:))
+
+      pdata%counters(3) = iter_lovo
 
    end subroutine lovo_algorithm
 
@@ -241,9 +248,9 @@ program cubic
          gaux = gaux - pdata%y(int(pdata%indices(i)))
 
          res(1) = res(1) + gaux
-         res(2) = res(2) + gaux * (ti - 3.d0)
-         res(3) = res(3) + gaux * ((ti - 3.d0)**2)
-         res(4) = res(4) + gaux * ((ti - 3.d0)**3)
+         res(2) = res(2) + gaux * ti
+         res(3) = res(3) + gaux * (ti**2)
+         res(4) = res(4) + gaux * (ti**3)
       enddo
 
    end subroutine compute_grad_sp
@@ -260,8 +267,8 @@ program cubic
 
       type(pdata_type), intent(in) :: pdata
 
-      res = x(1) + x(2) * (pdata%t(i) - 3.d0) + &
-      x(3) * ((pdata%t(i) - 3.d0)**2) + x(4) * ((pdata%t(i) - 3.d0)**3)
+      res = x(1) + x(2) * pdata%t(i) + &
+      x(3) * (pdata%t(i)**2) + x(4) * (pdata%t(i)**3)
 
    end subroutine model
 
@@ -334,7 +341,7 @@ program cubic
      if ( .false. ) write(*,*) inform
      
      call c_f_pointer(pdataptr, pdata)
-   !   pdata%counters(1) = pdata%counters(1) + 1
+     pdata%counters(1) = pdata%counters(1) + 1
      
    !   call cutest_ufn(status,n,x,f)
    !   if ( status .ne. 0 ) inform = -91
@@ -370,7 +377,7 @@ program cubic
      if ( .false. ) write(*,*) inform
      
      call c_f_pointer(pdataptr, pdata)
-   !   pdata%counters(2) = pdata%counters(2) + 1
+     pdata%counters(2) = pdata%counters(2) + 1
      
    !   call cutest_ugr(status,n,x,g)
    !   if ( status .ne. 0 ) inform = -92
