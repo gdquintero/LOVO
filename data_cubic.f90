@@ -41,7 +41,6 @@ program data_cubic
         endif
     enddo
 
-
     contains
 
     function poly(x,t,n)

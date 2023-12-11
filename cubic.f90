@@ -99,7 +99,7 @@ program cubic
 
    enddo
 
-   10 format (F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,I3,1X,I5,1X,I5,1X,F5.3) 
+   10 format (F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,ES10.3,1X,I3,1X,I6,1X,I6,1X,F5.3) 
    
    stop
   
