@@ -1,6 +1,3 @@
-! *****************************************************************
-! *****************************************************************
-
 program gencanma
    use sort
    use bmgencan, only: gencan, genunc
@@ -11,7 +8,7 @@ program gencanma
    type :: pdata_type
       integer :: counters(3) = 0
       integer :: samples,inf,sup,lovo_order
-      real(kind=8) :: sigma
+      real(kind=8) :: sigma,theta
       real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),data(:,:),indices(:),sp_vector(:),grad_sp(:),gp(:)
       integer, allocatable :: outliers(:)
    end type pdata_type
@@ -63,7 +60,7 @@ program gencanma
    nbds = count( lind(1:n) ) + count( uind(1:n) )
 
    ! Reading data and storing it in the variables t and y
-   Open(Unit = 10, File = "output/seropositives.txt", ACCESS = "SEQUENTIAL")
+   Open(Unit = 10, File = "data/seropositives.txt", ACCESS = "SEQUENTIAL")
 
    ! Set parameters
    read(10,*) pdata%samples
@@ -237,6 +234,8 @@ program gencanma
       iter_lovo = 0
       iter_sub_lovo = 0
       pdata%lovo_order = pdata%samples - noutliers
+
+      pdata%theta = 100.d0
 
       pdata%xk(1:n) = 1.0d0
 
@@ -441,6 +440,31 @@ program gencanma
    ! *****************************************************************
    ! GENCAN SUBROUTINES
    ! *****************************************************************
+
+   subroutine stpsub(n,x,gsupn,inhdefstp,stp,ierr,pdataptr)
+      use iso_c_binding, only: c_ptr
+      implicit none
+      integer, intent(in) :: n
+      real(kind=8), intent(in) :: gsupn
+      real(kind=8), intent(in) :: x(n)
+      logical, intent(out) :: inhdefstp,stp
+      integer, intent(inout) :: ierr
+      type(c_ptr), optional, intent(in) :: pdataptr
+
+      type(pdata_type), pointer :: pdata
+      call c_f_pointer(pdataptr, pdata)
+
+      if ( .false. ) write(*,*) ierr
+
+      inhdefstp = .false.
+      
+      if ( gsupn .le. pdata%theta * maxval(abs(x - pdata%xk))) then
+         stp = .true.
+      else
+         stp = .false.
+      endif
+
+   end subroutine stpsub
  
    subroutine evalf(n,x,f,inform,pdataptr)
  
