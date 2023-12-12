@@ -87,7 +87,7 @@ program cubic
 
       pdata%noutliers = i
 
-      pdata%counters(:) = 0
+      pdata%counters(1:3) = 0
 
       call cpu_time(start)
       call lovo_algorithm(fobj)

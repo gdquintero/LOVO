@@ -17,6 +17,7 @@ program data_cubic
     xsol(:) = (/1.d0,1.d0,-3.d0,1.d0/)
 
     Open(Unit = 100, File = "data/cubic.txt", ACCESS = "SEQUENTIAL")
+    Open(Unit = 200, File = "data/cubic_latex.txt", ACCESS = "SEQUENTIAL")
 
     write(100,*) m
 
@@ -31,15 +32,23 @@ program data_cubic
 
             if (ran2 .lt. 0.2d0) then
                 write(100,*) t, poly(xsol,t,4) + r
+                write(200,10) t, poly(xsol,t,4) + r
             else
                 write(100,*) t, poly(xsol,t,4) - r
+                write(200,10) t, poly(xsol,t,4) - r
             endif
 
         else
             r = a1 + (b1 - a1) * ran1
             write(100,*) t, poly(xsol,t,4) + r
+            write(200,10) t, poly(xsol,t,4) + r
         endif
     enddo
+
+    10 format (F5.3,1X,F6.3)
+
+    close(100)
+    close(200)
 
     contains
 
