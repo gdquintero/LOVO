@@ -81,7 +81,8 @@ program cubic
    enddo
 
    pdata%inf = 0
-   pdata%sup = int(pdata%samples * 0.1d0) + 5
+   ! pdata%sup = int(pdata%samples * 0.1d0) + 5
+   pdata%sup = 10
 
    do i = pdata%inf, pdata%sup
 
@@ -99,7 +100,7 @@ program cubic
 
    enddo
 
-   10 format (F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,ES10.3,1X,I3,1X,I6,1X,I6,1X,F5.3) 
+   10 format (F8.3,1X,F8.3,1X,F8.3,1X,F8.3,1X,ES10.3,1X,I4,1X,I6,1X,I6,1X,F6.4) 
    
    stop
   

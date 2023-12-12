@@ -21,28 +21,44 @@ program data_cubic
 
     write(100,*) m
 
+    ! do i = 1, m
+    !     t = (i-1) * 4.d0 / (m-1)
+    !     ran1 = drand(seed1)
+
+    !     if (ran1 .lt. 0.1d0) then
+    !         ran2 = drand(seed2)
+
+    !         r = a2 + (b2 - a2) * ran2
+
+    !         if (ran2 .lt. 0.8d0) then
+    !             write(100,*) t, poly(xsol,t,4) + r
+    !             write(200,10) t, poly(xsol,t,4) + r
+    !         else
+    !             write(100,*) t, poly(xsol,t,4) - r
+    !             write(200,10) t, poly(xsol,t,4) - r
+    !         endif
+
+    !     else
+    !         r = a1 + (b1 - a1) * ran1
+    !         write(100,*) t, poly(xsol,t,4) + r
+    !         write(200,10) t, poly(xsol,t,4) + r
+    !     endif
+    ! enddo
+
     do i = 1, m
         t = (i-1) * 4.d0 / (m-1)
         ran1 = drand(seed1)
 
-        if (ran1 .lt. 0.1d0) then
-            ran2 = drand(seed2)
-
-            r = a2 + (b2 - a2) * ran2
-
-            if (ran2 .lt. 0.2d0) then
-                write(100,*) t, poly(xsol,t,4) + r
-                write(200,10) t, poly(xsol,t,4) + r
-            else
-                write(100,*) t, poly(xsol,t,4) - r
-                write(200,10) t, poly(xsol,t,4) - r
-            endif
-
+        if (11 .le. i .and. i .le. 20) then
+            write(100,*) t, 10.d0
+            write(200,10) t, 10.d0
+            
         else
             r = a1 + (b1 - a1) * ran1
             write(100,*) t, poly(xsol,t,4) + r
             write(200,10) t, poly(xsol,t,4) + r
         endif
+        
     enddo
 
     10 format (F5.3,1X,F6.3)
