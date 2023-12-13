@@ -255,8 +255,7 @@ program gencanma
       ! write(*,*) "--------------------------------------------------"
 
       outliers(:) = int(pdata%indices(pdata%samples - noutliers + 1:))
-
-      print*,int(pdata%indices(pdata%samples - noutliers + 1:))
+      
 
    end subroutine lovo_algorithm
 
