@@ -23,7 +23,6 @@ program gencanma
    character(len=10) :: pname
    logical, allocatable :: lind(:),uind(:)
    real(kind=8), allocatable :: g(:),lbnd(:),ubnd(:),x(:)
-
    integer :: i
  
    n = 3
@@ -106,34 +105,46 @@ program gencanma
       implicit none
 
       integer, intent(in) :: n
-
-      integer :: noutliers,ind
+      integer :: noutliers,ind,it
+      real(kind=8) :: fobj
 
       do noutliers = pdata%inf, pdata%sup
          ! write(*,*) "LOVO Algorithm for Measles:"
          ind = 1
          pdata%y(:) = pdata%data(2,:)
-         call lovo_algorithm(n,noutliers,pdata%outliers(ind:ind+noutliers-1))
+         call cpu_time(start)
+         call lovo_algorithm(n,noutliers,pdata%outliers(ind:ind+noutliers-1),fobj,it)
+         call cpu_time(finish)
          Open(Unit = 100, File = "output/solutions_mixed_measles.txt", ACCESS = "SEQUENTIAL")
+         Open(Unit = 110, File = "output/measles_latex.txt", ACCESS = "SEQUENTIAL")
          write(100,1000) pdata%xk(1), pdata%xk(2), pdata%xk(3)
+         write(110,1010) fobj,it,pdata%counters(1),pdata%counters(2),finish-start
+
+         pdata%counters(:) = 0
       
-         write(*,*)
          ! write(*,*) "LOVO Algorithm for Mumps:"
          ind = ind + noutliers
          pdata%y(:) = pdata%data(3,:)
-         call lovo_algorithm(n,noutliers,pdata%outliers(ind:ind+noutliers-1))
+         call cpu_time(start)
+         call lovo_algorithm(n,noutliers,pdata%outliers(ind:ind+noutliers-1),fobj,it)
+         call cpu_time(finish)
          Open(Unit = 200, File = "output/solutions_mixed_mumps.txt", ACCESS = "SEQUENTIAL")
+         Open(Unit = 210, File = "output/mumps_latex.txt", ACCESS = "SEQUENTIAL")
          write(200,1000) pdata%xk(1), pdata%xk(2), pdata%xk(3)
+         write(210,1010) fobj,it,pdata%counters(1),pdata%counters(2),finish-start
 
-         write(*,*)
+         pdata%counters(:) = 0
+
          ! write(*,*) "LOVO Algorithm for Rubella:"
          ind = ind + noutliers
          pdata%y(:) = pdata%data(4,:)
-         call lovo_algorithm(n,noutliers,pdata%outliers(ind:ind+noutliers-1))
+         call cpu_time(start)
+         call lovo_algorithm(n,noutliers,pdata%outliers(ind:ind+noutliers-1),fobj,it)
+         call cpu_time(finish)
          Open(Unit = 300, File = "output/solutions_mixed_rubella.txt", ACCESS = "SEQUENTIAL")
+         Open(Unit = 310, File = "output/rubella_latex.txt", ACCESS = "SEQUENTIAL")
          write(300,1000) pdata%xk(1), pdata%xk(2), pdata%xk(3)
-
-         Open(Unit = 400 File = "output/farrington_latex.txt", ACCESS = "SEQUENTIAL")
+         write(310,1010) fobj,it,pdata%counters(1),pdata%counters(2),finish-start
          
       enddo
 
@@ -142,6 +153,7 @@ program gencanma
       write(500,1200) pdata%sup
 
       1000 format (ES12.6,1X,ES12.6,1X,ES12.6)
+      1010 format (ES10.3,1X,I4,1X,I6,1X,I6,1X,F5.2)
       1200 format (I2)
       close(100)
       close(200)
@@ -153,11 +165,13 @@ program gencanma
    !*****************************************************************
    !*****************************************************************
 
-   subroutine lovo_algorithm(n,noutliers,outliers)
+   subroutine lovo_algorithm(n,noutliers,outliers,fobj,it)
       implicit none
 
       integer, intent(in) :: n,noutliers
       integer, intent(inout) :: outliers(noutliers)
+      integer, intent(out) :: it
+      real(kind=8), intent(out) :: fobj
 
       real(kind=8) :: sp,sigmin,epsilon,fxk,fxtrial,alpha,gamma,termination
       integer :: iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo,i
@@ -209,13 +223,13 @@ program gencanma
             if ( nbds .eq. 0 ) then
                ! write(*,*) 'The problem is unconstrained.'
                call genunc(evalf,evalg,evalh,hnnzmax,hfixstr,n,x,f,g,gpsupn, &
-                  ftarget,eps,maxit,extallowed,iter,ierr,istop,pdata=c_loc(pdata))
+                  ftarget,eps,maxit,extallowed,iter,ierr,istop,stpsub,pdata=c_loc(pdata))
                
             else
                ! write(*,*) 'The problem is a bound constrained problem.'
                call gencan(evalf,evalg,evalh,hnnzmax,hfixstr,n,x,lind,lbnd, &
                   uind,ubnd,f,g,gpsupn,ftarget,eps,maxit,extallowed,iter,ierr, &
-                  istop,pdata=c_loc(pdata))
+                  istop,stpsub,pdata=c_loc(pdata))
             end if
 
             pdata%xtrial(:) = x(:)
@@ -234,6 +248,9 @@ program gencanma
          pdata%xk(:) = pdata%xtrial(:)
 
       enddo
+
+      fobj = fxtrial
+      it = iter_lovo
 
       ! write(*,*) "--------------------------------------------------"
 
@@ -421,7 +438,7 @@ program gencanma
      type(pdata_type), pointer :: pdata
      
      call c_f_pointer(pdataptr, pdata)
-   !   pdata%counters(1) = pdata%counters(1) + 1
+     pdata%counters(1) = pdata%counters(1) + 1
      
    !   call cutest_ufn(status,n,x,f)
    !   if ( status .ne. 0 ) inform = -91
@@ -454,7 +471,7 @@ program gencanma
      type(pdata_type), pointer :: pdata
      
      call c_f_pointer(pdataptr, pdata)
-   !   pdata%counters(2) = pdata%counters(2) + 1
+     pdata%counters(2) = pdata%counters(2) + 1
      
    !   call cutest_ugr(status,n,x,g)
    !   if ( status .ne. 0 ) inform = -92
