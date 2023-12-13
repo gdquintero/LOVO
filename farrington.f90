@@ -81,8 +81,8 @@ program gencanma
 
    close(10)
 
-   pdata%inf = 4
-   pdata%sup = 4
+   pdata%inf = 0
+   pdata%sup = 10
 
    allocate(pdata%outliers(3*pdata%samples*(pdata%sup-pdata%inf+1)),stat=allocerr)
 
@@ -95,72 +95,6 @@ program gencanma
 
    call mixed_test(n)
  
-   ! call cpu_time(start)
- 
-   ! if ( nbds .eq. 0 ) then
-   !    write(*,*) 'The problem is unconstrained.'
-   !    call genunc(evalf,evalg,evalh,hnnzmax,hfixstr,n,x,f,g,gpsupn, &
-   !         ftarget,eps,maxit,extallowed,iter,ierr,istop,pdata=c_loc(pdata))
-      
-   ! else
-   !    write(*,*) 'The problem is a bound constrained problem.'
-   !    call gencan(evalf,evalg,evalh,hnnzmax,hfixstr,n,x,lind,lbnd, &
-   !         uind,ubnd,f,g,gpsupn,ftarget,eps,maxit,extallowed,iter,ierr, &
-   !         istop,pdata=c_loc(pdata))
-   ! end if
-   
-   ! call cpu_time(finish)
- 
-!    write(*,*)
-!    write(*,*) 'Problem name                                          = ',pname
-!    write(*,*) 'Number of variables                                   = ',n
-!    write(*,*) 'Number of lower and upper bounds                      = ',count( lind(1:n) ) + count( uind(1:n) )
-!    write(*,*)
-!    write(*,*) '(REPORTED BY SOLVER) istop                            = ',istop
-!    write(*,*) '(REPORTED BY SOLVER) ierr                             = ',ierr
-!    write(*,*) '(REPORTED BY SOLVER) f                                = ',f
-!    write(*,*) '(REPORTED BY SOLVER) gpsupn                           = ',gpsupn
-!    write(*,*) '(REPORTED BY SOLVER) Number of iterations             = ',iter
-!    write(*,*)
-!    write(*,*) '(COMPUTED BY CALLER) Number of function evaluations   = ',pdata%counters(1)
-!    write(*,*) '(COMPUTED BY CALLER) Number of gradient evaluations   = ',pdata%counters(2)
-!    write(*,*) '(COMPUTED BY CALLER) Number of Hessian  evaluations   = ',pdata%counters(3)
-!    write(*,*) '(COMPUTED BY CALLER) CPU time in seconds              = ',finish - start
- 
-!    ! *****************************************************************
-!    ! *****************************************************************
-!    ! Just checking ...
-!    call cutest_ufn(status,n,x,f)
-!    if ( status .ne. 0 ) then
-!       write(*,*) 'error when calling cutest_ufn in the main file.'
-!       stop
-!    end if
-   
-!    bdsvio = max( 0.0d0, max( maxval( lbnd(1:n) - x(1:n), lind(1:n) ), maxval( x(1:n) - ubnd(1:n), uind(1:n) ) ) )
- 
-!    write(*,*)
-!    write(*,*) '(COMPUTED BY CALLER) f                                = ',f
-!    write(*,*) '(COMPUTED BY CALLER) bounds violation                 = ',bdsvio
- 
-!    write(*,*)
-!    write(*,*) 'When a quantity appears as computed by solver and computed by caller, they must coincide.'
-!    write(*,*) '(In case they do not coincide, please report it as a bug.)'
-!    ! *****************************************************************
-!    ! *****************************************************************
-   
-!    open(20,file='tabline.txt')
-!    write(20,9000) istop,ierr,finish - start,n,f,gpsupn,iter,pdata%counters(1:3)
-!    close(20)
- 
-!    deallocate(g,lind,lbnd,uind,ubnd,x,stat=allocerr)
-!    if ( allocerr .ne. 0 ) then
-!       write(*,*) 'Deallocation error.'
-!       stop
-!    end if
- 
-!    stop
- 
-!  9000 format(1X,I2,1X,I3,0P,F12.6,1X,I6,1X,1P,D24.16,1X,1P,D7.1,4(1X,I8))
  
    contains
 
@@ -176,28 +110,31 @@ program gencanma
       integer :: noutliers,ind
 
       do noutliers = pdata%inf, pdata%sup
-         write(*,*) "LOVO Algorithm for Measles:"
+         ! write(*,*) "LOVO Algorithm for Measles:"
          ind = 1
          pdata%y(:) = pdata%data(2,:)
          call lovo_algorithm(n,noutliers,pdata%outliers(ind:ind+noutliers-1))
          Open(Unit = 100, File = "output/solutions_mixed_measles.txt", ACCESS = "SEQUENTIAL")
          write(100,1000) pdata%xk(1), pdata%xk(2), pdata%xk(3)
-
-         ! write(*,*)
+      
+         write(*,*)
          ! write(*,*) "LOVO Algorithm for Mumps:"
-         ! ind = ind + noutliers
-         ! pdata%y(:) = pdata%data(3,:)
-         ! call lovo_algorithm(n,noutliers,pdata%outliers(ind:ind+noutliers-1))
-         ! Open(Unit = 200, File = "output/solutions_mixed_mumps.txt", ACCESS = "SEQUENTIAL")
-         ! write(200,1000) pdata%xk(1), pdata%xk(2), pdata%xk(3)
+         ind = ind + noutliers
+         pdata%y(:) = pdata%data(3,:)
+         call lovo_algorithm(n,noutliers,pdata%outliers(ind:ind+noutliers-1))
+         Open(Unit = 200, File = "output/solutions_mixed_mumps.txt", ACCESS = "SEQUENTIAL")
+         write(200,1000) pdata%xk(1), pdata%xk(2), pdata%xk(3)
 
-         ! write(*,*)
+         write(*,*)
          ! write(*,*) "LOVO Algorithm for Rubella:"
-         ! ind = ind + noutliers
-         ! pdata%y(:) = pdata%data(4,:)
-         ! call lovo_algorithm(n,noutliers,pdata%outliers(ind:ind+noutliers-1))
-         ! Open(Unit = 300, File = "output/solutions_mixed_rubella.txt", ACCESS = "SEQUENTIAL")
-         ! write(300,1000) pdata%xk(1), pdata%xk(2), pdata%xk(3)
+         ind = ind + noutliers
+         pdata%y(:) = pdata%data(4,:)
+         call lovo_algorithm(n,noutliers,pdata%outliers(ind:ind+noutliers-1))
+         Open(Unit = 300, File = "output/solutions_mixed_rubella.txt", ACCESS = "SEQUENTIAL")
+         write(300,1000) pdata%xk(1), pdata%xk(2), pdata%xk(3)
+
+         Open(Unit = 400 File = "output/farrington_latex.txt", ACCESS = "SEQUENTIAL")
+         
       enddo
 
       Open(Unit = 500, File = "output/num_mixed_test.txt", ACCESS = "SEQUENTIAL")
@@ -222,7 +159,7 @@ program gencanma
       integer, intent(in) :: n,noutliers
       integer, intent(inout) :: outliers(noutliers)
 
-      real(kind=8) :: sp,sigmin,epsilon,fxk,fxtrial,theta,alpha,gamma,termination
+      real(kind=8) :: sp,sigmin,epsilon,fxk,fxtrial,alpha,gamma,termination
       integer :: iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo,i
 
       sigmin = 1.0d0
@@ -241,10 +178,10 @@ program gencanma
 
       call compute_sp(n,pdata%xk,pdata,fxk)
 
-      write(*,*) "--------------------------------------------------"
-      write(*,10) "#iter","#init","Sp(xstar)","||gp(xstar)||"
-      10 format (2X,A5,4X,A5,6X,A9,6X,A13)
-      write(*,*) "--------------------------------------------------"
+      ! write(*,*) "--------------------------------------------------"
+      ! write(*,10) "#iter","#init","Sp(xstar)","||gp(xstar)||"
+      ! 10 format (2X,A5,4X,A5,6X,A9,6X,A13)
+      ! write(*,*) "--------------------------------------------------"
 
       do
          iter_lovo = iter_lovo + 1
@@ -257,8 +194,8 @@ program gencanma
 
          termination = norm2(pdata%gp(1:n) - pdata%xk(1:n))
 
-         write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination
-         20 format (I6,5X,I4,4X,ES14.6,3X,ES14.6)
+         ! write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination
+         ! 20 format (I6,5X,I4,4X,ES14.6,3X,ES14.6)
 
          if (termination .lt. epsilon) exit
          if (iter_lovo .gt. max_iter_lovo) exit
@@ -298,7 +235,7 @@ program gencanma
 
       enddo
 
-      write(*,*) "--------------------------------------------------"
+      ! write(*,*) "--------------------------------------------------"
 
       ! outliers(:) = int(pdata%indices(pdata%samples - noutliers + 1:))
 
