@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.cm as mplcm
+import matplotlib.colors as colors
 import models
 
 def plot_mixed(ind,t,inf,df_seropositives,df_mixed):
@@ -8,6 +10,13 @@ def plot_mixed(ind,t,inf,df_seropositives,df_mixed):
     plt.rcParams.update({'font.size': 12})
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
+    NUM_COLORS = 11
+    cm = plt.get_cmap('rainbow')
+    cNorm  = colors.Normalize(vmin=0, vmax=NUM_COLORS-1)
+    scalarMap = mplcm.ScalarMappable(norm=cNorm, cmap=cm)
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.set_prop_cycle(color=[scalarMap.to_rgba(NUM_COLORS-i) for i in range(NUM_COLORS)])
     # plt.figure(figsize=(10,7))
     # plt.xticks(fontsize=18)
     # plt.yticks(fontsize=18)
@@ -23,8 +32,8 @@ def plot_mixed(ind,t,inf,df_seropositives,df_mixed):
     l = plt.plot(df_seropositives[0].values,df_seropositives[ind].values,"ko")
     plt.setp(l, 'markersize', 6)
 
-    plt.savefig(disease[ind-1]+".pdf",bbox_inches = "tight")
-    # plt.show()
+    # plt.savefig(disease[ind-1]+".pdf",bbox_inches = "tight")
+    plt.show()
     plt.close()
 
 df_seropositives = pd.read_table("data/seropositives.txt",delimiter=" ",header=None,skiprows=1)

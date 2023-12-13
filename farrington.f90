@@ -80,8 +80,8 @@ program gencanma
 
    close(10)
 
-   pdata%inf = 0
-   pdata%sup = 10
+   pdata%inf = 4
+   pdata%sup = 4
 
    allocate(pdata%outliers(3*pdata%samples*(pdata%sup-pdata%inf+1)),stat=allocerr)
 
