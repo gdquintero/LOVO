@@ -1,4 +1,4 @@
-program gencanma
+program farrington
    use sort
    use bmgencan, only: gencan, genunc
    use iso_c_binding, only: c_ptr, c_loc, c_f_pointer
@@ -12,6 +12,10 @@ program gencanma
       real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),data(:,:),indices(:),sp_vector(:),grad_sp(:),gp(:)
       integer, allocatable :: outliers(:)
    end type pdata_type
+
+   character(*), parameter :: data_files = "/home/gustavo/github/LOVO/data/",&
+                              output_files = "/home/gustavo/github/LOVO/output/"
+
  
    ! LOCAL SCALARS
    logical :: extallowed,hfixstr
@@ -59,7 +63,7 @@ program gencanma
    nbds = count( lind(1:n) ) + count( uind(1:n) )
 
    ! Reading data and storing it in the variables t and y
-   Open(Unit = 10, File = "data/seropositives.txt", ACCESS = "SEQUENTIAL")
+   Open(Unit = 10, File = data_files//"seropositives.txt", Access = "SEQUENTIAL")
 
    ! Set parameters
    read(10,*) pdata%samples
@@ -116,8 +120,8 @@ program gencanma
          call cpu_time(start)
          call lovo_algorithm(n,noutliers,pdata%outliers(ind:ind+noutliers-1),fobj,it)
          call cpu_time(finish)
-         Open(Unit = 100, File = "output/solutions_mixed_measles.txt", ACCESS = "SEQUENTIAL")
-         Open(Unit = 110, File = "output/measles_latex.txt", ACCESS = "SEQUENTIAL")
+         Open(Unit = 100, File = output_files//"solutions_mixed_measles.txt", ACCESS = "SEQUENTIAL")
+         Open(Unit = 110, File = output_files//"measles_latex.txt", ACCESS = "SEQUENTIAL")
          write(100,1000) pdata%xk(1), pdata%xk(2), pdata%xk(3)
          write(110,1010) fobj,it,pdata%counters(1),pdata%counters(2)
 
@@ -129,8 +133,8 @@ program gencanma
          call cpu_time(start)
          call lovo_algorithm(n,noutliers,pdata%outliers(ind:ind+noutliers-1),fobj,it)
          call cpu_time(finish)
-         Open(Unit = 200, File = "output/solutions_mixed_mumps.txt", ACCESS = "SEQUENTIAL")
-         Open(Unit = 210, File = "output/mumps_latex.txt", ACCESS = "SEQUENTIAL")
+         Open(Unit = 200, File = output_files//"solutions_mixed_mumps.txt", ACCESS = "SEQUENTIAL")
+         Open(Unit = 210, File = output_files//"mumps_latex.txt", ACCESS = "SEQUENTIAL")
          write(200,1000) pdata%xk(1), pdata%xk(2), pdata%xk(3)
          write(210,1010) fobj,it,pdata%counters(1),pdata%counters(2)
 
@@ -142,14 +146,14 @@ program gencanma
          call cpu_time(start)
          call lovo_algorithm(n,noutliers,pdata%outliers(ind:ind+noutliers-1),fobj,it)
          call cpu_time(finish)
-         Open(Unit = 300, File = "output/solutions_mixed_rubella.txt", ACCESS = "SEQUENTIAL")
-         Open(Unit = 310, File = "output/rubella_latex.txt", ACCESS = "SEQUENTIAL")
+         Open(Unit = 300, File = output_files//"solutions_mixed_rubella.txt", ACCESS = "SEQUENTIAL")
+         Open(Unit = 310, File = output_files//"rubella_latex.txt", ACCESS = "SEQUENTIAL")
          write(300,1000) pdata%xk(1), pdata%xk(2), pdata%xk(3)
          write(310,1010) fobj,it,pdata%counters(1),pdata%counters(2)
          
       enddo
 
-      Open(Unit = 500, File = "output/num_mixed_test.txt", ACCESS = "SEQUENTIAL")
+      Open(Unit = 500, File = output_files//"num_mixed_test.txt", ACCESS = "SEQUENTIAL")
       write(500,1200) pdata%inf
       write(500,1200) pdata%sup
 
@@ -268,7 +272,7 @@ program gencanma
       integer, intent(in) :: noutliers,outliers(3*samples),samples
       integer :: i
 
-      Open(Unit = 200, File = "output/outliers.txt", ACCESS = "SEQUENTIAL")
+      Open(Unit = 200, File = output_files//"outliers.txt", ACCESS = "SEQUENTIAL")
 
       write(200,210) noutliers
 
@@ -528,5 +532,5 @@ program gencanma
      
    end subroutine evalh
  
- end program gencanma
+ end program farrington
  
