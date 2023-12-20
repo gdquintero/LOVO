@@ -80,8 +80,8 @@ program gencanma
 
    close(10)
 
-   pdata%inf = 4
-   pdata%sup = 4
+   pdata%inf = 0
+   pdata%sup = 10
 
    allocate(pdata%outliers(3*pdata%samples*(pdata%sup-pdata%inf+1)),stat=allocerr)
 
@@ -94,7 +94,7 @@ program gencanma
 
    call mixed_test(n)
  
- 
+   call export(pdata%sup,pdata%outliers,pdata%samples)
    contains
 
    ! *****************************************************************
@@ -108,6 +108,7 @@ program gencanma
       integer :: noutliers,ind,it
       real(kind=8) :: fobj
 
+
       do noutliers = pdata%inf, pdata%sup
          ! write(*,*) "LOVO Algorithm for Measles:"
          ind = 1
@@ -118,7 +119,7 @@ program gencanma
          Open(Unit = 100, File = "output/solutions_mixed_measles.txt", ACCESS = "SEQUENTIAL")
          Open(Unit = 110, File = "output/measles_latex.txt", ACCESS = "SEQUENTIAL")
          write(100,1000) pdata%xk(1), pdata%xk(2), pdata%xk(3)
-         write(110,1010) fobj,it,pdata%counters(1),pdata%counters(2),finish-start
+         write(110,1010) fobj,it,pdata%counters(1),pdata%counters(2)
 
          pdata%counters(:) = 0
       
@@ -131,7 +132,7 @@ program gencanma
          Open(Unit = 200, File = "output/solutions_mixed_mumps.txt", ACCESS = "SEQUENTIAL")
          Open(Unit = 210, File = "output/mumps_latex.txt", ACCESS = "SEQUENTIAL")
          write(200,1000) pdata%xk(1), pdata%xk(2), pdata%xk(3)
-         write(210,1010) fobj,it,pdata%counters(1),pdata%counters(2),finish-start
+         write(210,1010) fobj,it,pdata%counters(1),pdata%counters(2)
 
          pdata%counters(:) = 0
 
@@ -144,7 +145,7 @@ program gencanma
          Open(Unit = 300, File = "output/solutions_mixed_rubella.txt", ACCESS = "SEQUENTIAL")
          Open(Unit = 310, File = "output/rubella_latex.txt", ACCESS = "SEQUENTIAL")
          write(300,1000) pdata%xk(1), pdata%xk(2), pdata%xk(3)
-         write(310,1010) fobj,it,pdata%counters(1),pdata%counters(2),finish-start
+         write(310,1010) fobj,it,pdata%counters(1),pdata%counters(2)
          
       enddo
 
@@ -153,7 +154,7 @@ program gencanma
       write(500,1200) pdata%sup
 
       1000 format (ES12.6,1X,ES12.6,1X,ES12.6)
-      1010 format (ES10.3,1X,I4,1X,I6,1X,I6,1X,F5.2)
+      1010 format (ES10.3,1X,I4,1X,I6,1X,I6)
       1200 format (I2)
       close(100)
       close(200)
@@ -188,7 +189,7 @@ program gencanma
 
       pdata%theta = 100.d0
 
-      pdata%xk(1:n) = 1.0d0
+      pdata%xk(1:n) = 1.0d-1
 
       call compute_sp(n,pdata%xk,pdata,fxk)
 
