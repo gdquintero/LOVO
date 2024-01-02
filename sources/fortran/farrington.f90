@@ -20,7 +20,7 @@ program farrington
    ! LOCAL SCALARS
    logical :: extallowed,hfixstr
    integer :: allocerr,hnnzmax,ierr,istop,iter,maxit,n,nbds,status
-   real(kind=8) :: bdsvio,eps,f,finish,ftarget,gpsupn,start
+   real(kind=8) :: bdsvio,eps,f,finish,ftarget,gpsupn,start 
    type(pdata_type), target :: pdata
  
    ! LOCAL ARRAYS
