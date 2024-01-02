@@ -32,6 +32,7 @@ program farrington
    n = 3
  
    allocate(g(n),lind(n),lbnd(n),uind(n),ubnd(n),x(n),stat=allocerr)
+   
    if ( allocerr .ne. 0 ) then
       write(*,*) 'Allocation error.'
       stop

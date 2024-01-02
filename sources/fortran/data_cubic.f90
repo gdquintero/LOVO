@@ -6,6 +6,8 @@ program data_cubic
     real(kind=8), dimension(4) :: xsol
     integer :: m,i
 
+    character(*), parameter ::  data_files = "/home/gustavo/github/LOVO/data/"
+
     m = 50
     a1 = -0.01d0
     b1 = 0.01d0
@@ -16,8 +18,8 @@ program data_cubic
     seed2 = 1234.d0
     xsol(:) = (/1.d0,1.d0,-3.d0,1.d0/)
 
-    Open(Unit = 100, File = "data/cubic.txt", ACCESS = "SEQUENTIAL")
-    Open(Unit = 200, File = "data/cubic_latex.txt", ACCESS = "SEQUENTIAL")
+    Open(Unit = 100, File = data_files//"cubic.txt", ACCESS = "SEQUENTIAL")
+    Open(Unit = 200, File = data_files//"cubic_latex.txt", ACCESS = "SEQUENTIAL")
 
     write(100,*) m
 
