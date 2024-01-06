@@ -12,11 +12,4 @@ def F(t,a,b,c):
 def cubic(x1,x2,x3,t,ym,tm):
     return ym + x1 * (t - tm) + x2 * (t - tm)**2 + x3 * (t - tm)**3
 
-def logistic(x1,x2,x3,t):
-    return x1 * x3 * np.exp(x2 * t) / (x3 + x1 * (np.exp(x2 * t) - 1.0))
-
-def der_logistic(x1,x2,x3,t):
-    res = x1 * x2 * x3 * (x3 - x1) * np.exp(x2 * t)
-    res = res / (x3 + x1 * (np.exp(x2 * t) - 1.0))**3
-    return res
     

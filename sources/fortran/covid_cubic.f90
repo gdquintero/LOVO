@@ -28,8 +28,10 @@ program covid
    integer :: i,j,sam
    real(kind=8), allocatable :: fobj(:)
 
-   ! Number of variables
+   character(*), parameter :: data_files = "/home/gustavo/github/LOVO/data/",&
+                              output_files = "/home/gustavo/github/LOVO/output/"
 
+   ! Number of variables
    n = 3
 
    allocate(g(n),lind(n),lbnd(n),uind(n),ubnd(n),x(n),stat=allocerr)
@@ -61,8 +63,8 @@ program covid
    extallowed  =     .true.
 
    ! Reading data and storing it in the variables t and y
-   Open(Unit = 100, File = "data/covid_train.txt", ACCESS = "SEQUENTIAL")
-   Open(Unit = 200, File = "data/covid_test.txt", ACCESS = "SEQUENTIAL")
+   Open(Unit = 100, File = data_files//"covid_train.txt", ACCESS = "SEQUENTIAL")
+   Open(Unit = 200, File = data_files//"covid_test.txt", ACCESS = "SEQUENTIAL")
 
    ! Set parameters
    read(100,*) pdata%n_train
@@ -100,7 +102,7 @@ program covid
 
    fobj(:) = 0.0d0
 
-   Open(Unit = 100, File = "output/inf_sup_covid.txt", ACCESS = "SEQUENTIAL")
+   Open(Unit = 100, File = output_files//"inf_sup_covid.txt", ACCESS = "SEQUENTIAL")
    write(100,*) pdata%inf
    write(100,*) pdata%sup
    close(100)
@@ -127,8 +129,8 @@ program covid
 
       j = j + 1
 
-      Open(Unit = 100, File = "output/solutions_covid_cubic.txt", ACCESS = "SEQUENTIAL")
-      Open(Unit = 200, File = "output/outliers_covid_cubic.txt", ACCESS = "SEQUENTIAL")
+      Open(Unit = 100, File = output_files//"solutions_covid_cubic.txt", ACCESS = "SEQUENTIAL")
+      Open(Unit = 200, File = output_files//"outliers_covid_cubic.txt", ACCESS = "SEQUENTIAL")
 
       write(100,10) pdata%xk(1), pdata%xk(2), pdata%xk(3)
       write(200,20) pdata%noutliers
@@ -274,8 +276,8 @@ program covid
       integer :: i,j 
 
 
-      Open(Unit = 100, File = "output/solutions_covid_cubic.txt", ACCESS = "SEQUENTIAL")
-      Open(Unit = 200, File = "output/accuracy_covid_cubic.txt", ACCESS = "SEQUENTIAL")
+      Open(Unit = 100, File = output_files//"solutions_covid_cubic.txt", ACCESS = "SEQUENTIAL")
+      Open(Unit = 200, File = output_files//"accuracy_covid_cubic.txt", ACCESS = "SEQUENTIAL")
 
       allocate(xsol(3),accuracy(pdata%n_train - pdata%inf + 1,pdata%n_test),stat=allocerr)
 
