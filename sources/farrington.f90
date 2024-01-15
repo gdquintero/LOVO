@@ -136,7 +136,7 @@ program farrington
         sigmin = 1.0d0
         epsilon = 1.0d-3
         alpha = 1.0d-8
-        gamma = 2.0d0
+        gamma = 1.0d+1
         max_iter_lovo = 10000
         max_iter_sub_lovo = 100
         iter_lovo = 0
@@ -145,14 +145,14 @@ program farrington
   
         pdata%theta = 1.d0
   
-        pdata%xk(1:n) = 1.0d0
+        pdata%xk(1:n) = 1.0d-2
   
         call compute_sp(n,pdata%xk,pdata,fxk)       
   
-        write(*,*) "--------------------------------------------------"
+        write(*,*) "--------------------------------------------------------"
         write(*,10) "#iter","#init","Sp(xstar)","Stop criteria","#Imin"
         10 format (2X,A5,4X,A5,6X,A9,6X,A13,2X,A5)
-        write(*,*) "--------------------------------------------------"
+        write(*,*) "--------------------------------------------------------"
   
         do
             iter_lovo = iter_lovo + 1
@@ -197,7 +197,7 @@ program farrington
         fobj = fxtrial
         it = iter_lovo
   
-        write(*,*) "--------------------------------------------------"
+        write(*,*) "--------------------------------------------------------"
 
   
         outliers(:) = int(pdata%indices(pdata%samples - noutliers + 1:))
