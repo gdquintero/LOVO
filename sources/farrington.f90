@@ -68,38 +68,38 @@ program farrington
         type(pdata_type), intent(inout) :: pdata
   
         do noutliers = pdata%inf, pdata%sup
-           ! write(*,*) "LOVO Algorithm for Measles:"
-           ind = 1
-           pdata%y(:) = pdata%data(2,:)
-           call cpu_time(start)
-           call lovo_algorithm(n,noutliers,pdata%outliers(ind:ind+noutliers-1),pdata,fobj,it)
-           call cpu_time(finish)
+            write(*,*) "LOVO Algorithm for Measles:"
+            ind = 1
+            pdata%y(:) = pdata%data(2,:)
+            call cpu_time(start)
+            call lovo_algorithm(n,noutliers,pdata%outliers(ind:ind+noutliers-1),pdata,fobj,it)
+            call cpu_time(finish)
         !    Open(Unit = 100, File = trim(pwd)//"/../output/solutions_mixed_measles.txt", ACCESS = "SEQUENTIAL")
         !    Open(Unit = 110, File = trim(pwd)//"/../output/measles_latex.txt", ACCESS = "SEQUENTIAL")
         !    write(100,1000) pdata%xk(1), pdata%xk(2), pdata%xk(3)
         !    write(110,1010) fobj,it,pdata%counters(1),pdata%counters(2)
   
-           pdata%counters(:) = 0
+            pdata%counters(:) = 0
         
-        !    ! write(*,*) "LOVO Algorithm for Mumps:"
-        !    ind = ind + noutliers
-        !    pdata%y(:) = pdata%data(3,:)
-        !    call cpu_time(start)
-        !    call lovo_algorithm(n,noutliers,pdata%outliers(ind:ind+noutliers-1),fobj,it)
-        !    call cpu_time(finish)
+            write(*,*) "LOVO Algorithm for Mumps:"
+            ind = ind + noutliers
+            pdata%y(:) = pdata%data(3,:)
+            call cpu_time(start)
+            call lovo_algorithm(n,noutliers,pdata%outliers(ind:ind+noutliers-1),pdata,fobj,it)
+            call cpu_time(finish)
         !    Open(Unit = 200, File = trim(pwd)//"/../output/solutions_mixed_mumps.txt", ACCESS = "SEQUENTIAL")
         !    Open(Unit = 210, File = trim(pwd)//"/../output/mumps_latex.txt", ACCESS = "SEQUENTIAL")
         !    write(200,1000) pdata%xk(1), pdata%xk(2), pdata%xk(3)
         !    write(210,1010) fobj,it,pdata%counters(1),pdata%counters(2)
   
-        !    pdata%counters(:) = 0
+            pdata%counters(:) = 0
   
-        !    ! write(*,*) "LOVO Algorithm for Rubella:"
-        !    ind = ind + noutliers
-        !    pdata%y(:) = pdata%data(4,:)
-        !    call cpu_time(start)
-        !    call lovo_algorithm(n,noutliers,pdata%outliers(ind:ind+noutliers-1),fobj,it)
-        !    call cpu_time(finish)
+            write(*,*) "LOVO Algorithm for Rubella:"
+            ind = ind + noutliers
+            pdata%y(:) = pdata%data(4,:)
+            call cpu_time(start)
+            call lovo_algorithm(n,noutliers,pdata%outliers(ind:ind+noutliers-1),pdata,fobj,it)
+            call cpu_time(finish)
         !    Open(Unit = 300, File = trim(pwd)//"/../output/solutions_mixed_rubella.txt", ACCESS = "SEQUENTIAL")
         !    Open(Unit = 310, File = trim(pwd)//"/../output/rubella_latex.txt", ACCESS = "SEQUENTIAL")
         !    write(300,1000) pdata%xk(1), pdata%xk(2), pdata%xk(3)
