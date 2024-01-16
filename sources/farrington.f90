@@ -37,11 +37,13 @@ program farrington
     do i = 1, pdata%samples
         read(10,*) pdata%data(:,i)
     enddo
+
+    close(10)
   
     pdata%t(:) = pdata%data(1,:)
 
-    pdata%inf = 5
-    pdata%sup = 5
+    pdata%inf = 4
+    pdata%sup = 4
 
     pdata%lbnd(1:n) = 0.0d0
     pdata%ubnd(1:n) = 1.0d+20
@@ -56,6 +58,16 @@ program farrington
     pdata%outliers(:) = 0
 
     call mixed_test(n,pdata)
+
+    Open(Unit = 10, File =trim(pwd)//"/../output/outliers.txt", ACCESS = "SEQUENTIAL")
+
+    write(10,100) pdata%sup
+
+    do i = 1, 3*pdata%sup
+        write(10,100) pdata%outliers(i)
+    enddo
+
+    100 format (I2)
 
     contains
 
@@ -74,9 +86,8 @@ program farrington
             call cpu_time(start)
             call lovo_algorithm(n,noutliers,pdata%outliers(ind:ind+noutliers-1),pdata,fobj,it)
             call cpu_time(finish)
-        !    Open(Unit = 100, File = trim(pwd)//"/../output/solutions_mixed_measles.txt", ACCESS = "SEQUENTIAL")
-        !    Open(Unit = 110, File = trim(pwd)//"/../output/measles_latex.txt", ACCESS = "SEQUENTIAL")
-        !    write(100,1000) pdata%xk(1), pdata%xk(2), pdata%xk(3)
+            Open(Unit = 100, File = trim(pwd)//"/../output/solutions_mixed_measles.txt", ACCESS = "SEQUENTIAL")
+            write(100,1000) pdata%xk(1), pdata%xk(2), pdata%xk(3)
         !    write(110,1010) fobj,it,pdata%counters(1),pdata%counters(2)
   
             pdata%counters(:) = 0
@@ -87,9 +98,8 @@ program farrington
             call cpu_time(start)
             call lovo_algorithm(n,noutliers,pdata%outliers(ind:ind+noutliers-1),pdata,fobj,it)
             call cpu_time(finish)
-        !    Open(Unit = 200, File = trim(pwd)//"/../output/solutions_mixed_mumps.txt", ACCESS = "SEQUENTIAL")
-        !    Open(Unit = 210, File = trim(pwd)//"/../output/mumps_latex.txt", ACCESS = "SEQUENTIAL")
-        !    write(200,1000) pdata%xk(1), pdata%xk(2), pdata%xk(3)
+            Open(Unit = 200, File = trim(pwd)//"/../output/solutions_mixed_mumps.txt", ACCESS = "SEQUENTIAL")
+            write(200,1000) pdata%xk(1), pdata%xk(2), pdata%xk(3)
         !    write(210,1010) fobj,it,pdata%counters(1),pdata%counters(2)
   
             pdata%counters(:) = 0
@@ -100,24 +110,23 @@ program farrington
             call cpu_time(start)
             call lovo_algorithm(n,noutliers,pdata%outliers(ind:ind+noutliers-1),pdata,fobj,it)
             call cpu_time(finish)
-        !    Open(Unit = 300, File = trim(pwd)//"/../output/solutions_mixed_rubella.txt", ACCESS = "SEQUENTIAL")
-        !    Open(Unit = 310, File = trim(pwd)//"/../output/rubella_latex.txt", ACCESS = "SEQUENTIAL")
-        !    write(300,1000) pdata%xk(1), pdata%xk(2), pdata%xk(3)
+            Open(Unit = 300, File = trim(pwd)//"/../output/solutions_mixed_rubella.txt", ACCESS = "SEQUENTIAL")
+            write(300,1000) pdata%xk(1), pdata%xk(2), pdata%xk(3)
         !    write(310,1010) fobj,it,pdata%counters(1),pdata%counters(2)
            
         enddo
   
-        ! Open(Unit = 500, File = trim(pwd)//"/../output/num_mixed_test.txt", ACCESS = "SEQUENTIAL")
-        ! write(500,1200) pdata%inf
-        ! write(500,1200) pdata%sup
+        Open(Unit = 500, File = trim(pwd)//"/../output/num_mixed_test.txt", ACCESS = "SEQUENTIAL")
+        write(500,1200) pdata%inf
+        write(500,1200) pdata%sup
   
-        ! 1000 format (ES12.6,1X,ES12.6,1X,ES12.6)
+        1000 format (ES12.6,1X,ES12.6,1X,ES12.6)
         ! 1010 format (ES10.3,1X,I4,1X,I6,1X,I6)
-        ! 1200 format (I2)
-        ! close(100)
-        ! close(200)
-        ! close(300)
-        ! CLOSE(500)
+        1200 format (I2)
+        close(100)
+        close(200)
+        close(300)
+        CLOSE(500)
   
     end subroutine mixed_test
 
