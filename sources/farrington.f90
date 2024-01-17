@@ -42,8 +42,8 @@ program farrington
   
     pdata%t(:) = pdata%data(1,:)
 
-    pdata%inf = 0
-    pdata%sup = 0
+    pdata%inf = 4
+    pdata%sup = 4
 
     pdata%lbnd(1:n) = 0.0d0
     pdata%ubnd(1:n) = 1.0d+20
@@ -80,7 +80,7 @@ program farrington
         type(pdata_type), intent(inout) :: pdata
   
         do noutliers = pdata%inf, pdata%sup
-            write(*,*) "LOVO Algorithm for Measles:"
+            ! write(*,*) "LOVO Algorithm for Measles:"
             ind = 1
             pdata%y(:) = pdata%data(2,:)
             pdata%xk(:) =  (/0.197d0,0.287d0,0.021d0/)

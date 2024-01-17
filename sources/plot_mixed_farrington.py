@@ -7,7 +7,7 @@ import models
 
 def plot_mixed(ind,t,inf,df_seropositives,df_mixed):
     disease = [r"Measles",r"Mumps",r"Rubella"]
-    plt.rcParams.update({'font.size': 12})
+    plt.rcParams.update({'font.size': 13})
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
     NUM_COLORS = 11
