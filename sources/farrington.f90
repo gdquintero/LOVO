@@ -8,7 +8,7 @@ program farrington
         integer :: samples,inf,sup,lovo_order,dim_Imin
         real(kind=8) :: sigma,theta
         real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),data(:,:),indices(:),sp_vector(:),grad_sp(:),&
-                                        gp(:),lbnd(:),ubnd(:)
+        gp(:),lbnd(:),ubnd(:),sol_ovo_measles(:,:),sol_ovo_mumps(:,:),sol_ovo_rubella(:,:)
         integer, allocatable :: outliers(:)
     end type pdata_type
 
@@ -42,13 +42,14 @@ program farrington
   
     pdata%t(:) = pdata%data(1,:)
 
-    pdata%inf = 4
-    pdata%sup = 4
+    pdata%inf = 1
+    pdata%sup = 10
 
     pdata%lbnd(1:n) = 0.0d0
     pdata%ubnd(1:n) = 1.0d+20
  
-    allocate(pdata%outliers(3*pdata%samples*(pdata%sup-pdata%inf+1)),stat=allocerr)
+    allocate(pdata%outliers(3*pdata%samples*(pdata%sup-pdata%inf+1)),pdata%sol_ovo_measles(pdata%sup-pdata%inf+1,3),&
+    pdata%sol_ovo_mumps(pdata%sup-pdata%inf+1,3),pdata%sol_ovo_rubella(pdata%sup-pdata%inf+1,3),stat=allocerr)
  
     if ( allocerr .ne. 0 ) then
         write(*,*) 'Allocation error in main program'
@@ -56,6 +57,16 @@ program farrington
     end if
  
     pdata%outliers(:) = 0
+
+    Open(Unit = 10, File = trim(pwd)//"/../data/sol_ovo_measles.txt", Access = "SEQUENTIAL")
+    Open(Unit = 20, File = trim(pwd)//"/../data/sol_ovo_mumps.txt", Access = "SEQUENTIAL")
+    Open(Unit = 30, File = trim(pwd)//"/../data/sol_ovo_rubella.txt", Access = "SEQUENTIAL")
+
+    do i = 1, pdata%sup-pdata%inf+1
+        read(10,*) pdata%sol_ovo_measles(i,:)
+        read(20,*) pdata%sol_ovo_mumps(i,:)
+        read(30,*) pdata%sol_ovo_rubella(i,:)
+    enddo
 
     call mixed_test(n,pdata)
 
@@ -76,22 +87,39 @@ program farrington
   
         integer, intent(in) :: n
         integer :: noutliers,ind
-        real(kind=8) :: fobj,start,finish
+        real(kind=8) :: fobj,start,finish,lovo_fun_xlovo,ovo_fun_xlovo
         type(pdata_type), intent(inout) :: pdata
+
+        Open(Unit = 100, File = trim(pwd)//"/../output/solutions_mixed_measles.txt", ACCESS = "SEQUENTIAL")
+        Open(Unit = 200, File = trim(pwd)//"/../output/solutions_mixed_mumps.txt", ACCESS = "SEQUENTIAL")
+        Open(Unit = 300, File = trim(pwd)//"/../output/solutions_mixed_rubella.txt", ACCESS = "SEQUENTIAL")
+
+        Open(Unit = 110, File = trim(pwd)//"/../output/measles_latex.txt", ACCESS = "SEQUENTIAL")
+        Open(Unit = 111, File = trim(pwd)//"/../output/measles_latex2.txt", ACCESS = "SEQUENTIAL")
+
+        Open(Unit = 210, File = trim(pwd)//"/../output/mumps_latex.txt", ACCESS = "SEQUENTIAL")
+        Open(Unit = 211, File = trim(pwd)//"/../output/mumps_latex2.txt", ACCESS = "SEQUENTIAL")
+
+        Open(Unit = 310, File = trim(pwd)//"/../output/rubella_latex.txt", ACCESS = "SEQUENTIAL")
+        Open(Unit = 311, File = trim(pwd)//"/../output/rubella_latex2.txt", ACCESS = "SEQUENTIAL")
   
         do noutliers = pdata%inf, pdata%sup
             ! write(*,*) "LOVO Algorithm for Measles:"
             ind = 1
             pdata%y(:) = pdata%data(2,:)
             pdata%xk(:) =  (/0.197d0,0.287d0,0.021d0/)
+
             call cpu_time(start)
             call lovo_algorithm(n,noutliers,pdata%outliers(ind:ind+noutliers-1),pdata,fobj)
             call cpu_time(finish)
-            Open(Unit = 100, File = trim(pwd)//"/../output/solutions_mixed_measles.txt", ACCESS = "SEQUENTIAL")
-            write(100,1000) pdata%xk(1), pdata%xk(2), pdata%xk(3)
 
-            Open(Unit = 110, File = trim(pwd)//"/../output/measles_latex.txt", ACCESS = "SEQUENTIAL")
-            write(110,1010) fobj,pdata%counters(1),pdata%counters(2),finish - start
+            lovo_fun_xlovo = fobj
+            ovo_fun_xlovo  = pdata%sp_vector(pdata%lovo_order)
+            call compute_sp(n,pdata%sol_ovo_measles(noutliers,:),pdata,fobj) 
+
+            write(100,1000) pdata%xk(1), pdata%xk(2), pdata%xk(3)
+            write(110,1010) fobj,pdata%counters(1),pdata%counters(2),finish-start
+            write(111,1011) fobj,lovo_fun_xlovo,ovo_fun_xlovo,pdata%sp_vector(pdata%lovo_order)
   
             pdata%counters(:) = 0
         
@@ -99,14 +127,18 @@ program farrington
             ind = ind + noutliers
             pdata%y(:) = pdata%data(3,:)
             pdata%xk(:) = (/0.156d0,0.250d0,0.0d0/)
+
             call cpu_time(start)
             call lovo_algorithm(n,noutliers,pdata%outliers(ind:ind+noutliers-1),pdata,fobj)
             call cpu_time(finish)
-            Open(Unit = 200, File = trim(pwd)//"/../output/solutions_mixed_mumps.txt", ACCESS = "SEQUENTIAL")
-            write(200,1000) pdata%xk(1), pdata%xk(2), pdata%xk(3)
 
-            Open(Unit = 210, File = trim(pwd)//"/../output/mumps_latex.txt", ACCESS = "SEQUENTIAL")
-            write(210,1010) fobj,pdata%counters(1),pdata%counters(2),finish - start
+            lovo_fun_xlovo = fobj
+            ovo_fun_xlovo  = pdata%sp_vector(pdata%lovo_order)
+            call compute_sp(n,pdata%sol_ovo_mumps(noutliers,:),pdata,fobj)
+
+            write(200,1000) pdata%xk(1), pdata%xk(2), pdata%xk(3)
+            write(210,1010) fobj,pdata%counters(1),pdata%counters(2),finish-start
+            write(211,1011) fobj,lovo_fun_xlovo,ovo_fun_xlovo,pdata%sp_vector(pdata%lovo_order)
   
             pdata%counters(:) = 0
   
@@ -117,11 +149,14 @@ program farrington
             call cpu_time(start)
             call lovo_algorithm(n,noutliers,pdata%outliers(ind:ind+noutliers-1),pdata,fobj)
             call cpu_time(finish)
-            Open(Unit = 300, File = trim(pwd)//"/../output/solutions_mixed_rubella.txt", ACCESS = "SEQUENTIAL")
-            write(300,1000) pdata%xk(1), pdata%xk(2), pdata%xk(3)
 
-            Open(Unit = 310, File = trim(pwd)//"/../output/rubella_latex.txt", ACCESS = "SEQUENTIAL")
-            write(310,1010) fobj,pdata%counters(1),pdata%counters(2),finish - start
+            lovo_fun_xlovo = fobj
+            ovo_fun_xlovo  = pdata%sp_vector(pdata%lovo_order)
+            call compute_sp(n,pdata%sol_ovo_mumps(noutliers,:),pdata,fobj)
+            
+            write(300,1000) pdata%xk(1), pdata%xk(2), pdata%xk(3)
+            write(310,1010) fobj,pdata%counters(1),pdata%counters(2),finish-start
+            write(311,1011) fobj,lovo_fun_xlovo,ovo_fun_xlovo,pdata%sp_vector(pdata%lovo_order)
            
         enddo
   
@@ -131,11 +166,20 @@ program farrington
   
         1000 format (ES12.6,1X,ES12.6,1X,ES12.6)
         1010 format (ES10.3,1X,I4,1X,I4,1X,ES10.3)
+        1011 format (ES10.3,1X,ES10.3,1X,ES10.3,1X,ES10.3)
         1200 format (I2)
+
         close(100)
         close(200)
         close(300)
-        CLOSE(500)
+        close(500)
+        close(110)
+        close(111)
+        close(210)
+        close(211)
+        close(310)
+        close(311)
+
   
     end subroutine mixed_test
 
@@ -164,7 +208,7 @@ program farrington
   
         ! pdata%xk(1:n) = 1.0d-2
   
-        call compute_sp(n,pdata%xk,pdata,fxk)       
+        call compute_sp(n,pdata%xk,pdata,fxk)      
   
         ! write(*,*) "--------------------------------------------------------"
         ! write(*,10) "#iter","#init","Sp(xstar)","Stop criteria","#Imin"

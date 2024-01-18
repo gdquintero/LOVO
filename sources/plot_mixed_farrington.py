@@ -10,7 +10,7 @@ def plot_mixed(ind,t,inf,df_seropositives,df_mixed):
     plt.rcParams.update({'font.size': 13})
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
-    NUM_COLORS = 11
+    NUM_COLORS = 10
     cm = plt.get_cmap('rainbow')
     cNorm  = colors.Normalize(vmin=0, vmax=NUM_COLORS-1)
     scalarMap = mplcm.ScalarMappable(norm=cNorm, cmap=cm)
