@@ -1,22 +1,25 @@
 program data_cubic
     implicit none
 
-    real(kind=8) :: seed1,seed2
-    real(kind=8) :: a1,b1,a2,b2,t,r,ran1,ran2
+    real(kind=8) :: seed1,seed2,a1,b1,a2,b2,t,r,ran1,ran2,noise,inf,sup,delta_t
     real(kind=8), dimension(4) :: xsol
     integer :: m,i
 
     character(len=128) :: pwd
     call get_environment_variable('PWD',pwd)
 
+    noise = 0.2d0
+
     m = 50
-    a1 = -0.01d0
-    b1 = 0.01d0
-    a2 = 5.d0
-    b2 = 10.d0
+    a1 = -noise
+    b1 = noise
+    a2 = 3.d0
+    b2 = 5.d0
+    inf = -1.d0
+    sup = 3.d0
 
     seed1 = 123456.0d0
-    seed2 = 1234.d0
+    seed2 = 12345.0d0
     xsol(:) = (/1.d0,1.d0,-3.d0,1.d0/)
 
     Open(Unit = 100, File = trim(pwd)//"/../data/cubic.txt", ACCESS = "SEQUENTIAL")
@@ -24,8 +27,10 @@ program data_cubic
 
     write(100,*) m
 
+    delta_t = (sup - inf) / real(m-1)
+
     do i = 1, m
-        t = (i-1) * 4.d0 / (m-1)
+        t = inf + real(i - 1) * delta_t
         ran1 = drand(seed1)
 
         if (ran1 .lt. 0.1d0) then
@@ -33,7 +38,7 @@ program data_cubic
 
             r = a2 + (b2 - a2) * ran2
 
-            if (ran2 .lt. 0.2d0) then
+            if (ran2 .le. 0.5d0) then
                 write(100,*) t, poly(xsol,t,4) + r
                 write(200,10) t, poly(xsol,t,4) + r
             else
