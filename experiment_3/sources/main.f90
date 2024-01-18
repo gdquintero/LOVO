@@ -43,7 +43,7 @@ program main
     pdata%t(:) = pdata%data(1,:)
     pdata%y(:) = pdata%data(2,:)
 
-    pdata%inf = 0
+    pdata%inf = 5
     pdata%sup = 5
 
     pdata%lbnd(1:n) = -1.0d+20
@@ -80,7 +80,7 @@ program main
         real(kind=8) :: fobj,start,finish
         type(pdata_type), intent(inout) :: pdata
 
-        Open(Unit = 100, File = trim(pwd)//"/../output/solutions_mixed_cubic.txt", ACCESS = "SEQUENTIAL")
+        Open(Unit = 100, File = trim(pwd)//"/../output/solution_cubic.txt", ACCESS = "SEQUENTIAL")
   
         do noutliers = pdata%inf, pdata%sup
             ! write(*,*) "LOVO Algorithm for Measles:"
@@ -119,11 +119,11 @@ program main
         real(kind=8) :: sigmin,epsilon,fxk,fxtrial,alpha,gamma,termination
         integer :: iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo
   
-        sigmin = 1.0d-1
+        sigmin = 1.0d-2
         epsilon = 1.0d-3
         alpha = 1.0d-8
         gamma = 5.d0
-        max_iter_lovo = 10000
+        max_iter_lovo = 100000
         max_iter_sub_lovo = 100
         iter_lovo = 0
         iter_sub_lovo = 0
@@ -131,14 +131,14 @@ program main
   
         pdata%theta = 1.d0
   
-        pdata%xk(1:n) = 1.0d0
+        pdata%xk(1:n) =  (/-2.d0,-2.d0,1.d0,-1.d0/)
   
         call compute_sp(n,pdata%xk,pdata,fxk)      
   
-        ! write(*,*) "--------------------------------------------------------"
-        ! write(*,10) "#iter","#init","Sp(xstar)","Stop criteria","#Imin"
-        ! 10 format (2X,A5,4X,A5,6X,A9,6X,A13,2X,A5)
-        ! write(*,*) "--------------------------------------------------------"
+        write(*,*) "--------------------------------------------------------"
+        write(*,10) "#iter","#init","Sp(xstar)","Stop criteria","#Imin"
+        10 format (2X,A5,4X,A5,6X,A9,6X,A13,2X,A5)
+        write(*,*) "--------------------------------------------------------"
   
         do
             iter_lovo = iter_lovo + 1
@@ -147,8 +147,8 @@ program main
     
             termination = norm2(pdata%grad_sp(1:n))
     
-            ! write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination,pdata%dim_Imin
-            ! 20 format (I6,5X,I4,4X,ES14.6,3X,ES14.6,2X,I2)
+            write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination,pdata%dim_Imin
+            20 format (I6,5X,I4,4X,ES14.6,3X,ES14.6,2X,I2)
     
             if (termination .lt. epsilon) exit
             if (iter_lovo .gt. max_iter_lovo) exit
@@ -178,7 +178,7 @@ program main
         fobj = fxtrial
         pdata%counters(1) = iter_lovo
   
-        ! write(*,*) "--------------------------------------------------------"
+        write(*,*) "--------------------------------------------------------"
 
   
         outliers(:) = int(pdata%indices(pdata%samples - noutliers + 1:))
