@@ -70,15 +70,20 @@ program farrington
 
     call mixed_test(n,pdata)
 
-    Open(Unit = 10, File =trim(pwd)//"/../output/outliers.txt", ACCESS = "SEQUENTIAL")
+    Open(Unit = 40, File =trim(pwd)//"/../output/outliers.txt", ACCESS = "SEQUENTIAL")
 
-    write(10,100) pdata%sup
+    write(40,100) pdata%sup
 
     do i = 1, 3*pdata%sup
         write(10,100) pdata%outliers(i)
     enddo
 
     100 format (I2)
+
+    close(10)
+    close(20)
+    close(30)
+    close(40)
 
     contains
 
