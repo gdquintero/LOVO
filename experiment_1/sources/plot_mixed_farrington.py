@@ -4,6 +4,10 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as mplcm
 import matplotlib.colors as colors
 import models
+import os
+
+cwd = os.getcwd()
+parent =  os.path.abspath(os.path.join(cwd,os.pardir))
 
 def plot_mixed(ind,t,inf,df_seropositives,df_mixed):
     disease = [r"Measles",r"Mumps",r"Rubella"]
@@ -36,12 +40,12 @@ def plot_mixed(ind,t,inf,df_seropositives,df_mixed):
     plt.show()
     plt.close()
 
-df_seropositives = pd.read_table("data/seropositives.txt",delimiter=" ",header=None,skiprows=1)
-df_mixed_measles = pd.read_table("output/solutions_mixed_measles.txt",delimiter=" ",header=None,skiprows=0)
-df_mixed_mumps   = pd.read_table("output/solutions_mixed_mumps.txt",delimiter=" ",header=None,skiprows=0)
-df_mixed_rubella = pd.read_table("output/solutions_mixed_rubella.txt",delimiter=" ",header=None,skiprows=0)
+df_seropositives = pd.read_table(parent+"/data/seropositives.txt",delimiter=" ",header=None,skiprows=1)
+df_mixed_measles = pd.read_table(parent+"/output/solutions_mixed_measles.txt",delimiter=" ",header=None,skiprows=0)
+df_mixed_mumps   = pd.read_table(parent+"/output/solutions_mixed_mumps.txt",delimiter=" ",header=None,skiprows=0)
+df_mixed_rubella = pd.read_table(parent+"/output/solutions_mixed_rubella.txt",delimiter=" ",header=None,skiprows=0)
 
-with open("output/num_mixed_test.txt") as f:
+with open(parent+"/output/num_mixed_test.txt") as f:
     lines = f.readlines()
     lim = [line.split()[0] for line in lines]
 

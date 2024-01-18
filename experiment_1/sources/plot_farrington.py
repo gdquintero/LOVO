@@ -2,6 +2,10 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import models
+import os
+
+cwd = os.getcwd()
+parent =  os.path.abspath(os.path.join(cwd,os.pardir))
 
 def plot_solutions(ind,df_seropositives,df_sol,sero_outliers,noutliers):
     t = np.linspace(0,70,1000)
@@ -29,12 +33,12 @@ def plot_solutions(ind,df_seropositives,df_sol,sero_outliers,noutliers):
     plt.show()
     plt.close()
 
-df_seropositives = pd.read_table("data/seropositives.txt",delimiter=" ",header=None,skiprows=1)
-df_mixed_measles = pd.read_table("output/solutions_mixed_measles.txt",delimiter=" ",header=None,skiprows=0)
-df_mixed_mumps   = pd.read_table("output/solutions_mixed_mumps.txt",delimiter=" ",header=None,skiprows=0)
-df_mixed_rubella = pd.read_table("output/solutions_mixed_rubella.txt",delimiter=" ",header=None,skiprows=0)
+df_seropositives = pd.read_table(parent+"/data/seropositives.txt",delimiter=" ",header=None,skiprows=1)
+df_mixed_measles = pd.read_table(parent+"/output/solutions_mixed_measles.txt",delimiter=" ",header=None,skiprows=0)
+df_mixed_mumps   = pd.read_table(parent+"/output/solutions_mixed_mumps.txt",delimiter=" ",header=None,skiprows=0)
+df_mixed_rubella = pd.read_table(parent+"/output/solutions_mixed_rubella.txt",delimiter=" ",header=None,skiprows=0)
 
-with open("output/outliers.txt") as f:
+with open(parent+"/output/outliers.txt") as f:
     lines = f.readlines()
     xdata = [line.split()[0] for line in lines]
 
