@@ -7,8 +7,8 @@ program main
         integer :: counters(2) = 0
         integer :: samples,inf,sup,lovo_order,dim_Imin
         real(kind=8) :: sigma,theta
-        real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),data(:,:),indices(:),sp_vector(:),grad_sp(:),&
-        gp(:),lbnd(:),ubnd(:)
+        real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),data(:,:),indices(:),sp_vector(:),&
+        grad_sp(:),gp(:),lbnd(:),ubnd(:)
         integer, allocatable :: outliers(:)
     end type pdata_type
 
@@ -19,14 +19,15 @@ program main
     character(len=128) :: pwd
     call get_environment_variable('PWD',pwd)
 
-    n = 3
+    n = 4
     
     Open(Unit = 10, File = trim(pwd)//"/../data/cubic.txt", Access = "SEQUENTIAL")
 
     read(10,*) pdata%samples
 
-    allocate(pdata%xtrial(n),pdata%xk(n),pdata%t(pdata%samples),pdata%y(pdata%samples),pdata%indices(pdata%samples),&
-    pdata%sp_vector(pdata%samples),pdata%grad_sp(n),pdata%gp(n),pdata%lbnd(n),pdata%ubnd(n),stat=allocerr)
+    allocate(pdata%xtrial(n),pdata%xk(n),pdata%t(pdata%samples),pdata%y(pdata%samples),&
+    pdata%indices(pdata%samples),pdata%sp_vector(pdata%samples),pdata%grad_sp(n),pdata%gp(n),&
+    pdata%lbnd(n),pdata%ubnd(n),pdata%data(2,pdata%samples),stat=allocerr)
 
     if ( allocerr .ne. 0 ) then
         write(*,*) 'Allocation error.'
@@ -40,11 +41,12 @@ program main
     close(10)
   
     pdata%t(:) = pdata%data(1,:)
+    pdata%y(:) = pdata%data(2,:)
 
-    pdata%inf = 1
-    pdata%sup = 10
+    pdata%inf = 0
+    pdata%sup = 5
 
-    pdata%lbnd(1:n) = 0.0d0
+    pdata%lbnd(1:n) = -1.0d+20
     pdata%ubnd(1:n) = 1.0d+20
  
     allocate(pdata%outliers(pdata%samples*(pdata%sup-pdata%inf+1)),stat=allocerr)
@@ -74,20 +76,20 @@ program main
         implicit none
   
         integer, intent(in) :: n
-        integer :: noutliers,ind
+        integer :: noutliers
         real(kind=8) :: fobj,start,finish
         type(pdata_type), intent(inout) :: pdata
+
+        Open(Unit = 100, File = trim(pwd)//"/../output/solutions_mixed_cubic.txt", ACCESS = "SEQUENTIAL")
   
         do noutliers = pdata%inf, pdata%sup
             ! write(*,*) "LOVO Algorithm for Measles:"
-            ind = 1
-            pdata%y(:) = pdata%data(2,:)
 
             call cpu_time(start)
-            call lovo_algorithm(n,noutliers,pdata%outliers(ind:ind+noutliers-1),pdata,fobj)
+            call lovo_algorithm(n,noutliers,pdata%outliers,pdata,fobj)
             call cpu_time(finish)
 
-            write(100,1000) pdata%xk(1), pdata%xk(2), pdata%xk(3)
+            write(100,1000) pdata%xk(1),pdata%xk(2),pdata%xk(3),pdata%xk(4)
   
             pdata%counters(:) = 0
            
@@ -97,19 +99,11 @@ program main
         write(500,1200) pdata%inf
         write(500,1200) pdata%sup
   
-        1000 format (ES12.6,1X,ES12.6,1X,ES12.6)
+        1000 format (ES13.6,1X,ES13.6,1X,ES13.6,1X,ES13.6)
         1200 format (I2)
 
         close(100)
-        close(200)
-        close(300)
         close(500)
-        close(110)
-        close(111)
-        close(210)
-        close(211)
-        close(310)
-        close(311)
 
   
     end subroutine mixed_test
@@ -123,7 +117,7 @@ program main
         type(pdata_type), intent(inout) :: pdata
   
         real(kind=8) :: sigmin,epsilon,fxk,fxtrial,alpha,gamma,termination
-        integer :: iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo,i
+        integer :: iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo
   
         sigmin = 1.0d-1
         epsilon = 1.0d-3
@@ -137,7 +131,7 @@ program main
   
         pdata%theta = 1.d0
   
-        ! pdata%xk(1:n) = 1.0d-2
+        pdata%xk(1:n) = 1.0d0
   
         call compute_sp(n,pdata%xk,pdata,fxk)      
   
@@ -151,11 +145,7 @@ program main
     
             call compute_grad_sp(n,pdata%xk,pdata,pdata%grad_sp)
     
-            do i = 1, n
-                pdata%gp(i) = max(pdata%lbnd(i),min(pdata%xk(i) - pdata%grad_sp(i),pdata%ubnd(i)))
-            enddo
-    
-            termination = norm2(pdata%gp(1:n) - pdata%xk(1:n))
+            termination = norm2(pdata%grad_sp(1:n))
     
             ! write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination,pdata%dim_Imin
             ! 20 format (I6,5X,I4,4X,ES14.6,3X,ES14.6,2X,I2)
@@ -167,9 +157,7 @@ program main
             pdata%sigma = sigmin
 
             do 
-                do i = 1, n
-                    pdata%xtrial(i) = max(pdata%lbnd(i),min(pdata%xk(i) - (1.d0 / pdata%sigma) * pdata%grad_sp(i),pdata%ubnd(i)))
-                enddo
+                pdata%xtrial(:) = pdata%xk(:) - (1.d0 / pdata%sigma) * pdata%grad_sp(:)
 
                 call compute_sp(n,pdata%xtrial,pdata,fxtrial)
 
@@ -239,38 +227,28 @@ program main
 
     subroutine compute_grad_sp(n,x,pdata,res)
         implicit none
-
+  
         integer,       intent(in) :: n
         real(kind=8),  intent(in) :: x(n)
         real(kind=8),  intent(out) :: res(n)
         type(pdata_type), intent(in) :: pdata
-
-        real(kind=8) :: gaux1,gaux2,a,b,c,ebt,ti
+  
+        real(kind=8) :: gaux,ti
         integer :: i
-
-        a = x(1)
-        b = x(2)
-        c = x(3)
-
+        
         res(:) = 0.0d0
-
+  
         do i = 1, pdata%lovo_order
-            ti = pdata%t(int(pdata%indices(i)))
-            ebt = exp(-b * ti)
-
-            call model(n,x,int(pdata%indices(i)),pdata,gaux1)
-
-            gaux1 = pdata%y(int(pdata%indices(i))) - gaux1
-            gaux2 = exp((a / b) * ti * ebt + (1.0d0 / b) * ((a / b) - c) * (ebt - 1.0d0) - c * ti)
-
-            res(1) = res(1) + gaux1 * gaux2 * ((1.0d0 / b**2) * (ebt * (ti * b + 1.0d0) - 1.0d0))
-
-            res(2) = res(2) + gaux1 * gaux2 * (ebt * ((-2.0d0 * a * ti / b**2) - ((a * ti**2) / b) &
-                    - (2.0d0 * a / b**3) + (c / b**2) + (c * ti / b)) + (2.0d0 * a / b**3) - (c / b**2))
-
-            res(3) = res(3) + gaux1 * gaux2 * ((1.0d0 / b) * (1.0d0 - ebt) - ti)
+           ti = pdata%t(int(pdata%indices(i)))
+           call model(n,x,int(pdata%indices(i)),pdata,gaux)
+           gaux = gaux - pdata%y(int(pdata%indices(i)))
+  
+           res(1) = res(1) + gaux
+           res(2) = res(2) + gaux * ti
+           res(3) = res(3) + gaux * (ti**2)
+           res(4) = res(4) + gaux * (ti**3)
         enddo
-
+  
     end subroutine compute_grad_sp
 
     !*****************************************************************
@@ -282,19 +260,13 @@ program main
         integer,        intent(in) :: n,i
         real(kind=8),   intent(in) :: x(n)
         real(kind=8),   intent(out) :: res
-        real(kind=8) :: a,b,c,ti,ebt
+        real(kind=8) :: ti
 
         type(pdata_type), intent(in) :: pdata
-
-        a = x(1)
-        b = x(2)
-        c = x(3)
+   
         ti = pdata%t(i)
-        ebt = exp(-b * ti)
 
-        res = (a / b) * ti * ebt
-        res = res + (1.0d0 / b) * ((a / b) - c) * (ebt - 1.0d0) 
-        res = 1.0d0 - exp(res - c * ti)
+        res = x(1) + x(2) * ti + x(3) * (ti**2) + x(4) * (ti**3)
 
     end subroutine model
 
