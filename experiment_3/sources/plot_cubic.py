@@ -12,7 +12,6 @@ plt.rcParams.update({'font.size': 13})
 plt.rc('text', usetex=True)
 plt.rc('font', family='serif')
 
-
 def poly(x,t):
     return x[0] + x[1] * t + x[2] * (t**2) + x[3] * (t**3)
 
@@ -36,17 +35,15 @@ for i in range(noutliers):
 
 t = np.linspace(df_data[0].values[0],df_data[0].values[-1],1000)
 
-# plt.plot(df_data[0].values,df_data[1].values,"ok")
-plt.plot(t,poly(df_sol.values[0][:4],t))
-
 for i in range(noutliers):
         point1 = [cubic_outliers[0,i],poly(df_sol.iloc[0].values,cubic_outliers[0,i])]
         point2 = [cubic_outliers[0,i],cubic_outliers[1,i]]
         x_values = [point1[0], point2[0]]
         y_values = [point1[1], point2[1]]
-        # plt.plot(x_values, y_values, 'k', linestyle="--")
         
-l = plt.plot(df_data[0].values,df_data[1].values,"ko")
+l = plt.plot(df_data[0].values,df_data[1].values,"ok")
+
 plt.setp(l, 'markersize', 6)
-    
+plt.plot(t,poly(df_sol.values[0][:4],t))
+plt.plot(cubic_outliers[0],cubic_outliers[1],'ro',mfc='none',ms=10)
 plt.show()

@@ -43,7 +43,7 @@ program main
     pdata%t(:) = pdata%data(1,:)
     pdata%y(:) = pdata%data(2,:)
 
-    pdata%inf = 5
+    pdata%inf = 0
     pdata%sup = 5
 
     pdata%lbnd(1:n) = -1.0d+20
