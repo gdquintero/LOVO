@@ -42,8 +42,8 @@ program farrington
   
     pdata%t(:) = pdata%data(1,:)
 
-    pdata%inf = 1
-    pdata%sup = 10
+    pdata%inf = 4
+    pdata%sup = 4
 
     pdata%lbnd(1:n) = 0.0d0
     pdata%ubnd(1:n) = 1.0d+20
@@ -75,7 +75,7 @@ program farrington
     write(40,100) pdata%sup
 
     do i = 1, 3*pdata%sup
-        write(10,100) pdata%outliers(i)
+        write(40,100) pdata%outliers(i)
     enddo
 
     100 format (I2)
@@ -184,7 +184,6 @@ program farrington
         close(211)
         close(310)
         close(311)
-
   
     end subroutine mixed_test
 

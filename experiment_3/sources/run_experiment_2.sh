@@ -1,5 +1,3 @@
-cd sources
-
 rm -f main
 
 gfortran -c -O3 -Wall sort.f90

@@ -1,5 +1,3 @@
-cd sources
-
 rm -f farrington
 
 gfortran -c -O3 -Wall sort.f90
