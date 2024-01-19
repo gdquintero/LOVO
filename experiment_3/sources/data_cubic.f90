@@ -8,18 +8,19 @@ program data_cubic
     character(len=128) :: pwd
     call get_environment_variable('PWD',pwd)
 
-    noise = 0.2d0
+    noise = 0.1d0
 
     m = 50
     a1 = -noise
     b1 = noise
-    a2 = 3.d0
-    b2 = 5.d0
+    a2 = 2.d0
+    b2 = 4.d0
     inf = -1.d0
     sup = 3.d0
 
-    seed1 = 123456.0d0
-    seed2 = 12345.0d0
+    seed1 = 12345678912345.d0
+    seed2 = 1234567891234.d0
+
     xsol(:) = (/1.d0,1.d0,-3.d0,1.d0/)
 
     Open(Unit = 100, File = trim(pwd)//"/../data/cubic.txt", ACCESS = "SEQUENTIAL")
@@ -33,12 +34,12 @@ program data_cubic
         t = inf + real(i - 1) * delta_t
         ran1 = drand(seed1)
 
-        if (ran1 .lt. 0.1d0) then
+        if (ran1 .le. 0.1d0) then
             ran2 = drand(seed2)
 
             r = a2 + (b2 - a2) * ran2
 
-            if (ran2 .le. 0.5d0) then
+            if (ran2 .le. 0.2d0) then
                 write(100,*) t, poly(xsol,t,4) + r
                 write(200,10) t, poly(xsol,t,4) + r
             else
@@ -69,7 +70,7 @@ program data_cubic
         
     ! enddo
 
-    10 format (F5.3,1X,F6.3)
+    10 format (F6.3,1X,F6.3)
 
     close(100)
     close(200)

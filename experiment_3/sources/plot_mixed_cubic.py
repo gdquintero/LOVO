@@ -38,14 +38,12 @@ ax = fig.add_subplot(111)
 ax.set_prop_cycle(color=[scalarMap.to_rgba(NUM_COLORS-i) for i in range(NUM_COLORS)])
 t = np.linspace(df_data[0].values[0],df_data[0].values[-1],1000)
 
-
-
 for i in range(n):
     plt.plot(t,poly(df_sol.values[i][:4],t),label="o = "+str(inf+i),linewidth=1.5)
     plt.legend(loc='upper left')
 
 l = plt.plot(df_data[0].values,df_data[1].values,"ok")
-plt.setp(l, 'markersize', 6)
+plt.setp(l, 'markersize', 4)
 
 
 plt.show()
