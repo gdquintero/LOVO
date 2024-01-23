@@ -8,3 +8,6 @@ parent =  os.path.abspath(os.path.join(cwd,os.pardir))
 df= pd.read_table(parent+"/data/cubic_latex.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
 df.to_excel(parent+"/data/cubic_latex.xlsx")
 
+df= pd.read_table(parent+"/output/output_latex.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
+df.to_excel(parent+"/output/output_latex.xlsx")
+

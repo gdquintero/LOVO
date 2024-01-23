@@ -5,7 +5,7 @@ program main
 
     type :: pdata_type
         integer :: counters(2) = 0
-        integer :: samples,inf,sup,lovo_order,dim_Imin
+        integer :: samples,inf,sup,lovo_order,dim_Imin,n_train,n_test
         real(kind=8) :: sigma,theta
         real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),data(:,:),indices(:),sp_vector(:),&
         grad_sp(:),gp(:),lbnd(:),ubnd(:)
@@ -25,6 +25,9 @@ program main
 
     read(10,*) pdata%samples
 
+    pdata%n_train = pdata%samples - 20
+    pdata%n_test = pdata%samples - pdata%n_train
+
     allocate(pdata%xtrial(n),pdata%xk(n),pdata%t(pdata%samples),pdata%y(pdata%samples),&
     pdata%indices(pdata%samples),pdata%sp_vector(pdata%samples),pdata%grad_sp(n),pdata%gp(n),&
     pdata%lbnd(n),pdata%ubnd(n),pdata%data(2,pdata%samples),stat=allocerr)
@@ -43,8 +46,8 @@ program main
     pdata%t(:) = pdata%data(1,:)
     pdata%y(:) = pdata%data(2,:)
 
-    pdata%inf = 0
-    pdata%sup = 4
+    pdata%inf = 11
+    pdata%sup = 11
 
     pdata%lbnd(1:n) = -1.0d+20
     pdata%ubnd(1:n) = 1.0d+20
@@ -81,6 +84,7 @@ program main
         type(pdata_type), intent(inout) :: pdata
 
         Open(Unit = 100, File = trim(pwd)//"/../output/solution_cubic.txt", ACCESS = "SEQUENTIAL")
+        Open(Unit = 200, File = trim(pwd)//"/../output/output_latex.txt", ACCESS = "SEQUENTIAL")
   
         do noutliers = pdata%inf, pdata%sup
             ! write(*,*) "LOVO Algorithm for Measles:"
@@ -90,6 +94,7 @@ program main
             call cpu_time(finish)
 
             write(100,1000) pdata%xk(1),pdata%xk(2),pdata%xk(3),pdata%xk(4)
+            write(200,1100) pdata%xk(1),pdata%xk(2),pdata%xk(3),pdata%xk(4),fobj,pdata%counters(1),pdata%counters(2)   
   
             pdata%counters(:) = 0
            
@@ -101,6 +106,7 @@ program main
   
         1000 format (ES13.6,1X,ES13.6,1X,ES13.6,1X,ES13.6)
         1200 format (I2)
+        1100 format (F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,I4,1X,I4)
 
         close(100)
         close(500)
@@ -116,22 +122,21 @@ program main
         real(kind=8), intent(out) :: fobj
         type(pdata_type), intent(inout) :: pdata
   
-        real(kind=8) :: sigmin,epsilon,fxk,fxtrial,alpha,gamma,termination
-        integer :: iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo
+        real(kind=8) :: sigmin,sigmin_old,epsilon,fxk,fxtrial,alpha,gamma,termination
+        integer :: iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo,k
   
-        sigmin = 1.0d-2
+        sigmin = 1.0d-1
+        sigmin_old = sigmin
+        gamma = 1.d+1
         epsilon = 1.0d-3
         alpha = 1.0d-8
-        gamma = 5.d0
         max_iter_lovo = 100000
         max_iter_sub_lovo = 100
         iter_lovo = 0
         iter_sub_lovo = 0
         pdata%lovo_order = pdata%samples - noutliers
   
-        pdata%theta = 1.d0
-  
-        pdata%xk(1:n) =  (/-2.d0,-2.d0,1.d0,-1.d0/)
+        pdata%xk(1:n) =  -1.d0
   
         call compute_sp(n,pdata%xk,pdata,fxk)      
   
@@ -154,7 +159,8 @@ program main
             if (iter_lovo .gt. max_iter_lovo) exit
             
             iter_sub_lovo = 1
-            pdata%sigma = sigmin
+            pdata%sigma = sigmin_old
+            k = 1
 
             do 
                 pdata%xtrial(:) = pdata%xk(:) - (1.d0 / pdata%sigma) * pdata%grad_sp(:)
@@ -164,10 +170,20 @@ program main
                 if (fxtrial .le. (fxk - alpha * norm2(pdata%xtrial(1:n-1) - pdata%xk(1:n-1))**2)) exit
                 if (iter_sub_lovo .gt. max_iter_sub_lovo) exit
 
-                pdata%sigma = gamma * pdata%sigma
+                k = k + 1
+
+                if (k .eq. 2) then
+                    pdata%sigma = sigmin
+                else
+                    pdata%sigma = gamma * pdata%sigma
+                endif
+
+                
                 iter_sub_lovo = iter_sub_lovo + 1
 
             enddo
+
+            sigmin_old = pdata%sigma
   
             fxk = fxtrial
             pdata%xk(:) = pdata%xtrial(:)
@@ -266,7 +282,7 @@ program main
    
         ti = pdata%t(i)
 
-        res = x(1) + x(2) * ti + x(3) * (ti**2) + x(4) * (ti**3)
+        res = x(1) + (x(2) * ti) + (x(3) * (ti**2)) + (x(4) * (ti**3))
 
     end subroutine model
 

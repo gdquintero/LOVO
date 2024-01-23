@@ -1,20 +1,20 @@
 program data_cubic
     implicit none
 
-    real(kind=8) :: seed1,seed2,a1,b1,a2,b2,t,r,ran1,ran2,noise,inf,sup,delta_t
+    real(kind=8) :: seed1,seed2,a,b,r,ran1,ran2,noise,inf,sup,delta_t,percent_out,outlier
     real(kind=8), dimension(4) :: xsol
-    integer :: m,i
+    real(kind=8), allocatable :: t(:),y(:)
+    integer :: m,i,allocerr
 
     character(len=128) :: pwd
     call get_environment_variable('PWD',pwd)
 
     noise = 0.1d0
+    percent_out = 0.5d0
 
-    m = 50
-    a1 = -noise
-    b1 = noise
-    a2 = 2.d0
-    b2 = 4.d0
+    m = 100
+    a = -noise
+    b = noise
     inf = -1.d0
     sup = 3.d0
 
@@ -28,47 +28,42 @@ program data_cubic
 
     write(100,*) m
 
+    allocate(t(m),y(m),stat=allocerr)
+
+    if ( allocerr .ne. 0 ) then
+        write(*,*) 'Allocation error.'
+        stop
+    end if
+
     delta_t = (sup - inf) / real(m-1)
 
     do i = 1, m
-        t = inf + real(i - 1) * delta_t
+        t(i) = inf + real(i - 1) * delta_t
+        y(i) = poly(xsol,t(i),4)
+    enddo
+
+    outlier = maxval(abs(y)) * percent_out
+
+    do i = 1, m
         ran1 = drand(seed1)
 
         if (ran1 .le. 0.1d0) then
-            ran2 = drand(seed2)
-
-            r = a2 + (b2 - a2) * ran2
+            ran2 = drand(seed2)            
 
             if (ran2 .le. 0.2d0) then
-                write(100,*) t, poly(xsol,t,4) + r
-                write(200,10) t, poly(xsol,t,4) + r
+                write(100,*) t(i), y(i) + outlier
+                write(200,10) t(i), y(i) + outlier
             else
-                write(100,*) t, poly(xsol,t,4) - r
-                write(200,10) t, poly(xsol,t,4) - r
+                write(100,*) t(i), y(i) - outlier
+                write(200,10) t(i), y(i) - outlier
             endif
 
         else
-            r = a1 + (b1 - a1) * ran1
-            write(100,*) t, poly(xsol,t,4) + r
-            write(200,10) t, poly(xsol,t,4) + r
+            r = a + (b - a) * ran1
+            write(100,*) t(i), y(i) + r
+            write(200,10) t(i), y(i) + r
         endif
     enddo
-
-    ! do i = 1, m
-    !     t = (i-1) * 4.d0 / (m-1)
-    !     ran1 = drand(seed1)
-
-    !     if (11 .le. i .and. i .le. 20) then
-    !         write(100,*) t, 10.d0
-    !         write(200,10) t, 10.d0
-            
-    !     else
-    !         r = a1 + (b1 - a1) * ran1
-    !         write(100,*) t, poly(xsol,t,4) + r
-    !         write(200,10) t, poly(xsol,t,4) + r
-    !     endif
-        
-    ! enddo
 
     10 format (F6.3,1X,F6.3)
 

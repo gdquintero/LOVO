@@ -31,11 +31,12 @@ plt.rc('text', usetex=True)
 plt.rc('font', family='serif')
 NUM_COLORS = n
 cm = plt.get_cmap('rainbow')
-cNorm  = colors.Normalize(vmin=0, vmax=NUM_COLORS-1)
+cNorm  = colors.Normalize(vmin=0, vmax=NUM_COLORS)
 scalarMap = mplcm.ScalarMappable(norm=cNorm, cmap=cm)
 fig = plt.figure()
 ax = fig.add_subplot(111)
 ax.set_prop_cycle(color=[scalarMap.to_rgba(NUM_COLORS-i) for i in range(NUM_COLORS)])
+
 t = np.linspace(df_data[0].values[0],df_data[0].values[-1],1000)
 
 for i in range(n):
@@ -44,6 +45,6 @@ for i in range(n):
 
 l = plt.plot(df_data[0].values,df_data[1].values,"ok")
 plt.setp(l, 'markersize', 4)
-
-
+plt.xticks(range(-1, 4, 1))
+plt.yticks(range(-4, 5, 2))
 plt.show()

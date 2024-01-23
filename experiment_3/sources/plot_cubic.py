@@ -41,9 +41,11 @@ for i in range(noutliers):
         x_values = [point1[0], point2[0]]
         y_values = [point1[1], point2[1]]
         
-l = plt.plot(df_data[0].values,df_data[1].values,"ok")
 
-plt.setp(l, 'markersize', 6)
-plt.plot(t,poly(df_sol.values[0][:4],t))
+plt.plot(t,poly(df_sol.values[0][:4],t),lw=2)
 plt.plot(cubic_outliers[0],cubic_outliers[1],'ro',mfc='none',ms=10)
+l = plt.plot(df_data[0].values,df_data[1].values,"ok")
+plt.setp(l, 'markersize', 3)
+plt.xticks(range(-1, 4, 1))
+plt.yticks(range(-4, 5, 2))
 plt.show()
