@@ -46,8 +46,8 @@ program main
     pdata%t(:) = pdata%data(1,:)
     pdata%y(:) = pdata%data(2,:)
 
-    pdata%inf = 7
-    pdata%sup = 7
+    pdata%inf = 1
+    pdata%sup = 1
 
     pdata%lbnd(1:n) = -1.0d+20
     pdata%ubnd(1:n) = 1.0d+20
