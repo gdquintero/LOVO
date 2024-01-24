@@ -1,7 +1,7 @@
 program data_cubic
     implicit none
 
-    real(kind=8) :: seed1,seed2,a,b,r,ran1,ran2,noise,inf,sup,delta_t,percent_out,outlier
+    real(kind=8) :: seed1,seed2,a,b,r,ran1,ran2,noise,inf,sup,delta_t,outlier,percent_inf,percent_sup
     real(kind=8), dimension(4) :: xstar
     real(kind=8), allocatable :: t(:),y(:)
     integer :: m,i,allocerr
@@ -10,7 +10,8 @@ program data_cubic
     call get_environment_variable('PWD',pwd)
 
     noise = 0.1d0
-    percent_out = 0.5d0
+    percent_sup = 0.5d0
+    percent_inf = 0.2d0
 
     m = 100
     a = -noise
@@ -42,13 +43,12 @@ program data_cubic
         y(i) = poly(xstar,t(i),4)
     enddo
 
-    outlier = maxval(abs(y)) * percent_out
-
     do i = 1, m
         ran1 = drand(seed1)
 
         if (ran1 .le. 0.1d0) then
-            ran2 = drand(seed2)            
+            ran2 = drand(seed2)   
+            outlier = maxval(abs(y)) * (percent_inf + (percent_sup - percent_inf) * ran2)      
 
             if (ran2 .le. 0.2d0) then
                 write(100,*) t(i), y(i) + outlier
