@@ -28,16 +28,16 @@ program main
     pdata%n_train = pdata%samples - 20
     pdata%n_test = pdata%samples - pdata%n_train
 
-    allocate(pdata%xtrial(n),pdata%xk(n),pdata%t(pdata%samples),pdata%y(pdata%samples),&
-    pdata%indices(pdata%samples),pdata%sp_vector(pdata%samples),pdata%grad_sp(n),pdata%gp(n),&
-    pdata%lbnd(n),pdata%ubnd(n),pdata%data(2,pdata%samples),stat=allocerr)
+    allocate(pdata%xtrial(n),pdata%xk(n),pdata%t(pdata%n_train),pdata%y(pdata%n_train),&
+    pdata%indices(pdata%n_train),pdata%sp_vector(pdata%n_train),pdata%grad_sp(n),pdata%gp(n),&
+    pdata%lbnd(n),pdata%ubnd(n),pdata%data(2,pdata%n_train),stat=allocerr)
 
     if ( allocerr .ne. 0 ) then
         write(*,*) 'Allocation error.'
         stop
     end if
 
-    do i = 1, pdata%samples
+    do i = 1, pdata%n_train
         read(10,*) pdata%data(:,i)
     enddo
 
@@ -46,13 +46,13 @@ program main
     pdata%t(:) = pdata%data(1,:)
     pdata%y(:) = pdata%data(2,:)
 
-    pdata%inf = 11
-    pdata%sup = 11
+    pdata%inf = 7
+    pdata%sup = 7
 
     pdata%lbnd(1:n) = -1.0d+20
     pdata%ubnd(1:n) = 1.0d+20
  
-    allocate(pdata%outliers(pdata%samples*(pdata%sup-pdata%inf+1)),stat=allocerr)
+    allocate(pdata%outliers(pdata%n_train*(pdata%sup-pdata%inf+1)),stat=allocerr)
  
     if ( allocerr .ne. 0 ) then
         write(*,*) 'Allocation error in main program'
@@ -134,7 +134,7 @@ program main
         max_iter_sub_lovo = 100
         iter_lovo = 0
         iter_sub_lovo = 0
-        pdata%lovo_order = pdata%samples - noutliers
+        pdata%lovo_order = pdata%n_train - noutliers
   
         pdata%xk(1:n) =  -1.d0
   
@@ -197,7 +197,7 @@ program main
         write(*,*) "--------------------------------------------------------"
 
   
-        outliers(:) = int(pdata%indices(pdata%samples - noutliers + 1:))
+        outliers(:) = int(pdata%indices(pdata%n_train - noutliers + 1:))
         
   
     end subroutine lovo_algorithm
@@ -218,14 +218,14 @@ program main
 
         pdata%sp_vector(:) = 0.0d0
         kflag = 2
-        pdata%indices(:) = (/(i, i = 1, pdata%samples)/)
+        pdata%indices(:) = (/(i, i = 1, pdata%n_train)/)
 
-        do i = 1, pdata%samples
+        do i = 1, pdata%n_train
             call fi(n,x,i,pdata,pdata%sp_vector(i))
         end do
 
         ! Sorting
-        call DSORT(pdata%sp_vector,pdata%indices,pdata%samples,kflag)
+        call DSORT(pdata%sp_vector,pdata%indices,pdata%n_train,kflag)
 
         ! Lovo function
         res = sum(pdata%sp_vector(1:pdata%lovo_order))
