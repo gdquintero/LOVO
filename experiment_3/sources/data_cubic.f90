@@ -2,7 +2,7 @@ program data_cubic
     implicit none
 
     real(kind=8) :: seed1,seed2,a,b,r,ran1,ran2,noise,inf,sup,delta_t,percent_out,outlier
-    real(kind=8), dimension(4) :: xsol
+    real(kind=8), dimension(4) :: xstar
     real(kind=8), allocatable :: t(:),y(:)
     integer :: m,i,allocerr
 
@@ -21,7 +21,7 @@ program data_cubic
     seed1 = 12345678912345.d0
     seed2 = 1234567891234.d0
 
-    xsol(:) = (/1.d0,1.d0,-3.d0,1.d0/)
+    xstar(:) = (/1.d0,1.d0,-3.d0,1.d0/)
 
     Open(Unit = 100, File = trim(pwd)//"/../data/cubic.txt", ACCESS = "SEQUENTIAL")
     Open(Unit = 200, File = trim(pwd)//"/../data/cubic_latex.txt", ACCESS = "SEQUENTIAL")
@@ -39,7 +39,7 @@ program data_cubic
 
     do i = 1, m
         t(i) = inf + real(i - 1) * delta_t
-        y(i) = poly(xsol,t(i),4)
+        y(i) = poly(xstar,t(i),4)
     enddo
 
     outlier = maxval(abs(y)) * percent_out

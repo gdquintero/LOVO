@@ -7,7 +7,7 @@ program main
         integer :: counters(2) = 0
         integer :: samples,inf,sup,lovo_order,dim_Imin,n_train,n_test
         real(kind=8) :: sigma,theta
-        real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),data(:,:),indices(:),sp_vector(:),&
+        real(kind=8), allocatable :: xstar(:),xtrial(:),xk(:),t(:),y(:),data(:,:),indices(:),sp_vector(:),&
         grad_sp(:),gp(:),lbnd(:),ubnd(:)
         integer, allocatable :: outliers(:)
     end type pdata_type
@@ -28,9 +28,9 @@ program main
     pdata%n_train = pdata%samples - 20
     pdata%n_test = pdata%samples - pdata%n_train
 
-    allocate(pdata%xtrial(n),pdata%xk(n),pdata%t(pdata%n_train),pdata%y(pdata%n_train),&
+    allocate(pdata%xstar(n),pdata%xtrial(n),pdata%xk(n),pdata%t(pdata%n_train),pdata%y(pdata%n_train),&
     pdata%indices(pdata%n_train),pdata%sp_vector(pdata%n_train),pdata%grad_sp(n),pdata%gp(n),&
-    pdata%lbnd(n),pdata%ubnd(n),pdata%data(2,pdata%n_train),stat=allocerr)
+    pdata%data(2,pdata%n_train),stat=allocerr)
 
     if ( allocerr .ne. 0 ) then
         write(*,*) 'Allocation error.'
@@ -42,15 +42,14 @@ program main
     enddo
 
     close(10)
+
+    pdata%xstar(:) = (/1.d0,1.d0,-3.d0,1.d0/)
   
     pdata%t(:) = pdata%data(1,:)
     pdata%y(:) = pdata%data(2,:)
 
-    pdata%inf = 1
-    pdata%sup = 1
-
-    pdata%lbnd(1:n) = -1.0d+20
-    pdata%ubnd(1:n) = 1.0d+20
+    pdata%inf = 0
+    pdata%sup = 7
  
     allocate(pdata%outliers(pdata%n_train*(pdata%sup-pdata%inf+1)),stat=allocerr)
  
@@ -94,7 +93,8 @@ program main
             call cpu_time(finish)
 
             write(100,1000) pdata%xk(1),pdata%xk(2),pdata%xk(3),pdata%xk(4)
-            write(200,1100) pdata%xk(1),pdata%xk(2),pdata%xk(3),pdata%xk(4),fobj,pdata%counters(1),pdata%counters(2)   
+            write(200,1100) pdata%xk(1),pdata%xk(2),pdata%xk(3),pdata%xk(4),fobj,norm2(pdata%xk-pdata%xstar),&
+            maxval(abs(pdata%xk-pdata%xstar)),pdata%counters(1),pdata%counters(2)
   
             pdata%counters(:) = 0
            
@@ -106,7 +106,7 @@ program main
   
         1000 format (ES13.6,1X,ES13.6,1X,ES13.6,1X,ES13.6)
         1200 format (I2)
-        1100 format (F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,I4,1X,I4)
+        1100 format (F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,I4,1X,I4)
 
         close(100)
         close(500)
@@ -159,7 +159,8 @@ program main
             if (iter_lovo .gt. max_iter_lovo) exit
             
             iter_sub_lovo = 1
-            pdata%sigma = sigmin_old
+            ! pdata%sigma = sigmin_old
+            pdata%sigma = sigmin
             k = 1
 
             do 
@@ -172,13 +173,13 @@ program main
 
                 k = k + 1
 
-                if (k .eq. 2) then
-                    pdata%sigma = sigmin
-                else
-                    pdata%sigma = gamma * pdata%sigma
-                endif
+                ! if (k .eq. 2) then
+                !     pdata%sigma = sigmin
+                ! else
+                !     pdata%sigma = gamma * pdata%sigma
+                ! endif
 
-                
+                pdata%sigma = gamma * pdata%sigma
                 iter_sub_lovo = iter_sub_lovo + 1
 
             enddo
