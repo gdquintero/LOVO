@@ -48,8 +48,8 @@ program main
     pdata%t(:) = pdata%data(1,:)
     pdata%y(:) = pdata%data(2,:)
 
-    pdata%inf = 7
-    pdata%sup = 7
+    pdata%inf = 0
+    pdata%sup = 10
  
     allocate(pdata%outliers(pdata%n_train*(pdata%sup-pdata%inf+1)),stat=allocerr)
  
@@ -84,6 +84,7 @@ program main
 
         Open(Unit = 100, File = trim(pwd)//"/../output/solution_cubic.txt", ACCESS = "SEQUENTIAL")
         Open(Unit = 200, File = trim(pwd)//"/../output/output_latex.txt", ACCESS = "SEQUENTIAL")
+        Open(Unit = 300, File = trim(pwd)//"/../output/log_sp.txt", ACCESS = "SEQUENTIAL")
   
         do noutliers = pdata%inf, pdata%sup
             ! write(*,*) "LOVO Algorithm for Measles:"
@@ -95,6 +96,7 @@ program main
             write(100,1000) pdata%xk(1),pdata%xk(2),pdata%xk(3),pdata%xk(4)
             write(200,1100) pdata%xk(1),pdata%xk(2),pdata%xk(3),pdata%xk(4),fobj,norm2(pdata%xk-pdata%xstar),&
             maxval(abs(pdata%xk-pdata%xstar)),pdata%counters(1),pdata%counters(2)
+            write(300,1300) fobj
   
             pdata%counters(:) = 0
            
@@ -107,8 +109,11 @@ program main
         1000 format (ES13.6,1X,ES13.6,1X,ES13.6,1X,ES13.6)
         1200 format (I2)
         1100 format (F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,I4,1X,I4)
+        1300 format (ES13.6)
 
         close(100)
+        close(200)
+        close(300)
         close(500)
 
   

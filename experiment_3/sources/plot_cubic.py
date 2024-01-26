@@ -46,10 +46,10 @@ plt.plot(t,poly(df_sol.values[0][:4],t),lw=2)
 plt.plot(cubic_outliers[0],cubic_outliers[1],'ro',mfc='none',ms=10)
 
 l1 = plt.plot(df_data[0].values[:80],df_data[1].values[:80],"ok")
-plt.setp(l1, 'markersize', 3)
+plt.setp(l1, 'markersize', 4)
 
-l2 = plt.plot(df_data[0].values[80:],df_data[1].values[80:],"ok",marker="s",mfc='none',ms=10)
-plt.setp(l2, 'markersize', 3)
+l2 = plt.plot(df_data[0].values[80:],df_data[1].values[80:],"o",color="grey",marker="s")
+plt.setp(l2, 'markersize', 4)
 
 plt.xticks(range(-1, 4, 1))
 plt.yticks(range(-4, 5, 2))
