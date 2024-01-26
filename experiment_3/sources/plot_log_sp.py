@@ -38,4 +38,4 @@ n = sup - inf + 1
 x = np.linspace(inf,sup,n)
 y = df_sp[0].values
 
-plot2()
+plot1()
