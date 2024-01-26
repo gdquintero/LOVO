@@ -22,5 +22,12 @@ n = sup - inf + 1
 
 t = np.linspace(inf,sup,n)
 
-plt.plot(t,np.log(df_sp[0].values),"ko",ls=":")
+fig = plt.figure()
+ax = fig.subplots(1, 1)
+ax.loglog(t,df_sp[0].values,"ko",ls=":")
+ax.set_xscale('linear')
+ax.set_xlim(inf-0.5,sup+0.5)
+ax.set_ylim(min(np.log10(df_sp[0].values)),max(np.log10(df_sp[0].values))+10)
+
 plt.show()
+
