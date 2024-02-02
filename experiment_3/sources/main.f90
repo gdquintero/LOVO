@@ -210,7 +210,23 @@ program main
 
     !*****************************************************************
     !*****************************************************************
-    subroutine rmsd()
+    subroutine rmsd(o,p,n)
+        implicit none
+
+        integer,        intent(in) :: n
+        real(kind=8),   intent(in) :: o(n),p(n)
+        real(kind=8),   intent(out) :: res
+        integer :: i
+
+        res = 0.d0
+
+        do i = 1,n
+            res = res + (o(i)-p(i))**2
+        enddo
+
+        res = sqrt(res / n)
+
+    end subroutine rmsd
 
 
     !*****************************************************************
