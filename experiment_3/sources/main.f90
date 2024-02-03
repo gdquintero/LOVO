@@ -8,7 +8,7 @@ program main
         integer :: samples,inf,sup,lovo_order,dim_Imin,n_train,n_test
         real(kind=8) :: sigma,theta
         real(kind=8), allocatable :: xstar(:),xtrial(:),xk(:),t(:),y(:),data(:,:),indices(:),sp_vector(:),&
-        grad_sp(:),gp(:),lbnd(:),ubnd(:)
+        grad_sp(:),gp(:),lbnd(:),ubnd(:),pred(:)
         integer, allocatable :: outliers(:)
     end type pdata_type
 
@@ -28,16 +28,16 @@ program main
     pdata%n_train = pdata%samples - 20
     pdata%n_test = pdata%samples - pdata%n_train
 
-    allocate(pdata%xstar(n),pdata%xtrial(n),pdata%xk(n),pdata%t(pdata%n_train),pdata%y(pdata%n_train),&
+    allocate(pdata%xstar(n),pdata%xtrial(n),pdata%xk(n),pdata%t(pdata%samples),pdata%y(pdata%samples),&
     pdata%indices(pdata%n_train),pdata%sp_vector(pdata%n_train),pdata%grad_sp(n),pdata%gp(n),&
-    pdata%data(2,pdata%n_train),stat=allocerr)
+    pdata%data(2,pdata%samples),pdata%pred(pdata%n_test),stat=allocerr)
 
     if ( allocerr .ne. 0 ) then
         write(*,*) 'Allocation error.'
         stop
     end if
 
-    do i = 1, pdata%n_train
+    do i = 1, pdata%samples
         read(10,*) pdata%data(:,i)
     enddo
 
@@ -78,8 +78,8 @@ program main
         implicit none
   
         integer, intent(in) :: n
-        integer :: noutliers
-        real(kind=8) :: fobj,start,finish
+        integer :: noutliers,i
+        real(kind=8) :: fobj,start,finish,err_msd
         type(pdata_type), intent(inout) :: pdata
 
         Open(Unit = 100, File = trim(pwd)//"/../output/solution_cubic.txt", ACCESS = "SEQUENTIAL")
@@ -93,9 +93,15 @@ program main
             call lovo_algorithm(n,noutliers,pdata%outliers,pdata,fobj)
             call cpu_time(finish)
 
+            do i = 1, pdata%n_test
+                call model(n,pdata%xk,i+pdata%n_train,pdata,pdata%pred(i))  
+            enddo
+        
+            call rmsd(n,pdata%data(2,pdata%n_train:),pdata%pred,err_msd)
+
             write(100,1000) pdata%xk(1),pdata%xk(2),pdata%xk(3),pdata%xk(4)
             write(200,1100) pdata%xk(1),pdata%xk(2),pdata%xk(3),pdata%xk(4),fobj,norm2(pdata%xk-pdata%xstar),&
-            maxval(abs(pdata%xk-pdata%xstar)),pdata%counters(1),pdata%counters(2)
+            maxval(abs(pdata%xk-pdata%xstar)),pdata%counters(1),pdata%counters(2),err_msd
             write(300,1300) fobj
   
             pdata%counters(:) = 0
@@ -108,7 +114,7 @@ program main
   
         1000 format (ES13.6,1X,ES13.6,1X,ES13.6,1X,ES13.6)
         1200 format (I2)
-        1100 format (F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,I4,1X,I4)
+        1100 format (F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,I4,1X,I4,1X,F6.3)
         1300 format (ES13.6)
 
         close(100)
@@ -145,10 +151,10 @@ program main
   
         call compute_sp(n,pdata%xk,pdata,fxk)      
   
-        write(*,*) "--------------------------------------------------------"
-        write(*,10) "#iter","#init","Sp(xstar)","Stop criteria","#Imin"
-        10 format (2X,A5,4X,A5,6X,A9,6X,A13,2X,A5)
-        write(*,*) "--------------------------------------------------------"
+        ! write(*,*) "--------------------------------------------------------"
+        ! write(*,10) "#iter","#init","Sp(xstar)","Stop criteria","#Imin"
+        ! 10 format (2X,A5,4X,A5,6X,A9,6X,A13,2X,A5)
+        ! write(*,*) "--------------------------------------------------------"
   
         do
             iter_lovo = iter_lovo + 1
@@ -157,8 +163,8 @@ program main
     
             termination = norm2(pdata%grad_sp(1:n))
     
-            write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination,pdata%dim_Imin
-            20 format (I6,5X,I4,4X,ES14.6,3X,ES14.6,2X,I2)
+            ! write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination,pdata%dim_Imin
+            ! 20 format (I6,5X,I4,4X,ES14.6,3X,ES14.6,2X,I2)
     
             if (termination .lt. epsilon) exit
             if (iter_lovo .gt. max_iter_lovo) exit
@@ -200,7 +206,7 @@ program main
         fobj = fxtrial
         pdata%counters(1) = iter_lovo
   
-        write(*,*) "--------------------------------------------------------"
+        ! write(*,*) "--------------------------------------------------------"
 
   
         outliers(:) = int(pdata%indices(pdata%n_train - noutliers + 1:))
@@ -210,7 +216,8 @@ program main
 
     !*****************************************************************
     !*****************************************************************
-    subroutine rmsd(o,p,n)
+    
+    subroutine rmsd(n,o,p,res)
         implicit none
 
         integer,        intent(in) :: n
@@ -227,7 +234,6 @@ program main
         res = sqrt(res / n)
 
     end subroutine rmsd
-
 
     !*****************************************************************
     !*****************************************************************

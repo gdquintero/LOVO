@@ -48,7 +48,7 @@ plt.plot(cubic_outliers[0],cubic_outliers[1],'ro',mfc='none',ms=10)
 l1 = plt.plot(df_data[0].values[:80],df_data[1].values[:80],"ok")
 plt.setp(l1, 'markersize', 4)
 
-l2 = plt.plot(df_data[0].values[80:],df_data[1].values[80:],"o",color="grey",marker="s")
+l2 = plt.plot(df_data[0].values[80:],df_data[1].values[80:],"ok",mfc='none',ms=10,marker="s")
 plt.setp(l2, 'markersize', 4)
 
 plt.xticks(range(-1, 4, 1))
