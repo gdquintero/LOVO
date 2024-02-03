@@ -8,7 +8,7 @@ program main
         integer :: samples,inf,sup,lovo_order,dim_Imin,n_train,n_test
         real(kind=8) :: sigma,theta
         real(kind=8), allocatable :: xstar(:),xtrial(:),xk(:),t(:),y(:),data(:,:),indices(:),sp_vector(:),&
-        grad_sp(:),gp(:),lbnd(:),ubnd(:),pred(:)
+        grad_sp(:),gp(:),lbnd(:),ubnd(:),pred(:),re(:)
         integer, allocatable :: outliers(:)
     end type pdata_type
 
@@ -30,7 +30,7 @@ program main
 
     allocate(pdata%xstar(n),pdata%xtrial(n),pdata%xk(n),pdata%t(pdata%samples),pdata%y(pdata%samples),&
     pdata%indices(pdata%n_train),pdata%sp_vector(pdata%n_train),pdata%grad_sp(n),pdata%gp(n),&
-    pdata%data(2,pdata%samples),pdata%pred(pdata%n_test),stat=allocerr)
+    pdata%data(2,pdata%samples),pdata%pred(pdata%n_test),pdata%re(pdata%n_test),stat=allocerr)
 
     if ( allocerr .ne. 0 ) then
         write(*,*) 'Allocation error.'
@@ -85,6 +85,7 @@ program main
         Open(Unit = 100, File = trim(pwd)//"/../output/solution_cubic.txt", ACCESS = "SEQUENTIAL")
         Open(Unit = 200, File = trim(pwd)//"/../output/output_latex.txt", ACCESS = "SEQUENTIAL")
         Open(Unit = 300, File = trim(pwd)//"/../output/log_sp.txt", ACCESS = "SEQUENTIAL")
+        Open(Unit = 400, File = trim(pwd)//"/../output/relative_error.txt", ACCESS = "SEQUENTIAL")
   
         do noutliers = pdata%inf, pdata%sup
             ! write(*,*) "LOVO Algorithm for Measles:"
@@ -95,14 +96,17 @@ program main
 
             do i = 1, pdata%n_test
                 call model(n,pdata%xk,i+pdata%n_train,pdata,pdata%pred(i))  
+                call relative_error(pdata%y(i+pdata%n_train),pdata%pred(i),pdata%re(i))
             enddo
         
             call rmsd(n,pdata%data(2,pdata%n_train:),pdata%pred,err_msd)
 
             write(100,1000) pdata%xk(1),pdata%xk(2),pdata%xk(3),pdata%xk(4)
             write(200,1100) pdata%xk(1),pdata%xk(2),pdata%xk(3),pdata%xk(4),fobj,norm2(pdata%xk-pdata%xstar),&
-            maxval(abs(pdata%xk-pdata%xstar)),pdata%counters(1),pdata%counters(2),err_msd
+            maxval(abs(pdata%xk-pdata%xstar)),err_msd,pdata%counters(1),pdata%counters(2)
             write(300,1300) fobj
+
+            write(400,1400) pdata%re
   
             pdata%counters(:) = 0
            
@@ -114,12 +118,14 @@ program main
   
         1000 format (ES13.6,1X,ES13.6,1X,ES13.6,1X,ES13.6)
         1200 format (I2)
-        1100 format (F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,I4,1X,I4,1X,F6.3)
+        1100 format (F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,I4,1X,I4)
         1300 format (ES13.6)
+        1400 format (20ES13.6)
 
         close(100)
         close(200)
         close(300)
+        close(400)
         close(500)
 
   
@@ -234,6 +240,20 @@ program main
         res = sqrt(res / n)
 
     end subroutine rmsd
+
+    !*****************************************************************
+    !*****************************************************************
+
+    subroutine relative_error(o,p,res)
+        implicit none
+
+        real(kind=8),   intent(in) :: o,p
+        real(kind=8),   intent(out):: res
+
+        res = abs(p - o) / abs(o)
+        ! res = res * 100.d0
+    
+    end subroutine relative_error
 
     !*****************************************************************
     !*****************************************************************
