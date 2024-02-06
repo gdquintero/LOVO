@@ -28,7 +28,7 @@ program main
     pdata%n_train = pdata%samples - 20
     pdata%n_test = pdata%samples - pdata%n_train
 
-    allocate(pdata%xstar(n),pdata%xtrial(n),pdata%xk(n),pdata%t(pdata%samples),pdata%y(pdata%samples),&
+    allocate(pdata%xstar(n),pdata%xtrial(n),pdata%xk(n),pdata%t(pdata%n_train),pdata%y(pdata%n_train),&
     pdata%indices(pdata%n_train),pdata%sp_vector(pdata%n_train),pdata%grad_sp(n),pdata%gp(n),&
     pdata%data(2,pdata%samples),pdata%pred(pdata%n_test),pdata%re(pdata%n_test),stat=allocerr)
 
@@ -45,8 +45,8 @@ program main
 
     pdata%xstar(:) = (/1.d0,1.d0,-3.d0,1.d0/)
   
-    pdata%t(:) = pdata%data(1,:)
-    pdata%y(:) = pdata%data(2,:)
+    pdata%t(1:pdata%n_train) = pdata%data(1,1:pdata%n_train)
+    pdata%y(1:pdata%n_train) = pdata%data(2,1:pdata%n_train)
 
     pdata%inf = 0
     pdata%sup = 10
@@ -79,7 +79,7 @@ program main
   
         integer, intent(in) :: n
         integer :: noutliers,i
-        real(kind=8) :: fobj,start,finish,err_msd
+        real(kind=8) :: fobj,start,finish,err_msd,ti
         type(pdata_type), intent(inout) :: pdata
 
         Open(Unit = 100, File = trim(pwd)//"/../output/solution_cubic.txt", ACCESS = "SEQUENTIAL")
@@ -95,11 +95,12 @@ program main
             call cpu_time(finish)
 
             do i = 1, pdata%n_test
-                call model(n,pdata%xk,i+pdata%n_train,pdata,pdata%pred(i))  
-                call relative_error(pdata%y(i+pdata%n_train),pdata%pred(i),pdata%re(i))
+                ti = pdata%data(1,i+pdata%n_train)
+                pdata%pred(i) = pdata%xk(1) + (pdata%xk(2) * ti) + (pdata%xk(3) * (ti**2)) + (pdata%xk(4) * (ti**3))
+                call relative_error(pdata%data(2,i+pdata%n_train),pdata%pred(i),pdata%re(i))
             enddo
         
-            call rmsd(n,pdata%data(2,pdata%n_train:),pdata%pred,err_msd)
+            call rmsd(n,pdata%data(2,pdata%n_train + 1:),pdata%pred,err_msd)
 
             write(100,1000) pdata%xk(1),pdata%xk(2),pdata%xk(3),pdata%xk(4)
             write(200,1100) pdata%xk(1),pdata%xk(2),pdata%xk(3),pdata%xk(4),fobj,norm2(pdata%xk-pdata%xstar),&
