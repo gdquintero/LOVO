@@ -7,7 +7,7 @@ program main
         integer :: counters(2) = 0
         integer :: samples,inf,sup,lovo_order,dim_Imin,n_train,n_test
         real(kind=8) :: sigma,theta
-        real(kind=8), allocatable :: xstar(:),xtrial(:),xk(:),t(:),y(:),data(:,:),indices(:),sp_vector(:),&
+        real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),data(:,:),indices(:),sp_vector(:),&
         grad_sp(:),gp(:),lbnd(:),ubnd(:),pred(:),re(:)
         integer, allocatable :: outliers(:)
     end type pdata_type
@@ -28,7 +28,7 @@ program main
     pdata%n_train = pdata%samples - 20
     pdata%n_test = pdata%samples - pdata%n_train
 
-    allocate(pdata%xstar(n),pdata%xtrial(n),pdata%xk(n),pdata%t(pdata%n_train),pdata%y(pdata%n_train),&
+    allocate(pdata%xtrial(n),pdata%xk(n),pdata%t(pdata%n_train),pdata%y(pdata%n_train),&
     pdata%indices(pdata%n_train),pdata%sp_vector(pdata%n_train),pdata%grad_sp(n),pdata%gp(n),&
     pdata%data(2,pdata%samples),pdata%pred(pdata%n_test),pdata%re(pdata%n_test),stat=allocerr)
 
@@ -42,8 +42,6 @@ program main
     enddo
 
     close(10)
-
-    pdata%xstar(:) = (/1.d0,1.d0,-3.d0,1.d0/)
   
     pdata%t(1:pdata%n_train) = pdata%data(1,1:pdata%n_train)
     pdata%y(1:pdata%n_train) = pdata%data(2,1:pdata%n_train)
@@ -60,76 +58,8 @@ program main
  
     pdata%outliers(:) = 0
 
-    call mixed_test(n,pdata)
-
-    Open(Unit = 10, File =trim(pwd)//"/../output/outliers.txt", ACCESS = "SEQUENTIAL")
-
-    write(10,100) pdata%sup
-
-    do i = 1, pdata%sup
-        write(10,100) pdata%outliers(i)
-    enddo
-
-    100 format (I2)
 
     contains
-
-    subroutine mixed_test(n,pdata)
-        implicit none
-  
-        integer, intent(in) :: n
-        integer :: noutliers,i
-        real(kind=8) :: fobj,start,finish,err_msd,ti
-        type(pdata_type), intent(inout) :: pdata
-
-        Open(Unit = 100, File = trim(pwd)//"/../output/solution_cubic.txt", ACCESS = "SEQUENTIAL")
-        Open(Unit = 200, File = trim(pwd)//"/../output/output_latex.txt", ACCESS = "SEQUENTIAL")
-        Open(Unit = 300, File = trim(pwd)//"/../output/log_sp.txt", ACCESS = "SEQUENTIAL")
-        Open(Unit = 400, File = trim(pwd)//"/../output/relative_error.txt", ACCESS = "SEQUENTIAL")
-  
-        do noutliers = pdata%inf, pdata%sup
-            ! write(*,*) "LOVO Algorithm for Measles:"
-
-            call cpu_time(start)
-            call lovo_algorithm(n,noutliers,pdata%outliers,pdata,fobj)
-            call cpu_time(finish)
-
-            do i = 1, pdata%n_test
-                ti = pdata%data(1,i+pdata%n_train)
-                pdata%pred(i) = pdata%xk(1) + (pdata%xk(2) * ti) + (pdata%xk(3) * (ti**2)) + (pdata%xk(4) * (ti**3))
-                call relative_error(pdata%data(2,i+pdata%n_train),pdata%pred(i),pdata%re(i))
-            enddo
-        
-            call rmsd(n,pdata%data(2,pdata%n_train + 1:),pdata%pred,err_msd)
-
-            write(100,1000) pdata%xk(1),pdata%xk(2),pdata%xk(3),pdata%xk(4)
-            write(200,1100) pdata%xk(1),pdata%xk(2),pdata%xk(3),pdata%xk(4),fobj,norm2(pdata%xk-pdata%xstar),&
-            maxval(abs(pdata%xk-pdata%xstar)),err_msd,pdata%counters(1),pdata%counters(2)
-            write(300,1300) fobj
-
-            write(400,1400) pdata%re
-  
-            pdata%counters(:) = 0
-           
-        enddo
-  
-        Open(Unit = 500, File = trim(pwd)//"/../output/num_mixed_test.txt", ACCESS = "SEQUENTIAL")
-        write(500,1200) pdata%inf
-        write(500,1200) pdata%sup
-  
-        1000 format (ES13.6,1X,ES13.6,1X,ES13.6,1X,ES13.6)
-        1200 format (I2)
-        1100 format (F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,I4,1X,I4)
-        1300 format (ES13.6)
-        1400 format (20ES13.6)
-
-        close(100)
-        close(200)
-        close(300)
-        close(400)
-        close(500)
-  
-    end subroutine mixed_test
 
     subroutine lovo_algorithm(n,noutliers,outliers,pdata,fobj)
         implicit none
@@ -301,20 +231,20 @@ program main
         real(kind=8),  intent(out) :: res(n)
         type(pdata_type), intent(in) :: pdata
   
-        real(kind=8) :: gaux,ti
+        real(kind=8) :: gaux,ti,tm
         integer :: i
         
         res(:) = 0.0d0
   
         do i = 1, pdata%lovo_order
-           ti = pdata%t(int(pdata%indices(i)))
-           call model(n,x,int(pdata%indices(i)),pdata,gaux)
-           gaux = gaux - pdata%y(int(pdata%indices(i)))
-  
-           res(1) = res(1) + gaux
-           res(2) = res(2) + gaux * ti
-           res(3) = res(3) + gaux * (ti**2)
-           res(4) = res(4) + gaux * (ti**3)
+            ti = pdata%t(int(pdata%indices(i)))
+            tm = pdata%t(pdata%samples)
+            call model(n,x,int(pdata%indices(i)),pdata,gaux)
+            gaux = gaux - pdata%y(int(pdata%indices(i)))
+            
+            res(1) = res(1) + gaux * (ti - tm)
+            res(2) = res(2) + gaux * ((ti - tm)**2)
+            res(3) = res(3) + gaux * ((ti - tm)**3)
         enddo
   
     end subroutine compute_grad_sp
@@ -328,13 +258,15 @@ program main
         integer,        intent(in) :: n,i
         real(kind=8),   intent(in) :: x(n)
         real(kind=8),   intent(out) :: res
-        real(kind=8) :: ti
+        real(kind=8) :: ti,tm
 
         type(pdata_type), intent(in) :: pdata
    
         ti = pdata%t(i)
+        tm = pdata%t(pdata%samples)
 
-        res = x(1) + (x(2) * ti) + (x(3) * (ti**2)) + (x(4) * (ti**3))
+        res = pdata%y(pdata%samples) + x(1) * (ti - tm) + &
+            x(2) * ((ti - tm)**2) + x(3) * ((ti - tm)**3)
 
     end subroutine model
 
