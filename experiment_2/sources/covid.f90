@@ -4,60 +4,106 @@ program main
     implicit none
 
     type :: pdata_type
-        integer :: counters(2) = 0
-        integer :: samples,inf,sup,lovo_order,dim_Imin,n_train,n_test
+        integer :: counters(3) = 0
+        integer :: samples,lovo_order,n_train,n_test,noutliers,days_test,dim_Imin
         real(kind=8) :: sigma,theta
-        real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),data(:,:),indices(:),sp_vector(:),&
-        grad_sp(:),gp(:),lbnd(:),ubnd(:),pred(:),re(:)
+        real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),indices(:),sp_vector(:),grad_sp(:),&
+                                    gp(:),train_set(:),test_set(:),data_test(:,:),data_train(:,:)
         integer, allocatable :: outliers(:)
     end type pdata_type
 
+    real(kind=8), allocatable :: covid_data(:)
     type(pdata_type), target :: pdata
 
-    integer :: allocerr,i,n
+    integer :: allocerr,i,j,n,n_data
 
     character(len=128) :: pwd
     call get_environment_variable('PWD',pwd)
 
-    n = 4
-    
-    Open(Unit = 10, File = trim(pwd)//"/../data/cubic.txt", Access = "SEQUENTIAL")
+   ! Number of variables
+    n = 3
 
-    read(10,*) pdata%samples
-
-    pdata%n_train = pdata%samples - 20
-    pdata%n_test = pdata%samples - pdata%n_train
-
-    allocate(pdata%xtrial(n),pdata%xk(n),pdata%t(pdata%n_train),pdata%y(pdata%n_train),&
-    pdata%indices(pdata%n_train),pdata%sp_vector(pdata%n_train),pdata%grad_sp(n),pdata%gp(n),&
-    pdata%data(2,pdata%samples),pdata%pred(pdata%n_test),pdata%re(pdata%n_test),stat=allocerr)
-
+   ! Set parameters 
+    pdata%n_train  = 30
+    pdata%n_test   = 10
+    pdata%days_test = 100
+ 
+    Open(Unit = 10, File = trim(pwd)//"/../data/covid.txt", Access = "SEQUENTIAL")
+    read(10,*) n_data
+ 
+    allocate(pdata%data_train(pdata%days_test,pdata%n_train),pdata%data_test(pdata%days_test,pdata%n_test),&
+    covid_data(n_data),stat=allocerr)
+ 
     if ( allocerr .ne. 0 ) then
-        write(*,*) 'Allocation error.'
-        stop
+       write(*,*) 'Allocation error.'
+       stop
     end if
+ 
+    do i = 1, n_data
+       read(10,*) covid_data(i)
+    enddo
+ 
+    close(10)
+ 
+    call mount_dataset(pdata,covid_data)
 
-    do i = 1, pdata%samples
-        read(10,*) pdata%data(:,i)
+    do j = 1, pdata%n_train
+        print*, pdata%data_train(100,j)
     enddo
 
-    close(10)
-  
-    pdata%t(1:pdata%n_train) = pdata%data(1,1:pdata%n_train)
-    pdata%y(1:pdata%n_train) = pdata%data(2,1:pdata%n_train)
-
-    pdata%inf = 0
-    pdata%sup = 10
+    print*
+    do j = 1, pdata%n_test
+        print*, pdata%data_test(100,j)
+    enddo
  
-    allocate(pdata%outliers(pdata%n_train*(pdata%sup-pdata%inf+1)),stat=allocerr)
+    ! allocate(pdata%train_set(pdata%n_train),pdata%test_set(pdata%n_test),&
+    ! pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),pdata%gp(n),stat=allocerr)
  
-    if ( allocerr .ne. 0 ) then
-        write(*,*) 'Allocation error in main program'
-        stop
-    end if
+    ! if ( allocerr .ne. 0 ) then
+    !    write(*,*) 'Allocation error.'
+    !    stop
+    ! end if
  
-    pdata%outliers(:) = 0
-
+    ! pdata%samples = pdata%n_train
+    ! pdata%noutliers = 3*int(dble(pdata%samples) / 7.0d0)
+ 
+    ! allocate(pdata%t(pdata%samples),pdata%y(pdata%samples),pdata%indices(pdata%samples),&
+    !          pdata%sp_vector(pdata%samples),pdata%outliers(pdata%noutliers),stat=allocerr)
+ 
+    ! if ( allocerr .ne. 0 ) then
+    !    write(*,*) 'Allocation error.'
+    !    stop
+    ! end if
+ 
+    ! do k = 1, pdata%days_test
+ 
+    !    pdata%train_set(:)   = pdata%data_train(k,:)
+    !    pdata%test_set(:)    = pdata%data_test(k,:)
+    !    pdata%t(:)           = (/(i, i = 1, pdata%samples)/)
+    !    pdata%indices(:)     = (/(i, i = 1, pdata%samples)/)
+    !    pdata%y(:)           = pdata%train_set(:)
+ 
+    !    call lovo_algorithm()
+    !    Open(Unit = 100, File = "output/solutions_covid_cubic_100.txt", ACCESS = "SEQUENTIAL")
+    !    write(100,10) pdata%xk(1), pdata%xk(2), pdata%xk(3)
+ 
+    !    print*, k * 100/pdata%days_test,"%"
+ 
+    ! enddo
+ 
+    ! 10 format (ES13.6,1X,ES13.6,1X,ES13.6) 
+    ! close(100)
+ 
+    ! deallocate(pdata%t,pdata%y,pdata%indices,pdata%sp_vector,pdata%outliers,stat=allocerr)
+       
+    ! if ( allocerr .ne. 0 ) then
+    !    write(*,*) 'Deallocation error.'
+    !    stop
+    ! end if
+ 
+    ! call export(pdata)
+    
+    stop
 
     contains
 
@@ -149,6 +195,23 @@ program main
         
   
     end subroutine lovo_algorithm
+
+    !*****************************************************************
+    !*****************************************************************
+    subroutine mount_dataset(pdata,covid_data)
+        implicit none
+  
+        type(pdata_type), intent(inout) :: pdata
+        real(kind=8), intent(in) :: covid_data(:)
+  
+        integer :: i
+  
+        do i = 1, 100
+           pdata%data_train(i,:) = covid_data(i:i+pdata%n_train-1)
+           pdata%data_test(i,:) = covid_data(i+pdata%n_train:i+pdata%n_train+pdata%n_test-1)    
+        enddo
+  
+     end subroutine mount_dataset
 
     !*****************************************************************
     !*****************************************************************
