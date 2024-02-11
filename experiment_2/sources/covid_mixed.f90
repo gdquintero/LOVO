@@ -26,10 +26,13 @@ program main
    ! Set parameters 
     pdata%n_train  = 30
     pdata%n_test   = 10
-    pdata%days_test = 100
+    pdata%days_test = 10
  
     Open(Unit = 10, File = trim(pwd)//"/../data/covid.txt", Access = "SEQUENTIAL")
+    Open(Unit = 20, File = trim(pwd)//"/../data/n_train_test.txt", Access = "SEQUENTIAL")
     read(10,*) n_data
+    write(20,*) pdata%n_train
+    write(20,*) pdata%n_test
  
     allocate(pdata%data_train(pdata%days_test,pdata%n_train),pdata%data_test(pdata%days_test,pdata%n_test),&
     covid_data(n_data),stat=allocerr)
@@ -44,6 +47,7 @@ program main
     enddo
  
     close(10)
+    close(20)
  
     call mount_dataset(pdata,covid_data)
  
@@ -65,7 +69,7 @@ program main
        stop
     end if
 
-    Open(Unit = 100, File = trim(pwd)//"/../output/solutions_covid_cubic.txt", ACCESS = "SEQUENTIAL")
+    Open(Unit = 100, File = trim(pwd)//"/../output/solutions_covid.txt", ACCESS = "SEQUENTIAL")
  
     do k = 1, pdata%days_test
  
