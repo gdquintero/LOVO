@@ -14,7 +14,7 @@ program main
 
     type(pdata_type), target :: pdata
 
-    integer :: allocerr,i,k,n
+    integer :: allocerr,i,n
 
     character(len=128) :: pwd
     call get_environment_variable('PWD',pwd)
@@ -90,20 +90,19 @@ program main
         type(pdata_type), intent(inout) :: pdata
   
         real(kind=8) :: sigmin,sigmin_old,epsilon,fxk,fxtrial,alpha,gamma,termination
-        integer :: iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo,k
+        integer :: iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo
   
         sigmin = 1.0d-1
-        sigmin_old = sigmin
-        gamma = 1.d+1
+        gamma = 1.d+2
         epsilon = 1.0d-3
         alpha = 1.0d-8
-        max_iter_lovo = 10000
+        max_iter_lovo = 100
         max_iter_sub_lovo = 100
         iter_lovo = 0
         iter_sub_lovo = 0
         pdata%lovo_order = pdata%n_train - noutliers
   
-        pdata%xk(1:n) = 1.0d-2
+        pdata%xk(1:n) = 1.0d0
         
         call compute_sp(n,pdata%xk,pdata,fxk)      
   
@@ -126,9 +125,7 @@ program main
             if (iter_lovo .gt. max_iter_lovo) exit
             
             iter_sub_lovo = 1
-            ! pdata%sigma = sigmin_old
-            pdata%sigma = sigmin
-            k = 1
+            pdata%sigma = 0.d0
 
             do 
                 pdata%xtrial(:) = pdata%xk(:) - (1.d0 / pdata%sigma) * pdata%grad_sp(:)
@@ -138,15 +135,7 @@ program main
                 if (fxtrial .le. (fxk - alpha * norm2(pdata%xtrial(1:n-1) - pdata%xk(1:n-1))**2)) exit
                 if (iter_sub_lovo .gt. max_iter_sub_lovo) exit
 
-                k = k + 1
-
-                ! if (k .eq. 2) then
-                !     pdata%sigma = sigmin
-                ! else
-                !     pdata%sigma = gamma * pdata%sigma
-                ! endif
-
-                pdata%sigma = gamma * pdata%sigma
+                pdata%sigma = max(sigmin,gamma * pdata%sigma)
                 iter_sub_lovo = iter_sub_lovo + 1
 
             enddo
@@ -255,10 +244,11 @@ program main
         integer :: i
         
         res(:) = 0.0d0
+        tm = pdata%t(pdata%n_train)
   
         do i = 1, pdata%lovo_order
             ti = pdata%t(int(pdata%indices(i)))
-            tm = pdata%t(pdata%n_train)
+        
             call model(n,x,int(pdata%indices(i)),pdata,gaux)
             gaux = gaux - pdata%y(int(pdata%indices(i)))
             
