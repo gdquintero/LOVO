@@ -27,9 +27,12 @@ program main
     
     read(10,*) pdata%n_train
     read(20,*) pdata%n_test
+
+    pdata%noutliers = 2*int(dble(pdata%n_train) / 7.0d0)
  
     allocate(pdata%t(pdata%n_train),pdata%y(pdata%n_train),pdata%y_test(pdata%n_test),&
-    pdata%t_test(pdata%n_test),pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),pdata%gp(n),stat=allocerr)
+    pdata%t_test(pdata%n_test),pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),pdata%gp(n),&
+    pdata%indices(pdata%n_train),pdata%sp_vector(pdata%n_train),pdata%outliers(pdata%noutliers),stat=allocerr)
  
     if ( allocerr .ne. 0 ) then
        write(*,*) 'Allocation error.'
@@ -47,15 +50,6 @@ program main
     pdata%t(1:pdata%n_train) = (/(i, i = 1, pdata%n_train)/)
     pdata%t_test(1:pdata%n_test) = (/(i, i = pdata%n_train + 1, pdata%n_train + pdata%n_test)/)
  
-    pdata%noutliers = 2*int(dble(pdata%n_train) / 7.0d0)
-
-    allocate(pdata%indices(pdata%n_train),pdata%sp_vector(pdata%n_train),&
-    pdata%outliers(pdata%noutliers),stat=allocerr)
-
-    if ( allocerr .ne. 0 ) then
-       write(*,*) 'Allocation error.'
-       stop
-    end if
 
     Open(Unit = 100, File = trim(pwd)//"/../output/solution_covid.txt", ACCESS = "SEQUENTIAL")
 
@@ -89,20 +83,20 @@ program main
         real(kind=8), intent(out) :: fobj
         type(pdata_type), intent(inout) :: pdata
   
-        real(kind=8) :: sigmin,sigmin_old,epsilon,fxk,fxtrial,alpha,gamma,termination
+        real(kind=8) :: sigmin,epsilon,fxk,fxtrial,alpha,gamma,termination
         integer :: iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo
   
         sigmin = 1.0d-1
         gamma = 1.d+2
         epsilon = 1.0d-3
         alpha = 1.0d-8
-        max_iter_lovo = 100
+        max_iter_lovo = 100000
         max_iter_sub_lovo = 100
         iter_lovo = 0
         iter_sub_lovo = 0
         pdata%lovo_order = pdata%n_train - noutliers
   
-        pdata%xk(1:n) = 1.0d0
+        pdata%xk(1:n) = 1.0d-2
         
         call compute_sp(n,pdata%xk,pdata,fxk)      
   
@@ -139,8 +133,6 @@ program main
                 iter_sub_lovo = iter_sub_lovo + 1
 
             enddo
-
-            sigmin_old = pdata%sigma
   
             fxk = fxtrial
             pdata%xk(:) = pdata%xtrial(:)
@@ -268,15 +260,15 @@ program main
         integer,        intent(in) :: n,i
         real(kind=8),   intent(in) :: x(n)
         real(kind=8),   intent(out) :: res
-        real(kind=8) :: ti,tm
+        real(kind=8) :: ti,tm,ym
 
         type(pdata_type), intent(in) :: pdata
    
         ti = pdata%t(i)
         tm = pdata%t(pdata%n_train)
+        ym = pdata%y(pdata%n_train)
 
-        res = pdata%y(pdata%n_train) + x(1) * (ti - tm) + &
-               x(2) * ((ti - tm)**2) + x(3) * ((ti - tm)**3)
+        res = ym + x(1) * (ti - tm) + x(2) * ((ti - tm)**2) + x(3) * ((ti - tm)**3)
 
     end subroutine model
 
