@@ -13,18 +13,18 @@ plt.rcParams.update({'font.size': 13})
 plt.rc('text', usetex=True)
 plt.rc('font', family='serif')
 
-df_data = pd.read_table(parent+"/data/covid.txt",delimiter=" ",header=None,skiprows=1,skipinitialspace=True)
-df_sol = pd.read_table(parent+"/output/solutions_covid.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
-df_train_test = pd.read_table(parent+"/data/n_train_test.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
+df_train = pd.read_table(parent+"/data/covid_train.txt",delimiter=" ",header=None,skiprows=1,skipinitialspace=True)
+df_test = pd.read_table(parent+"/data/covid_test.txt",delimiter=" ",header=None,skiprows=1,skipinitialspace=True)
+df_sol = pd.read_table(parent+"/output/solution_covid.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
 
-n_train = df_train_test[0].values[0]
-n_test = df_train_test[0].values[1]
+n_train = len(df_train)
+n_test = len(df_test)
 
-# print(len(df_data[0].values[1:n_train+1]))
 
 days = [i for i in range(1,n_train+1)]
-y = df_data[0].values[1:n_train+1]
-x = df_sol[:].values[1]
+y = df_train[0].values[:n_train+1]
+x = df_sol[:].values[0]
+
 t = np.linspace(days[0],days[-1],1000)
 
 plt.plot(days,y,"o")

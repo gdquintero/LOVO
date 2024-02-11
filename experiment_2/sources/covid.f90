@@ -7,12 +7,11 @@ program main
         integer :: counters(3) = 0
         integer :: samples,lovo_order,n_train,n_test,noutliers,dim_Imin
         real(kind=8) :: sigma,theta,fobj
-        real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),indices(:),sp_vector(:),grad_sp(:),&
-                                    gp(:),train_set(:),test_set(:),data_test(:,:),data_train(:,:)
+        real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),t_test(:),y_test(:),indices(:),&
+        sp_vector(:),grad_sp(:),gp(:)
         integer, allocatable :: outliers(:)
     end type pdata_type
 
-    real(kind=8), allocatable :: covid_data(:)
     type(pdata_type), target :: pdata
 
     integer :: allocerr,i,k,n
@@ -28,18 +27,44 @@ program main
     
     read(10,*) pdata%n_train
     read(20,*) pdata%n_test
+ 
+    allocate(pdata%t(pdata%n_train),pdata%y(pdata%n_train),pdata%y_test(pdata%n_test),&
+    pdata%t_test(pdata%n_test),pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),pdata%gp(n),stat=allocerr)
+ 
+    if ( allocerr .ne. 0 ) then
+       write(*,*) 'Allocation error.'
+       stop
+    end if
 
-    print*, pdata%n_train, pdata%n_test
+    do i = 1, pdata%n_train
+        read(10,*) pdata%y(i)
+    enddo
+
+    do i = 1, pdata%n_test
+        read(20,*) pdata%y_test(i)
+    enddo
+
+    pdata%t(1:pdata%n_train) = (/(i, i = 1, pdata%n_train)/)
+    pdata%t_test(1:pdata%n_test) = (/(i, i = pdata%n_train + 1, pdata%n_train + pdata%n_test)/)
  
-    ! allocate(pdata%train_set(pdata%n_train),pdata%test_set(pdata%n_test),&
-    ! pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),pdata%gp(n),stat=allocerr)
- 
-    ! if ( allocerr .ne. 0 ) then
-    !    write(*,*) 'Allocation error.'
-    !    stop
-    ! end if
- 
-    ! pdata%noutliers = 3*int(dble(pdata%n_train) / 7.0d0)
+    pdata%noutliers = 2*int(dble(pdata%n_train) / 7.0d0)
+
+    allocate(pdata%indices(pdata%n_train),pdata%sp_vector(pdata%n_train),&
+    pdata%outliers(pdata%noutliers),stat=allocerr)
+
+    if ( allocerr .ne. 0 ) then
+       write(*,*) 'Allocation error.'
+       stop
+    end if
+
+    Open(Unit = 100, File = trim(pwd)//"/../output/solution_covid.txt", ACCESS = "SEQUENTIAL")
+
+    call lovo_algorithm(n,pdata%noutliers,pdata%outliers,pdata,pdata%fobj)
+
+    write(100,10) pdata%xk(1),pdata%xk(2),pdata%xk(3)
+
+    10 format (ES13.6,1X,ES13.6,1X,ES13.6) 
+    close(100)
  
     ! allocate(pdata%t(pdata%n_train),pdata%y(pdata%n_train),pdata%indices(pdata%n_train),&
     !          pdata%sp_vector(pdata%n_train),pdata%outliers(pdata%noutliers),stat=allocerr)
@@ -51,7 +76,6 @@ program main
 
     ! Open(Unit = 100, File = trim(pwd)//"/../output/solutions_covid.txt", ACCESS = "SEQUENTIAL")
  
-
     
     stop
 
@@ -73,20 +97,20 @@ program main
         gamma = 1.d+1
         epsilon = 1.0d-3
         alpha = 1.0d-8
-        max_iter_lovo = 100000
+        max_iter_lovo = 10000
         max_iter_sub_lovo = 100
         iter_lovo = 0
         iter_sub_lovo = 0
         pdata%lovo_order = pdata%n_train - noutliers
   
         pdata%xk(1:n) = 1.0d-2
-  
+        
         call compute_sp(n,pdata%xk,pdata,fxk)      
   
-        ! write(*,*) "--------------------------------------------------------"
-        ! write(*,10) "#iter","#init","Sp(xstar)","Stop criteria","#Imin"
-        ! 10 format (2X,A5,4X,A5,6X,A9,6X,A13,2X,A5)
-        ! write(*,*) "--------------------------------------------------------"
+        write(*,*) "--------------------------------------------------------"
+        write(*,10) "#iter","#init","Sp(xstar)","Stop criteria","#Imin"
+        10 format (2X,A5,4X,A5,6X,A9,6X,A13,2X,A5)
+        write(*,*) "--------------------------------------------------------"
   
         do
             iter_lovo = iter_lovo + 1
@@ -95,8 +119,8 @@ program main
     
             termination = norm2(pdata%grad_sp(1:n))
     
-            ! write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination,pdata%dim_Imin
-            ! 20 format (I6,5X,I4,4X,ES14.6,3X,ES14.6,2X,I2)
+            write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination,pdata%dim_Imin
+            20 format (I6,5X,I4,4X,ES14.6,3X,ES14.6,2X,I2)
     
             if (termination .lt. epsilon) exit
             if (iter_lovo .gt. max_iter_lovo) exit
@@ -138,7 +162,7 @@ program main
         fobj = fxtrial
         pdata%counters(1) = iter_lovo
   
-        ! write(*,*) "--------------------------------------------------------"
+        write(*,*) "--------------------------------------------------------"
 
   
         outliers(:) = int(pdata%indices(pdata%n_train - noutliers + 1:))
@@ -234,7 +258,7 @@ program main
   
         do i = 1, pdata%lovo_order
             ti = pdata%t(int(pdata%indices(i)))
-            tm = pdata%t(pdata%samples)
+            tm = pdata%t(pdata%n_train)
             call model(n,x,int(pdata%indices(i)),pdata,gaux)
             gaux = gaux - pdata%y(int(pdata%indices(i)))
             
@@ -259,9 +283,9 @@ program main
         type(pdata_type), intent(in) :: pdata
    
         ti = pdata%t(i)
-        tm = pdata%t(pdata%samples)
+        tm = pdata%t(pdata%n_train)
 
-        res = pdata%y(pdata%samples) + x(1) * (ti - tm) + &
+        res = pdata%y(pdata%n_train) + x(1) * (ti - tm) + &
                x(2) * ((ti - tm)**2) + x(3) * ((ti - tm)**3)
 
     end subroutine model

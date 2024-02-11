@@ -69,7 +69,7 @@ program main
        stop
     end if
 
-    Open(Unit = 100, File = trim(pwd)//"/../output/solutions_covid.txt", ACCESS = "SEQUENTIAL")
+    Open(Unit = 100, File = trim(pwd)//"/../output/solutions_covid_mixed.txt", ACCESS = "SEQUENTIAL")
  
     do k = 1, pdata%days_test
  
