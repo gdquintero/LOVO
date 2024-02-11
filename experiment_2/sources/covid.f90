@@ -15,25 +15,21 @@ program main
     real(kind=8), allocatable :: covid_data(:)
     type(pdata_type), target :: pdata
 
-    integer :: allocerr,i,k,n,n_data
+    integer :: allocerr,i,k,n
 
     character(len=128) :: pwd
     call get_environment_variable('PWD',pwd)
 
    ! Number of variables
     n = 3
-
-   ! Set parameters 
-    pdata%n_train  = 30
-    pdata%n_test   = 10
  
-    Open(Unit = 10, File = trim(pwd)//"/../data/covid.txt", Access = "SEQUENTIAL")
-    Open(Unit = 20, File = trim(pwd)//"/../data/n_train_test.txt", Access = "SEQUENTIAL")
-    read(10,*) n_data
-    write(20,*) pdata%n_train
-    write(20,*) pdata%n_test
+    Open(Unit = 10, File = trim(pwd)//"/../data/covid_train.txt", Access = "SEQUENTIAL")
+    Open(Unit = 20, File = trim(pwd)//"/../data/covid_test.txt", Access = "SEQUENTIAL")
+    
+    read(10,*) pdata%n_train
+    read(20,*) pdata%n_test
 
- 
+    print*, pdata%n_train, pdata%n_test
  
     ! allocate(pdata%train_set(pdata%n_train),pdata%test_set(pdata%n_test),&
     ! pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),pdata%gp(n),stat=allocerr)
