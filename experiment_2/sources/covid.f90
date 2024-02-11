@@ -88,11 +88,11 @@ program main
         real(kind=8) :: sigmin,epsilon,fxk,fxtrial,alpha,gamma,termination
         integer :: iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo
   
-        sigmin = 1.0d-1
-        gamma = 1.0d+1
+        sigmin = 1.0d-2
+        gamma = 1.0d+2
         epsilon = 1.0d-3
         alpha = 1.0d-8
-        max_iter_lovo = 1000
+        max_iter_lovo = 100000
         max_iter_sub_lovo = 100
         iter_lovo = 0
         iter_sub_lovo = 0
@@ -112,7 +112,6 @@ program main
     
             call compute_grad_sp(n,pdata%xk,pdata,pdata%grad_sp)
 
-    
             termination = norm2(pdata%grad_sp(1:n))
     
             write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination,pdata%dim_Imin
@@ -125,14 +124,15 @@ program main
             pdata%sigma = sigmin
 
             do 
-                pdata%xtrial(1:n) = pdata%xk(1:n) - (1.d0 / pdata%sigma) * pdata%grad_sp(:)
+                pdata%xtrial(:) = pdata%xk(:) - (1.d0 / pdata%sigma) * pdata%grad_sp(:)
 
                 call compute_sp(n,pdata%xtrial,pdata,fxtrial)
 
                 if (fxtrial .le. (fxk - alpha * norm2(pdata%xtrial(1:n) - pdata%xk(1:n))**2)) exit
                 if (iter_sub_lovo .gt. max_iter_sub_lovo) exit
 
-                pdata%sigma = max(sigmin,gamma * pdata%sigma)
+                ! pdata%sigma = max(sigmin,gamma * pdata%sigma)
+                pdata%sigma = gamma * pdata%sigma
                 iter_sub_lovo = iter_sub_lovo + 1
 
             enddo
@@ -235,17 +235,19 @@ program main
         real(kind=8),  intent(out) :: res(n)
         type(pdata_type), intent(in) :: pdata
   
-        real(kind=8) :: gaux,t
-        integer :: i
+        real(kind=8) :: gaux,t,tm
+        integer :: i,i_j
         
         res(:) = 0.0d0
+        tm = pdata%t(pdata%n_train)
   
         do i = 1, pdata%lovo_order
-            t = pdata%t(pdata%n_train) - pdata%t(int(pdata%indices(i)))
+            i_j = int(pdata%indices(i))
+            t = pdata%t(i_j) - tm
         
-            call model(n,x,int(pdata%indices(i)),pdata,gaux)
+            call model(n,x,i_j,pdata,gaux)
 
-            gaux = gaux - pdata%y(int(pdata%indices(i)))
+            gaux = gaux - pdata%y(i_j)
             
             res(1) = res(1) + gaux * t
             res(2) = res(2) + gaux * (t**2)

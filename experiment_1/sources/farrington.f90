@@ -246,7 +246,7 @@ program farrington
 
                 call compute_sp(n,pdata%xtrial,pdata,fxtrial)
 
-                if (fxtrial .le. (fxk - alpha * norm2(pdata%xtrial(1:n-1) - pdata%xk(1:n-1))**2)) exit
+                if (fxtrial .le. (fxk - alpha * norm2(pdata%xtrial(1:n) - pdata%xk(1:n))**2)) exit
                 if (iter_sub_lovo .gt. max_iter_sub_lovo) exit
 
                 pdata%sigma = gamma * pdata%sigma

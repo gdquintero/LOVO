@@ -12,7 +12,7 @@ country = countries[1]
 # ind_excel = 166 # 15 jun 2020 estados unidos con outliers
 # ind_excel = 216 # 4 de agosto italia 
 
-ind_excel  = 91 # 01-04-2020
+ind_excel  = 122 # 01-04-2020
 
 
 df = pd.read_excel(parent+"/data/"+country)
