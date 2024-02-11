@@ -158,10 +158,10 @@ program main
   
         call compute_sp(n,pdata%xk,pdata,fxk)      
   
-        ! write(*,*) "--------------------------------------------------------"
-        ! write(*,10) "#iter","#init","Sp(xstar)","Stop criteria","#Imin"
-        ! 10 format (2X,A5,4X,A5,6X,A9,6X,A13,2X,A5)
-        ! write(*,*) "--------------------------------------------------------"
+        write(*,*) "--------------------------------------------------------"
+        write(*,10) "#iter","#init","Sp(xstar)","Stop criteria","#Imin"
+        10 format (2X,A5,4X,A5,6X,A9,6X,A13,2X,A5)
+        write(*,*) "--------------------------------------------------------"
   
         do
             iter_lovo = iter_lovo + 1
@@ -170,8 +170,8 @@ program main
     
             termination = norm2(pdata%grad_sp(1:n))
     
-            ! write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination,pdata%dim_Imin
-            ! 20 format (I6,5X,I4,4X,ES14.6,3X,ES14.6,2X,I2)
+            write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination,pdata%dim_Imin
+            20 format (I6,5X,I4,4X,ES14.6,3X,ES14.6,2X,I2)
     
             if (termination .lt. epsilon) exit
             if (iter_lovo .gt. max_iter_lovo) exit
@@ -186,7 +186,7 @@ program main
 
                 call compute_sp(n,pdata%xtrial,pdata,fxtrial)
 
-                if (fxtrial .le. (fxk - alpha * norm2(pdata%xtrial(1:n-1) - pdata%xk(1:n-1))**2)) exit
+                if (fxtrial .le. (fxk - alpha * norm2(pdata%xtrial(1:n) - pdata%xk(1:n))**2)) exit
                 if (iter_sub_lovo .gt. max_iter_sub_lovo) exit
 
                 k = k + 1
@@ -213,7 +213,7 @@ program main
         fobj = fxtrial
         pdata%counters(1) = iter_lovo
   
-        ! write(*,*) "--------------------------------------------------------"
+        write(*,*) "--------------------------------------------------------"
 
   
         outliers(:) = int(pdata%indices(pdata%n_train - noutliers + 1:))

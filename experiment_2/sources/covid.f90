@@ -22,13 +22,13 @@ program main
    ! Number of variables
     n = 3
  
-    Open(Unit = 10, File = trim(pwd)//"/../data/covid_train.txt", Access = "SEQUENTIAL")
-    Open(Unit = 20, File = trim(pwd)//"/../data/covid_test.txt", Access = "SEQUENTIAL")
+    Open(Unit = 100, File = trim(pwd)//"/../data/covid_train.txt", Access = "SEQUENTIAL")
+    Open(Unit = 200, File = trim(pwd)//"/../data/covid_test.txt", Access = "SEQUENTIAL")
     
-    read(10,*) pdata%n_train
-    read(20,*) pdata%n_test
+    read(100,*) pdata%n_train
+    read(200,*) pdata%n_test
 
-    pdata%noutliers = 2*int(dble(pdata%n_train) / 7.0d0)
+    pdata%noutliers = 0*int(dble(pdata%n_train) / 7.0d0)
  
     allocate(pdata%t(pdata%n_train),pdata%y(pdata%n_train),pdata%y_test(pdata%n_test),&
     pdata%t_test(pdata%n_test),pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),pdata%gp(n),&
@@ -40,17 +40,19 @@ program main
     end if
 
     do i = 1, pdata%n_train
-        read(10,*) pdata%y(i)
+        read(100,*) pdata%y(i)
     enddo
 
     do i = 1, pdata%n_test
-        read(20,*) pdata%y_test(i)
+        read(200,*) pdata%y_test(i)
     enddo
+
+    close(100)
+    close(200)
 
     pdata%t(1:pdata%n_train) = (/(i, i = 1, pdata%n_train)/)
     pdata%t_test(1:pdata%n_test) = (/(i, i = pdata%n_train + 1, pdata%n_train + pdata%n_test)/)
  
-
     Open(Unit = 100, File = trim(pwd)//"/../output/solution_covid.txt", ACCESS = "SEQUENTIAL")
 
     call lovo_algorithm(n,pdata%noutliers,pdata%outliers,pdata,pdata%fobj)
@@ -87,16 +89,16 @@ program main
         integer :: iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo
   
         sigmin = 1.0d-1
-        gamma = 1.d+2
+        gamma = 1.0d+1
         epsilon = 1.0d-3
         alpha = 1.0d-8
-        max_iter_lovo = 100000
+        max_iter_lovo = 1000
         max_iter_sub_lovo = 100
         iter_lovo = 0
         iter_sub_lovo = 0
         pdata%lovo_order = pdata%n_train - noutliers
   
-        pdata%xk(1:n) = 1.0d-2
+        pdata%xk(1:n) = 1.0d-1
         
         call compute_sp(n,pdata%xk,pdata,fxk)      
   
@@ -109,6 +111,7 @@ program main
             iter_lovo = iter_lovo + 1
     
             call compute_grad_sp(n,pdata%xk,pdata,pdata%grad_sp)
+
     
             termination = norm2(pdata%grad_sp(1:n))
     
@@ -119,14 +122,14 @@ program main
             if (iter_lovo .gt. max_iter_lovo) exit
             
             iter_sub_lovo = 1
-            pdata%sigma = 0.d0
+            pdata%sigma = sigmin
 
             do 
-                pdata%xtrial(:) = pdata%xk(:) - (1.d0 / pdata%sigma) * pdata%grad_sp(:)
+                pdata%xtrial(1:n) = pdata%xk(1:n) - (1.d0 / pdata%sigma) * pdata%grad_sp(:)
 
                 call compute_sp(n,pdata%xtrial,pdata,fxtrial)
 
-                if (fxtrial .le. (fxk - alpha * norm2(pdata%xtrial(1:n-1) - pdata%xk(1:n-1))**2)) exit
+                if (fxtrial .le. (fxk - alpha * norm2(pdata%xtrial(1:n) - pdata%xk(1:n))**2)) exit
                 if (iter_sub_lovo .gt. max_iter_sub_lovo) exit
 
                 pdata%sigma = max(sigmin,gamma * pdata%sigma)
@@ -232,21 +235,21 @@ program main
         real(kind=8),  intent(out) :: res(n)
         type(pdata_type), intent(in) :: pdata
   
-        real(kind=8) :: gaux,ti,tm
+        real(kind=8) :: gaux,t
         integer :: i
         
         res(:) = 0.0d0
-        tm = pdata%t(pdata%n_train)
   
         do i = 1, pdata%lovo_order
-            ti = pdata%t(int(pdata%indices(i)))
+            t = pdata%t(pdata%n_train) - pdata%t(int(pdata%indices(i)))
         
             call model(n,x,int(pdata%indices(i)),pdata,gaux)
+
             gaux = gaux - pdata%y(int(pdata%indices(i)))
             
-            res(1) = res(1) + gaux * (ti - tm)
-            res(2) = res(2) + gaux * ((ti - tm)**2)
-            res(3) = res(3) + gaux * ((ti - tm)**3)
+            res(1) = res(1) + gaux * t
+            res(2) = res(2) + gaux * (t**2)
+            res(3) = res(3) + gaux * (t**3)
         enddo
   
     end subroutine compute_grad_sp
@@ -260,15 +263,14 @@ program main
         integer,        intent(in) :: n,i
         real(kind=8),   intent(in) :: x(n)
         real(kind=8),   intent(out) :: res
-        real(kind=8) :: ti,tm,ym
+        real(kind=8) :: t,ym
 
         type(pdata_type), intent(in) :: pdata
    
-        ti = pdata%t(i)
-        tm = pdata%t(pdata%n_train)
+        t = pdata%t(i) - pdata%t(pdata%n_train)
         ym = pdata%y(pdata%n_train)
 
-        res = ym + x(1) * (ti - tm) + x(2) * ((ti - tm)**2) + x(3) * ((ti - tm)**3)
+        res = ym + (x(1) * t) + (x(2) * (t**2)) + (x(3) * (t**3))
 
     end subroutine model
 
