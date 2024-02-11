@@ -5,7 +5,7 @@ program main
 
     type :: pdata_type
         integer :: counters(3) = 0
-        integer :: samples,lovo_order,n_train,n_test,noutliers,days_test,dim_Imin
+        integer :: samples,lovo_order,n_train,n_test,noutliers,dim_Imin
         real(kind=8) :: sigma,theta,fobj
         real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),indices(:),sp_vector(:),grad_sp(:),&
                                     gp(:),train_set(:),test_set(:),data_test(:,:),data_train(:,:)
@@ -26,78 +26,36 @@ program main
    ! Set parameters 
     pdata%n_train  = 30
     pdata%n_test   = 10
-    pdata%days_test = 10
  
-    Open(Unit = 10, File = trim(pwd)//"/../data/covid_mixed.txt", Access = "SEQUENTIAL")
+    Open(Unit = 10, File = trim(pwd)//"/../data/covid.txt", Access = "SEQUENTIAL")
     Open(Unit = 20, File = trim(pwd)//"/../data/n_train_test.txt", Access = "SEQUENTIAL")
     read(10,*) n_data
     write(20,*) pdata%n_train
     write(20,*) pdata%n_test
- 
-    allocate(pdata%data_train(pdata%days_test,pdata%n_train),pdata%data_test(pdata%days_test,pdata%n_test),&
-    covid_data(n_data),stat=allocerr)
- 
-    if ( allocerr .ne. 0 ) then
-       write(*,*) 'Allocation error.'
-       stop
-    end if
- 
-    do i = 1, n_data
-       read(10,*) covid_data(i)
-    enddo
- 
-    close(10)
-    close(20)
- 
-    call mount_dataset(pdata,covid_data)
- 
-    allocate(pdata%train_set(pdata%n_train),pdata%test_set(pdata%n_test),&
-    pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),pdata%gp(n),stat=allocerr)
- 
-    if ( allocerr .ne. 0 ) then
-       write(*,*) 'Allocation error.'
-       stop
-    end if
- 
-    pdata%noutliers = 3*int(dble(pdata%n_train) / 7.0d0)
- 
-    allocate(pdata%t(pdata%n_train),pdata%y(pdata%n_train),pdata%indices(pdata%n_train),&
-             pdata%sp_vector(pdata%n_train),pdata%outliers(pdata%noutliers),stat=allocerr)
- 
-    if ( allocerr .ne. 0 ) then
-       write(*,*) 'Allocation error.'
-       stop
-    end if
 
-    Open(Unit = 100, File = trim(pwd)//"/../output/solutions_covid.txt", ACCESS = "SEQUENTIAL")
  
-    do k = 1, pdata%days_test
  
-       pdata%train_set(:)   = pdata%data_train(k,:)
-       pdata%test_set(:)    = pdata%data_test(k,:)
-       pdata%t(:)           = (/(i, i = 1, pdata%samples)/)
-       pdata%indices(:)     = (/(i, i = 1, pdata%samples)/)
-       pdata%y(:)           = pdata%train_set(:)
+    ! allocate(pdata%train_set(pdata%n_train),pdata%test_set(pdata%n_test),&
+    ! pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),pdata%gp(n),stat=allocerr)
  
-       call lovo_algorithm(n,pdata%noutliers,pdata%outliers,pdata,pdata%fobj)
-       
-       write(100,10) pdata%xk(1), pdata%xk(2), pdata%xk(3)
+    ! if ( allocerr .ne. 0 ) then
+    !    write(*,*) 'Allocation error.'
+    !    stop
+    ! end if
  
-       print*, k * 100/pdata%days_test,"%"
+    ! pdata%noutliers = 3*int(dble(pdata%n_train) / 7.0d0)
  
-    enddo
+    ! allocate(pdata%t(pdata%n_train),pdata%y(pdata%n_train),pdata%indices(pdata%n_train),&
+    !          pdata%sp_vector(pdata%n_train),pdata%outliers(pdata%noutliers),stat=allocerr)
  
-    10 format (ES13.6,1X,ES13.6,1X,ES13.6) 
-    close(100)
+    ! if ( allocerr .ne. 0 ) then
+    !    write(*,*) 'Allocation error.'
+    !    stop
+    ! end if
+
+    ! Open(Unit = 100, File = trim(pwd)//"/../output/solutions_covid.txt", ACCESS = "SEQUENTIAL")
  
-    deallocate(pdata%t,pdata%y,pdata%indices,pdata%sp_vector,pdata%outliers,stat=allocerr)
-       
-    if ( allocerr .ne. 0 ) then
-       write(*,*) 'Deallocation error.'
-       stop
-    end if
- 
-    ! call export(pdata)
+
     
     stop
 
@@ -191,23 +149,6 @@ program main
         
   
     end subroutine lovo_algorithm
-
-    !*****************************************************************
-    !*****************************************************************
-    subroutine mount_dataset(pdata,covid_data)
-        implicit none
-  
-        type(pdata_type), intent(inout) :: pdata
-        real(kind=8), intent(in) :: covid_data(:)
-  
-        integer :: i
-  
-        do i = 1, 100
-           pdata%data_train(i,:) = covid_data(i:i+pdata%n_train-1)
-           pdata%data_test(i,:) = covid_data(i+pdata%n_train:i+pdata%n_train+pdata%n_test-1)    
-        enddo
-  
-     end subroutine mount_dataset
 
     !*****************************************************************
     !*****************************************************************

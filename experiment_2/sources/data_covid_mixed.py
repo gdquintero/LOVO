@@ -17,7 +17,7 @@ end_date        = ind_excel_end - 2
 n = ind_excel_end-ind_excel_init + 1
 
 
-with open(parent+"/data/covid.txt","w") as f:
+with open(parent+"/data/covid_mixed.txt","w") as f:
     f.write("%i\n" % n)
     for i in range(n):
         x = df["new_deaths_smoothed_per_million"][i+init_date]
