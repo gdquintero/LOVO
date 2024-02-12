@@ -28,7 +28,7 @@ program main
     read(100,*) pdata%n_train
     read(200,*) pdata%n_test
 
-    pdata%noutliers = 2*int(dble(pdata%n_train) / 7.0d0)
+    pdata%noutliers = 1*int(dble(pdata%n_train) / 7.0d0)
 
  
     allocate(pdata%t(pdata%n_train),pdata%y(pdata%n_train),pdata%y_test(pdata%n_test),pdata%t_test(pdata%n_test),&
@@ -91,7 +91,7 @@ program main
   
         sigmin = 1.0d-1
         gamma = 1.0d+1
-        epsilon = 1.0d0
+        epsilon = 1.0d-1
         alpha = 1.0d-8
         max_iter_lovo = 1000000
         max_iter_sub_lovo = 100
@@ -99,7 +99,7 @@ program main
         iter_sub_lovo = 0
         pdata%lovo_order = pdata%n_train - noutliers
   
-        pdata%xk(:) = 1.0d-3
+        pdata%xk(:) = 1.0d-2
         
         call compute_sp(n,pdata%xk,pdata,fxk)      
   
@@ -114,7 +114,6 @@ program main
             call compute_grad_sp(n,pdata%xk,pdata,pdata%grad_sp)
 
             termination = norm2(pdata%grad_sp(:))
-            ! termination = maxval(abs(pdata%grad_sp(:)))
             
             write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination,pdata%dim_Imin
             20 format (I8,5X,I4,4X,ES14.6,3X,ES14.6,2X,I2)
@@ -133,8 +132,8 @@ program main
                 if (fxtrial .le. (fxk - alpha * norm2(pdata%xtrial(:) - pdata%xk(:))**2)) exit
                 if (iter_sub_lovo .gt. max_iter_sub_lovo) exit
 
-                pdata%sigma = max(sigmin,gamma * pdata%sigma)
-                ! pdata%sigma = gamma * pdata%sigma
+                ! pdata%sigma = max(sigmin,gamma * pdata%sigma)
+                pdata%sigma = gamma * pdata%sigma
                 iter_sub_lovo = iter_sub_lovo + 1
 
             enddo
