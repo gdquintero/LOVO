@@ -5,10 +5,10 @@ program main
 
     type :: pdata_type
         integer :: counters(3) = 0
-        integer :: samples,lovo_order,n_train,n_test,noutliers,dim_Imin
-        real(kind=8) :: sigma,theta,fobj
+        integer :: lovo_order,n_train,n_test,noutliers,dim_Imin
+        real(kind=8) :: sigma,fobj
         real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),t_test(:),y_test(:),indices(:),&
-        sp_vector(:),grad_sp(:),gp(:)
+        sp_vector(:),grad_sp(:)
         integer, allocatable :: outliers(:)
     end type pdata_type
 
@@ -28,11 +28,12 @@ program main
     read(100,*) pdata%n_train
     read(200,*) pdata%n_test
 
-    pdata%noutliers = 0*int(dble(pdata%n_train) / 7.0d0)
+    pdata%noutliers = 2*int(dble(pdata%n_train) / 7.0d0)
+
  
-    allocate(pdata%t(pdata%n_train),pdata%y(pdata%n_train),pdata%y_test(pdata%n_test),&
-    pdata%t_test(pdata%n_test),pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),pdata%gp(n),&
-    pdata%indices(pdata%n_train),pdata%sp_vector(pdata%n_train),pdata%outliers(pdata%noutliers),stat=allocerr)
+    allocate(pdata%t(pdata%n_train),pdata%y(pdata%n_train),pdata%y_test(pdata%n_test),pdata%t_test(pdata%n_test),&
+    pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),pdata%indices(pdata%n_train),pdata%sp_vector(pdata%n_train),&
+    pdata%outliers(pdata%noutliers),stat=allocerr)
  
     if ( allocerr .ne. 0 ) then
        write(*,*) 'Allocation error.'
@@ -88,17 +89,17 @@ program main
         real(kind=8) :: sigmin,epsilon,fxk,fxtrial,alpha,gamma,termination
         integer :: iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo
   
-        sigmin = 1.0d-2
-        gamma = 1.0d+2
-        epsilon = 1.0d-3
+        sigmin = 1.0d-1
+        gamma = 1.0d+1
+        epsilon = 1.0d0
         alpha = 1.0d-8
-        max_iter_lovo = 100000
+        max_iter_lovo = 1000000
         max_iter_sub_lovo = 100
         iter_lovo = 0
         iter_sub_lovo = 0
         pdata%lovo_order = pdata%n_train - noutliers
   
-        pdata%xk(1:n) = 1.0d-1
+        pdata%xk(:) = 1.0d-3
         
         call compute_sp(n,pdata%xk,pdata,fxk)      
   
@@ -112,10 +113,11 @@ program main
     
             call compute_grad_sp(n,pdata%xk,pdata,pdata%grad_sp)
 
-            termination = norm2(pdata%grad_sp(1:n))
-    
+            termination = norm2(pdata%grad_sp(:))
+            ! termination = maxval(abs(pdata%grad_sp(:)))
+            
             write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination,pdata%dim_Imin
-            20 format (I6,5X,I4,4X,ES14.6,3X,ES14.6,2X,I2)
+            20 format (I8,5X,I4,4X,ES14.6,3X,ES14.6,2X,I2)
     
             if (termination .lt. epsilon) exit
             if (iter_lovo .gt. max_iter_lovo) exit
@@ -128,11 +130,11 @@ program main
 
                 call compute_sp(n,pdata%xtrial,pdata,fxtrial)
 
-                if (fxtrial .le. (fxk - alpha * norm2(pdata%xtrial(1:n) - pdata%xk(1:n))**2)) exit
+                if (fxtrial .le. (fxk - alpha * norm2(pdata%xtrial(:) - pdata%xk(:))**2)) exit
                 if (iter_sub_lovo .gt. max_iter_sub_lovo) exit
 
-                ! pdata%sigma = max(sigmin,gamma * pdata%sigma)
-                pdata%sigma = gamma * pdata%sigma
+                pdata%sigma = max(sigmin,gamma * pdata%sigma)
+                ! pdata%sigma = gamma * pdata%sigma
                 iter_sub_lovo = iter_sub_lovo + 1
 
             enddo
@@ -236,22 +238,24 @@ program main
         type(pdata_type), intent(in) :: pdata
   
         real(kind=8) :: gaux,t,tm
-        integer :: i,i_j
+        integer :: i,ix
         
         res(:) = 0.0d0
         tm = pdata%t(pdata%n_train)
   
         do i = 1, pdata%lovo_order
-            i_j = int(pdata%indices(i))
-            t = pdata%t(i_j) - tm
+            ix = int(pdata%indices(i))
+            t = pdata%t(ix) - tm
         
-            call model(n,x,i_j,pdata,gaux)
+            call model(n,x,ix,pdata,gaux)
 
-            gaux = gaux - pdata%y(i_j)
+            gaux = gaux - pdata%y(ix)
             
             res(1) = res(1) + gaux * t
             res(2) = res(2) + gaux * (t**2)
             res(3) = res(3) + gaux * (t**3)
+
+            gaux = 0.d0
         enddo
   
     end subroutine compute_grad_sp

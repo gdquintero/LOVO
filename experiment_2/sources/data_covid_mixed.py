@@ -1,8 +1,20 @@
 import pandas as pd
 import os
 
-countries = ["ar","br","co","es","it","pa","uk","us"]
-country = countries[1]
+# countries = ["ar","br","co","es","it","pa","uk","us"]
+
+countries = {
+    "ar" : "ar.xlsx",
+    "br" : "br.xlsx",
+    "co" : "co.xlsx",
+    "es" : "es.xlsx",
+    "it" : "it.xlsx",
+    "pa" : "pa.xlsx",
+    "uk" : "uk.xlsx",
+    "us" : "us.xlsx"
+}
+
+country = countries["br"]
 
 cwd = os.getcwd()
 parent =  os.path.abspath(os.path.join(cwd,os.pardir))
