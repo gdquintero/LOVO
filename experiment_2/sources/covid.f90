@@ -93,7 +93,7 @@ program main
         gamma = 1.0d+1
         epsilon = 1.0d-3
         alpha = 1.0d-8
-        max_iter_lovo = 0
+        max_iter_lovo = 10000
         max_iter_sub_lovo = 100
         iter_lovo = 0
         iter_sub_lovo = 0
@@ -103,22 +103,20 @@ program main
         
         call compute_sp(n,pdata%xk,pdata,fxk)  
   
-        ! write(*,*) "--------------------------------------------------------"
-        ! write(*,10) "#iter","#init","Sp(xstar)","Stop criteria","#Imin"
-        ! 10 format (2X,A5,4X,A5,6X,A9,6X,A13,2X,A5)
-        ! write(*,*) "--------------------------------------------------------"
+        write(*,*) "--------------------------------------------------------"
+        write(*,10) "#iter","#init","Sp(xstar)","Stop criteria","#Imin"
+        10 format (2X,A5,4X,A5,6X,A9,6X,A13,2X,A5)
+        write(*,*) "--------------------------------------------------------"
   
         do
             iter_lovo = iter_lovo + 1
     
             call compute_grad_sp(n,pdata%xk,pdata,pdata%grad_sp)
 
-            print*,pdata%grad_sp
-
             termination = norm2(pdata%grad_sp(:))
             
-            ! write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination,pdata%dim_Imin
-            ! 20 format (I8,5X,I4,4X,ES14.6,3X,ES14.6,2X,I2)
+            write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination,pdata%dim_Imin
+            20 format (I8,5X,I4,4X,ES14.6,3X,ES14.6,2X,I2)
     
             if (termination .lt. epsilon) exit
             if (iter_lovo .gt. max_iter_lovo) exit
@@ -149,7 +147,7 @@ program main
         fobj = fxtrial
         pdata%counters(1) = iter_lovo
   
-        ! write(*,*) "--------------------------------------------------------"
+        write(*,*) "--------------------------------------------------------"
 
   
         outliers(:) = int(pdata%indices(pdata%n_train - noutliers + 1:))
@@ -254,6 +252,34 @@ program main
          enddo
   
     end subroutine compute_grad_sp
+
+   !*****************************************************************
+   !*****************************************************************
+
+    subroutine compute_hess_sp(n,x,pdata,res)
+        implicit none
+  
+        integer,       intent(in) :: n
+        real(kind=8),  intent(in) :: x(n)
+        real(kind=8),  intent(out) :: res(n,n)
+        type(pdata_type), intent(in) :: pdata
+  
+        real(kind=8) :: gaux,ti
+        integer :: i,k
+        
+        res(:,:) = 0.0d0
+  
+        do i = 1, pdata%lovo_order
+           ti = pdata%t(int(pdata%indices(i)))
+
+           res(1,:) = (/()/) 
+           
+           res(1) = res(1) + gaux * (ti - pdata%t(pdata%samples))
+           res(2) = res(2) + gaux * ((ti - pdata%t(pdata%samples))**2)
+           res(3) = res(3) + gaux * ((ti - pdata%t(pdata%samples))**3)
+        enddo
+  
+     end subroutine compute_hess_sp
 
     !*****************************************************************
     !*****************************************************************
