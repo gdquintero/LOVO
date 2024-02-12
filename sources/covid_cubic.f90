@@ -186,7 +186,7 @@ program covid
       gamma = 1.0d+1
       epsilon = 1.0d-3
       alpha = 1.0d-8
-      max_iter_lovo = 0
+      max_iter_lovo = 1000
       max_iter_sub_lovo = 100
       iter_lovo = 0
       iter_sub_lovo = 0
@@ -199,26 +199,25 @@ program covid
       
       call compute_sp(n,pdata%xk,pdata,fxk)
 
-      ! write(*,*)
-      ! write(*,99) "Main algorithm with", sam, "previous days"
-      ! 99 format (1X,A19,1X,I2,1X,A13)
-      ! write(*,*) "--------------------------------------------------"
-      ! write(*,10) "#iter","#init","Sp(xstar)","||g(xstar)||"
-      ! 10 format (2X,A5,4X,A5,6X,A9,7X,A12)
-      ! write(*,*) "--------------------------------------------------"
+      write(*,*)
+      write(*,99) "Main algorithm with", sam, "previous days"
+      99 format (1X,A19,1X,I2,1X,A13)
+      write(*,*) "--------------------------------------------------"
+      write(*,10) "#iter","#init","Sp(xstar)","||g(xstar)||"
+      10 format (2X,A5,4X,A5,6X,A9,7X,A12)
+      write(*,*) "--------------------------------------------------"
 
       do
          iter_lovo = iter_lovo + 1
 
          call compute_grad_sp(n,pdata%xk,pdata,pdata%grad_sp)
 
-         print*, pdata%grad_sp
-
          termination = norm2(pdata%grad_sp(1:n))
+
          ! termination = maxval(abs(pdata%grad_sp(1:n)))
 
-         ! write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination
-         ! 20 format (I6,5X,I4,4X,ES14.6,3X,ES14.6)
+         write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination
+         20 format (I6,5X,I4,4X,ES14.6,3X,ES14.6)
 
          if (termination .lt. epsilon) exit
          if (iter_lovo .gt. max_iter_lovo) exit
@@ -257,9 +256,10 @@ program covid
          fxk = fxtrial
          pdata%xk(:) = pdata%xtrial(:)
 
+
       enddo
 
-      ! write(*,*) "--------------------------------------------------"
+      write(*,*) "--------------------------------------------------"
 
       pdata%outliers(:) = int(pdata%indices(pdata%samples - pdata%noutliers + 1:))
 
