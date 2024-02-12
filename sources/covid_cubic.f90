@@ -10,7 +10,7 @@ program covid
       integer :: samples,inf,sup,lovo_order,n_train,n_test,noutliers
       real(kind=8) :: sigma,theta
       real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),data(:,:),indices(:),sp_vector(:),grad_sp(:),&
-                                   gp(:),train_set(:),test_set(:)
+                                   train_set(:),test_set(:)
       integer, allocatable :: outliers(:)
    end type pdata_type
 
@@ -71,7 +71,7 @@ program covid
    read(200,*) pdata%n_test
 
    allocate(pdata%train_set(pdata%n_train),pdata%test_set(pdata%n_test),&
-   pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),pdata%gp(n),stat=allocerr)
+   pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),stat=allocerr)
 
    if ( allocerr .ne. 0 ) then
       write(*,*) 'Allocation error.'
@@ -122,7 +122,7 @@ program covid
       end if
 
       pdata%t(1:pdata%samples)         = (/(i, i = 1, pdata%samples)/)
-      pdata%indices(1:pdata%samples)   = (/(i, i = 1, pdata%samples)/)
+      ! pdata%indices(1:pdata%samples)   = (/(i, i = 1, pdata%samples)/)
       pdata%y(1:pdata%samples)         = pdata%train_set(pdata%n_train - pdata%samples + 1:pdata%n_train)
 
       call lovo_algorithm(fobj(j))
@@ -183,10 +183,10 @@ program covid
       integer :: iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo
 
       sigmin = 1.0d0
+      gamma = 1.0d+1
       epsilon = 1.0d-3
       alpha = 1.0d-8
-      gamma = 1.0d+1
-      max_iter_lovo = 1000
+      max_iter_lovo = 0
       max_iter_sub_lovo = 100
       iter_lovo = 0
       iter_sub_lovo = 0
@@ -199,24 +199,26 @@ program covid
       
       call compute_sp(n,pdata%xk,pdata,fxk)
 
-      write(*,*)
-      write(*,99) "Main algorithm with", sam, "previous days"
-      99 format (1X,A19,1X,I2,1X,A13)
-      write(*,*) "--------------------------------------------------"
-      write(*,10) "#iter","#init","Sp(xstar)","||g(xstar)||"
-      10 format (2X,A5,4X,A5,6X,A9,7X,A12)
-      write(*,*) "--------------------------------------------------"
+      ! write(*,*)
+      ! write(*,99) "Main algorithm with", sam, "previous days"
+      ! 99 format (1X,A19,1X,I2,1X,A13)
+      ! write(*,*) "--------------------------------------------------"
+      ! write(*,10) "#iter","#init","Sp(xstar)","||g(xstar)||"
+      ! 10 format (2X,A5,4X,A5,6X,A9,7X,A12)
+      ! write(*,*) "--------------------------------------------------"
 
       do
          iter_lovo = iter_lovo + 1
 
-         call compute_grad_sp(n,x,pdata,pdata%gp)
+         call compute_grad_sp(n,pdata%xk,pdata,pdata%grad_sp)
 
-         ! termination = norm2(pdata%gp(1:n))
-         termination = maxval(abs(pdata%gp(1:n)))
+         print*, pdata%grad_sp
 
-         write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination
-         20 format (I6,5X,I4,4X,ES14.6,3X,ES14.6)
+         termination = norm2(pdata%grad_sp(1:n))
+         ! termination = maxval(abs(pdata%grad_sp(1:n)))
+
+         ! write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination
+         ! 20 format (I6,5X,I4,4X,ES14.6,3X,ES14.6)
 
          if (termination .lt. epsilon) exit
          if (iter_lovo .gt. max_iter_lovo) exit
@@ -257,7 +259,7 @@ program covid
 
       enddo
 
-      write(*,*) "--------------------------------------------------"
+      ! write(*,*) "--------------------------------------------------"
 
       pdata%outliers(:) = int(pdata%indices(pdata%samples - pdata%noutliers + 1:))
 
