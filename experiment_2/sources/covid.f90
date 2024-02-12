@@ -89,11 +89,11 @@ program main
         real(kind=8) :: sigmin,epsilon,fxk,fxtrial,alpha,gamma,termination
         integer :: iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo
   
-        sigmin = 1.0d-1
+        sigmin = 1.0d0
         gamma = 1.0d+1
-        epsilon = 1.0d-1
+        epsilon = 1.0d-3
         alpha = 1.0d-8
-        max_iter_lovo = 1000000
+        max_iter_lovo = 0
         max_iter_sub_lovo = 100
         iter_lovo = 0
         iter_sub_lovo = 0
@@ -101,22 +101,24 @@ program main
   
         pdata%xk(:) = 1.0d-2
         
-        call compute_sp(n,pdata%xk,pdata,fxk)      
+        call compute_sp(n,pdata%xk,pdata,fxk)  
   
-        write(*,*) "--------------------------------------------------------"
-        write(*,10) "#iter","#init","Sp(xstar)","Stop criteria","#Imin"
-        10 format (2X,A5,4X,A5,6X,A9,6X,A13,2X,A5)
-        write(*,*) "--------------------------------------------------------"
+        ! write(*,*) "--------------------------------------------------------"
+        ! write(*,10) "#iter","#init","Sp(xstar)","Stop criteria","#Imin"
+        ! 10 format (2X,A5,4X,A5,6X,A9,6X,A13,2X,A5)
+        ! write(*,*) "--------------------------------------------------------"
   
         do
             iter_lovo = iter_lovo + 1
     
             call compute_grad_sp(n,pdata%xk,pdata,pdata%grad_sp)
 
+            print*,pdata%grad_sp
+
             termination = norm2(pdata%grad_sp(:))
             
-            write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination,pdata%dim_Imin
-            20 format (I8,5X,I4,4X,ES14.6,3X,ES14.6,2X,I2)
+            ! write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination,pdata%dim_Imin
+            ! 20 format (I8,5X,I4,4X,ES14.6,3X,ES14.6,2X,I2)
     
             if (termination .lt. epsilon) exit
             if (iter_lovo .gt. max_iter_lovo) exit
@@ -147,7 +149,7 @@ program main
         fobj = fxtrial
         pdata%counters(1) = iter_lovo
   
-        write(*,*) "--------------------------------------------------------"
+        ! write(*,*) "--------------------------------------------------------"
 
   
         outliers(:) = int(pdata%indices(pdata%n_train - noutliers + 1:))
@@ -236,26 +238,20 @@ program main
         real(kind=8),  intent(out) :: res(n)
         type(pdata_type), intent(in) :: pdata
   
-        real(kind=8) :: gaux,t,tm
-        integer :: i,ix
+        real(kind=8) :: gaux,ti
+        integer :: i
         
         res(:) = 0.0d0
-        tm = pdata%t(pdata%n_train)
   
         do i = 1, pdata%lovo_order
-            ix = int(pdata%indices(i))
-            t = pdata%t(ix) - tm
-        
-            call model(n,x,ix,pdata,gaux)
-
-            gaux = gaux - pdata%y(ix)
+            ti = pdata%t(int(pdata%indices(i)))
+            call model(n,x,int(pdata%indices(i)),pdata,gaux)
+            gaux = gaux - pdata%y(int(pdata%indices(i)))
             
-            res(1) = res(1) + gaux * t
-            res(2) = res(2) + gaux * (t**2)
-            res(3) = res(3) + gaux * (t**3)
-
-            gaux = 0.d0
-        enddo
+            res(1) = res(1) + gaux * (ti - pdata%t(pdata%n_train))
+            res(2) = res(2) + gaux * ((ti - pdata%t(pdata%n_train))**2)
+            res(3) = res(3) + gaux * ((ti - pdata%t(pdata%n_train))**3)
+         enddo
   
     end subroutine compute_grad_sp
 
@@ -268,14 +264,11 @@ program main
         integer,        intent(in) :: n,i
         real(kind=8),   intent(in) :: x(n)
         real(kind=8),   intent(out) :: res
-        real(kind=8) :: t,ym
 
         type(pdata_type), intent(in) :: pdata
    
-        t = pdata%t(i) - pdata%t(pdata%n_train)
-        ym = pdata%y(pdata%n_train)
-
-        res = ym + (x(1) * t) + (x(2) * (t**2)) + (x(3) * (t**3))
+        res = pdata%y(pdata%n_train) + x(1) * (pdata%t(i) - pdata%t(pdata%n_train)) + &
+        x(2) * ((pdata%t(i) - pdata%t(pdata%n_train))**2) + x(3) * ((pdata%t(i) - pdata%t(pdata%n_train))**3)
 
     end subroutine model
 
