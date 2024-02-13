@@ -141,7 +141,7 @@ program main
             if (iter_lovo .gt. max_iter_lovo) exit
             
             iter_sub_lovo = 1
-            pdata%sigma = sigmin
+            pdata%sigma = 0.d0
 
             do                 
                 call compute_xtrial(n,pdata,pdata%sigma,pdata%xtrial)
@@ -151,7 +151,7 @@ program main
                 if (iter_sub_lovo .gt. max_iter_sub_lovo) exit
 
                 ! pdata%sigma = max(sigmin,gamma * pdata%sigma)
-                pdata%sigma = gamma * pdata%sigma
+                pdata%sigma = max(sigmin,gamma * pdata%sigma)
                 iter_sub_lovo = iter_sub_lovo + 1
 
             enddo

@@ -370,6 +370,11 @@ program main
         max_it = 1000
         it = 0
 
+        pdata%aux_mat(1,:) = (/1.d0,0.d0,0.d0,0.d0/)
+        pdata%aux_mat(2,:) = (/0.d0,1.d0,0.d0,0.d0/)
+        pdata%aux_mat(3,:) = (/0.d0,0.d0,1.d0,0.d0/)
+        pdata%aux_mat(3,:) = (/0.d0,0.d0,0.d0,1.d0/)
+
         call compute_hess_sp(n,pdata,pdata%hess_sp)
 
         do
@@ -380,7 +385,7 @@ program main
 
             if (minval(pdata%eig_hess_sp) .gt. 0.0d0) exit
 
-            pdata%hess_sp(:,:) = pdata%hess_sp(:,:) + mu
+            pdata%hess_sp(:,:) = pdata%hess_sp(:,:) + mu * pdata%aux_mat(:,:)
             mu =  max(1.d-8,10.d0 * mu)
             it = it + 1
         enddo
