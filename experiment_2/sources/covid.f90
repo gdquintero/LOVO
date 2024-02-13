@@ -8,11 +8,11 @@ program main
         integer :: lovo_order,n_train,n_test,noutliers,dim_Imin
         real(kind=8) :: sigma,fobj
         real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),t_test(:),y_test(:),indices(:),&
-        sp_vector(:),grad_sp(:),hess_sp(:,:),eig_hess_sp(:)
+        sp_vector(:),grad_sp(:),hess_sp(:,:),eig_hess_sp(:),aux(:,:)
         integer, allocatable :: outliers(:)
-        character(len=1) :: JOBZ,UPLO ! dsyev-lapack variable
-        integer :: LDA,LWORK,INFO,i ! dsyev-lapack variable
-        real(kind=8), allocatable :: WORK(:) ! dsyev-lapack variable
+        character(len=1) :: JOBZ,UPLO ! lapack variables
+        integer :: LDA,LWORK,INFO,NRHS,LDB ! lapack variables
+        real(kind=8), allocatable :: WORK(:),IPIV(:) ! lapack variables
     end type pdata_type
 
     type(pdata_type), target :: pdata
@@ -25,11 +25,13 @@ program main
     ! Number of variables
     n = 3
     
-    ! dsyev-lapack variable
+    ! lapack variables
     pdata%JOBZ = 'N'
     pdata%UPLO = 'U'
     pdata%LDA = n
+    pdata%LDB = n
     pdata%LWORK = 3*n - 1
+    pdata%NRHS = 1
  
     Open(Unit = 100, File = trim(pwd)//"/../data/covid_train.txt", Access = "SEQUENTIAL")
     Open(Unit = 200, File = trim(pwd)//"/../data/covid_test.txt", Access = "SEQUENTIAL")
@@ -41,8 +43,15 @@ program main
 
  
     allocate(pdata%t(pdata%n_train),pdata%y(pdata%n_train),pdata%y_test(pdata%n_test),pdata%t_test(pdata%n_test),&
-    pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),pdata%indices(pdata%n_train),pdata%sp_vector(pdata%n_train),&
-    pdata%outliers(pdata%noutliers),pdata%hess_sp(n,n),pdata%eig_hess_sp(n),pdata%WORK(pdata%LWORK),stat=allocerr)
+    pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),pdata%indices(pdata%n_train),stat=allocerr)
+ 
+    if ( allocerr .ne. 0 ) then
+       write(*,*) 'Allocation error.'
+       stop
+    end if
+
+    allocate(pdata%sp_vector(pdata%n_train),pdata%outliers(pdata%noutliers),pdata%hess_sp(n,n),pdata%eig_hess_sp(n),&
+    pdata%WORK(pdata%LWORK),pdata%aux(n,n),pdata%IPIV(n),stat=allocerr)
  
     if ( allocerr .ne. 0 ) then
        write(*,*) 'Allocation error.'
@@ -300,12 +309,27 @@ program main
 
         integer,            intent(in) :: n
         type(pdata_type),   intent(inout) :: pdata
+        real(kind=8) :: mu
+        integer :: max_it,it
+
+        mu = 1.0d0
+        max_it = 1000
+        it = 0
 
         call compute_hess_sp(n,pdata,pdata%hess_sp)
-        call dsyev(pdata%JOBZ,pdata%UPLO,n,pdata%hess_sp,pdata%LDA,&
-        pdata%eig_hess_sp,pdata%WORK,pdata%LWORK,pdata%INFO)
 
-        print*, pdata%eig_hess_sp
+        do
+            pdata%aux(:,:) = pdata%hess_sp(:,:)
+
+            call dsyev(pdata%JOBZ,pdata%UPLO,n,pdata%aux,pdata%LDA,&
+            pdata%eig_hess_sp,pdata%WORK,pdata%LWORK,pdata%INFO)
+
+            if (minval(pdata%eig_hess_sp) .gt. 0.0d0) exit
+
+            pdata%hess_sp(:,:) = pdata%hess_sp(:,:) + mu
+            mu =  max(1.d-8,10.d0 * mu)
+            it = it + 1
+        enddo
 
     end subroutine
 
