@@ -144,7 +144,7 @@ program main
             pdata%sigma = 0.d0
 
             do                 
-                call compute_xtrial(n,pdata,pdata%sigma,pdata%xtrial)
+                call compute_xtrial(n,pdata)
                 call compute_sp(n,pdata%xtrial,pdata,fxtrial)
 
                 if (fxtrial .le. (fxk - alpha * norm2(pdata%xtrial(:) - pdata%xk(:))**2)) exit
@@ -306,44 +306,35 @@ program main
 
         integer,            intent(in) :: n
         type(pdata_type),   intent(inout) :: pdata
-        real(kind=8) :: mu
-        integer :: max_it,it
-
-        mu = 1.0d0
-        max_it = 1000
-        it = 0
+        real(kind=8) :: lambda_min
 
         call compute_hess_sp(n,pdata,pdata%hess_sp)
 
-        do
-            pdata%aux_mat(:,:) = pdata%hess_sp(:,:)
+        pdata%aux_mat(:,:) = pdata%hess_sp(:,:)
 
-            call dsyev(pdata%JOBZ,pdata%UPLO,n,pdata%aux_mat,pdata%LDA,&
-            pdata%eig_hess_sp,pdata%WORK,pdata%LWORK,pdata%INFO)
+        call dsyev(pdata%JOBZ,pdata%UPLO,n,pdata%aux_mat,pdata%LDA,&
+        pdata%eig_hess_sp,pdata%WORK,pdata%LWORK,pdata%INFO)
 
-            if (minval(pdata%eig_hess_sp) .gt. 0.0d0) exit
+        lambda_min = minval(pdata%eig_hess_sp)
+        call compute_eye(n,pdata%aux_mat)
 
-            pdata%hess_sp(:,:) = pdata%hess_sp(:,:) + mu
-            mu =  max(1.d-8,10.d0 * mu)
-            it = it + 1
-        enddo
-
-    end subroutine
+        pdata%hess_sp(:,:) = pdata%hess_sp(:,:) + &
+        max(0.d0,-lambda_min + 1.d-8) * pdata%aux_mat(:,:)
+               
+    end subroutine compute_Bkj
 
     !*****************************************************************
     !*****************************************************************
 
-    subroutine compute_xtrial(n,pdata,sigma,res)
+    subroutine compute_xtrial(n,pdata)
         implicit none 
 
         integer,            intent(in) :: n
-        real(kind=8),       intent(in) :: sigma
-        real(kind=8),       intent(out)::res(n)
         type(pdata_type),   intent(inout) :: pdata
 
         call compute_eye(n,pdata%aux_mat)
 
-        pdata%aux_mat(:,:) = pdata%hess_sp(:,:) + sigma * pdata%aux_mat(:,:)
+        pdata%aux_mat(:,:) = pdata%hess_sp(:,:) + pdata%sigma * pdata%aux_mat(:,:)
 
         pdata%aux_vec(:) = matmul(pdata%aux_mat(:,:),pdata%xk(:))
         pdata%aux_vec(:) = pdata%aux_vec(:) - pdata%grad_sp(:)
@@ -351,7 +342,7 @@ program main
         call dsysv(pdata%UPLO,n,pdata%NRHS,pdata%aux_mat(:,:),pdata%LDA,pdata%IPIV,&
         pdata%aux_vec(:),pdata%LDB,pdata%WORK,pdata%LWORK,pdata%INFO)
 
-        res(:) = pdata%aux_vec(:)
+        pdata%xtrial(:) = pdata%aux_vec(:)
     end subroutine compute_xtrial
 
     !*****************************************************************

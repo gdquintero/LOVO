@@ -365,8 +365,6 @@ program main
         type(pdata_type),   intent(inout) :: pdata
         real(kind=8) :: lambda_min
 
-        call compute_eye(n,pdata%aux_mat)
-
         call compute_hess_sp(n,pdata,pdata%hess_sp)
 
         pdata%aux_mat(:,:) = pdata%hess_sp(:,:)
@@ -375,6 +373,7 @@ program main
         pdata%eig_hess_sp,pdata%WORK,pdata%LWORK,pdata%INFO)
 
         lambda_min = minval(pdata%eig_hess_sp)
+        call compute_eye(n,pdata%aux_mat)
 
         pdata%hess_sp(:,:) = pdata%hess_sp(:,:) + &
         max(0.d0,-lambda_min + 1.d-8) * pdata%aux_mat(:,:)
