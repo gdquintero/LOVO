@@ -363,32 +363,21 @@ program main
 
         integer,            intent(in) :: n
         type(pdata_type),   intent(inout) :: pdata
-        real(kind=8) :: mu
-        integer :: max_it,it
+        real(kind=8) :: lambda_min
 
-        mu = 1.0d-1
-        max_it = 1000
-        it = 0
-
-        pdata%aux_mat(1,:) = (/1.d0,0.d0,0.d0,0.d0/)
-        pdata%aux_mat(2,:) = (/0.d0,1.d0,0.d0,0.d0/)
-        pdata%aux_mat(3,:) = (/0.d0,0.d0,1.d0,0.d0/)
-        pdata%aux_mat(3,:) = (/0.d0,0.d0,0.d0,1.d0/)
+        call compute_eye(n,pdata%aux_mat)
 
         call compute_hess_sp(n,pdata,pdata%hess_sp)
 
-        do
-            pdata%aux_mat(:,:) = pdata%hess_sp(:,:)
+        pdata%aux_mat(:,:) = pdata%hess_sp(:,:)
 
-            call dsyev(pdata%JOBZ,pdata%UPLO,n,pdata%aux_mat,pdata%LDA,&
-            pdata%eig_hess_sp,pdata%WORK,pdata%LWORK,pdata%INFO)
+        call dsyev(pdata%JOBZ,pdata%UPLO,n,pdata%aux_mat,pdata%LDA,&
+        pdata%eig_hess_sp,pdata%WORK,pdata%LWORK,pdata%INFO)
 
-            if (minval(pdata%eig_hess_sp) .gt. 0.0d0) exit
+        lambda_min = minval(pdata%eig_hess_sp)
 
-            pdata%hess_sp(:,:) = pdata%hess_sp(:,:) + mu * pdata%aux_mat(:,:)
-            mu =  max(1.d-8,10.d0 * mu)
-            it = it + 1
-        enddo
+        pdata%hess_sp(:,:) = pdata%hess_sp(:,:) + &
+        max(0.d0,-lambda_min + 1.d-8) * pdata%aux_mat(:,:)
                
     end subroutine compute_Bkj
 
@@ -400,20 +389,10 @@ program main
 
         integer,            intent(in) :: n
         type(pdata_type),   intent(inout) :: pdata
-        integer :: i
 
-        pdata%aux_mat(1,:) = (/1.d0,0.d0,0.d0,0.d0/)
-        pdata%aux_mat(2,:) = (/0.d0,1.d0,0.d0,0.d0/)
-        pdata%aux_mat(3,:) = (/0.d0,0.d0,1.d0,0.d0/)
-        pdata%aux_mat(3,:) = (/0.d0,0.d0,0.d0,1.d0/)
+        call compute_eye(n,pdata%aux_mat)
 
         pdata%aux_mat(:,:) = pdata%hess_sp(:,:) + pdata%sigma * pdata%aux_mat(:,:)
-
-        ! do i = 1, n
-        !     print*, pdata%aux_mat(i,:)
-        ! enddo
-
-        ! print*
 
         pdata%aux_vec(:) = matmul(pdata%aux_mat(:,:),pdata%xk(:))
         pdata%aux_vec(:) = pdata%aux_vec(:) - pdata%grad_sp(:)
@@ -423,6 +402,23 @@ program main
 
         pdata%xtrial(:) = pdata%aux_vec(:)
     end subroutine compute_xtrial
+
+    !*****************************************************************
+    !*****************************************************************
+
+    subroutine compute_eye(n,res)
+        implicit none
+
+        integer,        intent(in) :: n
+        real(kind=8),   intent(out):: res(n,n)
+        integer :: i
+
+        res(:,:) = 0.0d0
+
+        do i = 1, n
+            res(i,i) = 1.d0
+        enddo
+    end subroutine compute_eye
 
     !*****************************************************************
     !*****************************************************************

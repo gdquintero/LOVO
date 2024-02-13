@@ -341,9 +341,7 @@ program main
         real(kind=8),       intent(out)::res(n)
         type(pdata_type),   intent(inout) :: pdata
 
-        pdata%aux_mat(1,:) = (/1.d0,0.d0,0.d0/)
-        pdata%aux_mat(2,:) = (/0.d0,1.d0,0.d0/)
-        pdata%aux_mat(3,:) = (/0.d0,0.d0,1.d0/)
+        call compute_eye(n,pdata%aux_mat)
 
         pdata%aux_mat(:,:) = pdata%hess_sp(:,:) + sigma * pdata%aux_mat(:,:)
 
@@ -355,6 +353,23 @@ program main
 
         res(:) = pdata%aux_vec(:)
     end subroutine compute_xtrial
+
+    !*****************************************************************
+    !*****************************************************************
+
+    subroutine compute_eye(n,res)
+        implicit none
+
+        integer,        intent(in) :: n
+        real(kind=8),   intent(out):: res(n,n)
+        integer :: i
+
+        res(:,:) = 0.0d0
+
+        do i = 1, n
+            res(i,i) = 1.d0
+        enddo
+    end subroutine compute_eye
 
     !*****************************************************************
     !*****************************************************************
