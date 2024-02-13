@@ -8,8 +8,11 @@ program main
         integer :: lovo_order,n_train,n_test,noutliers,dim_Imin
         real(kind=8) :: sigma,fobj
         real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),t_test(:),y_test(:),indices(:),&
-        sp_vector(:),grad_sp(:)
+        sp_vector(:),grad_sp(:),hess_sp(:,:),eig_hess_sp(:)
         integer, allocatable :: outliers(:)
+        character(len=1) :: JOBZ,UPLO ! dsyev-lapack variable
+        integer :: LDA,LWORK,INFO,i ! dsyev-lapack variable
+        real(kind=8), allocatable :: WORK(:) ! dsyev-lapack variable
     end type pdata_type
 
     type(pdata_type), target :: pdata
@@ -19,8 +22,14 @@ program main
     character(len=128) :: pwd
     call get_environment_variable('PWD',pwd)
 
-   ! Number of variables
+    ! Number of variables
     n = 3
+    
+    ! dsyev-lapack variable
+    pdata%JOBZ = 'N'
+    pdata%UPLO = 'U'
+    pdata%LDA = n
+    pdata%LWORK = 3*n - 1
  
     Open(Unit = 100, File = trim(pwd)//"/../data/covid_train.txt", Access = "SEQUENTIAL")
     Open(Unit = 200, File = trim(pwd)//"/../data/covid_test.txt", Access = "SEQUENTIAL")
@@ -33,7 +42,7 @@ program main
  
     allocate(pdata%t(pdata%n_train),pdata%y(pdata%n_train),pdata%y_test(pdata%n_test),pdata%t_test(pdata%n_test),&
     pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),pdata%indices(pdata%n_train),pdata%sp_vector(pdata%n_train),&
-    pdata%outliers(pdata%noutliers),stat=allocerr)
+    pdata%outliers(pdata%noutliers),pdata%hess_sp(n,n),pdata%eig_hess_sp(n),pdata%WORK(pdata%LWORK),stat=allocerr)
  
     if ( allocerr .ne. 0 ) then
        write(*,*) 'Allocation error.'
@@ -93,8 +102,8 @@ program main
         gamma = 1.0d+1
         epsilon = 1.0d-3
         alpha = 1.0d-8
-        max_iter_lovo = 10000
-        max_iter_sub_lovo = 100
+        max_iter_lovo = 0
+        max_iter_sub_lovo = 0
         iter_lovo = 0
         iter_sub_lovo = 0
         pdata%lovo_order = pdata%n_train - noutliers
@@ -102,11 +111,14 @@ program main
         pdata%xk(:) = 1.0d-2
         
         call compute_sp(n,pdata%xk,pdata,fxk)  
+
+        call compute_Bkj(n,pdata)
+
   
-        write(*,*) "--------------------------------------------------------"
-        write(*,10) "#iter","#init","Sp(xstar)","Stop criteria","#Imin"
-        10 format (2X,A5,4X,A5,6X,A9,6X,A13,2X,A5)
-        write(*,*) "--------------------------------------------------------"
+        ! write(*,*) "--------------------------------------------------------"
+        ! write(*,10) "#iter","#init","Sp(xstar)","Stop criteria","#Imin"
+        ! 10 format (2X,A5,4X,A5,6X,A9,6X,A13,2X,A5)
+        ! write(*,*) "--------------------------------------------------------"
   
         do
             iter_lovo = iter_lovo + 1
@@ -115,8 +127,8 @@ program main
 
             termination = norm2(pdata%grad_sp(:))
             
-            write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination,pdata%dim_Imin
-            20 format (I8,5X,I4,4X,ES14.6,3X,ES14.6,2X,I2)
+            ! write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination,pdata%dim_Imin
+            ! 20 format (I8,5X,I4,4X,ES14.6,3X,ES14.6,2X,I2)
     
             if (termination .lt. epsilon) exit
             if (iter_lovo .gt. max_iter_lovo) exit
@@ -147,7 +159,7 @@ program main
         fobj = fxtrial
         pdata%counters(1) = iter_lovo
   
-        write(*,*) "--------------------------------------------------------"
+        ! write(*,*) "--------------------------------------------------------"
 
   
         outliers(:) = int(pdata%indices(pdata%n_train - noutliers + 1:))
@@ -253,31 +265,49 @@ program main
   
     end subroutine compute_grad_sp
 
-   !*****************************************************************
-   !*****************************************************************
+    !*****************************************************************
+    !*****************************************************************
 
     subroutine compute_hess_sp(n,pdata,res)
         implicit none
-  
+
         integer,       intent(in) :: n
         real(kind=8),  intent(out) :: res(n,n)
         type(pdata_type), intent(in) :: pdata
-  
-        real(kind=8) :: ti
-        integer :: i,k
-        
-        res(:,:) = 0.0d0
-  
-        do i = 1, pdata%lovo_order
-           ti = pdata%t(int(pdata%indices(i)))
 
-           res(1,:) = res(1,:) + (/((ti - pdata%t(pdata%n_train))**k, k = 2,3,4)/) 
-           res(2,:) = res(2,:) + (/((ti - pdata%t(pdata%n_train))**k, k = 3,4,5)/) 
-           res(3,:) = res(3,:) + (/((ti - pdata%t(pdata%n_train))**k, k = 4,5,6)/) 
-           
+        real(kind=8) :: ti,tm
+        integer :: i
+
+        res(:,:) = 0.0d0
+        tm = pdata%t(pdata%n_train)
+
+        do i = 1, pdata%lovo_order
+            ti = pdata%t(int(pdata%indices(i)))
+
+            res(1,:) = res(1,:) + (/(ti-tm)**2,(ti-tm)**3,(ti-tm)**4/) 
+            res(2,:) = res(2,:) + (/(ti-tm)**3,(ti-tm)**4,(ti-tm)**5/) 
+            res(3,:) = res(3,:) + (/(ti-tm)**4,(ti-tm)**5,(ti-tm)**6/) 
+            
         enddo
-  
-     end subroutine compute_hess_sp
+    
+    end subroutine compute_hess_sp
+
+    !*****************************************************************
+    !*****************************************************************
+
+    subroutine compute_Bkj(n,pdata)
+        implicit none
+
+        integer,            intent(in) :: n
+        type(pdata_type),   intent(inout) :: pdata
+
+        call compute_hess_sp(n,pdata,pdata%hess_sp)
+        call dsyev(pdata%JOBZ,pdata%UPLO,n,pdata%hess_sp,pdata%LDA,&
+        pdata%eig_hess_sp,pdata%WORK,pdata%LWORK,pdata%INFO)
+
+        print*, pdata%eig_hess_sp
+
+    end subroutine
 
     !*****************************************************************
     !*****************************************************************
