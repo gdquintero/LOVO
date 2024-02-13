@@ -256,15 +256,14 @@ program main
    !*****************************************************************
    !*****************************************************************
 
-    subroutine compute_hess_sp(n,x,pdata,res)
+    subroutine compute_hess_sp(n,pdata,res)
         implicit none
   
         integer,       intent(in) :: n
-        real(kind=8),  intent(in) :: x(n)
         real(kind=8),  intent(out) :: res(n,n)
         type(pdata_type), intent(in) :: pdata
   
-        real(kind=8) :: gaux,ti
+        real(kind=8) :: ti
         integer :: i,k
         
         res(:,:) = 0.0d0
@@ -272,11 +271,10 @@ program main
         do i = 1, pdata%lovo_order
            ti = pdata%t(int(pdata%indices(i)))
 
-           res(1,:) = (/()/) 
+           res(1,:) = res(1,:) + (/((ti - pdata%t(pdata%n_train))**k, k = 2,3,4)/) 
+           res(2,:) = res(2,:) + (/((ti - pdata%t(pdata%n_train))**k, k = 3,4,5)/) 
+           res(3,:) = res(3,:) + (/((ti - pdata%t(pdata%n_train))**k, k = 4,5,6)/) 
            
-           res(1) = res(1) + gaux * (ti - pdata%t(pdata%samples))
-           res(2) = res(2) + gaux * ((ti - pdata%t(pdata%samples))**2)
-           res(3) = res(3) + gaux * ((ti - pdata%t(pdata%samples))**3)
         enddo
   
      end subroutine compute_hess_sp
