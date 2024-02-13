@@ -8,7 +8,7 @@ program main
         integer :: lovo_order,n_train,n_test,noutliers,dim_Imin
         real(kind=8) :: sigma,fobj
         real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),t_test(:),y_test(:),indices(:),&
-        sp_vector(:),grad_sp(:),hess_sp(:,:),eig_hess_sp(:),aux(:,:)
+        sp_vector(:),grad_sp(:),hess_sp(:,:),eig_hess_sp(:),aux_mat(:,:),aux_vec(:)
         integer, allocatable :: outliers(:)
         character(len=1) :: JOBZ,UPLO ! lapack variables
         integer :: LDA,LWORK,INFO,NRHS,LDB ! lapack variables
@@ -51,7 +51,7 @@ program main
     end if
 
     allocate(pdata%sp_vector(pdata%n_train),pdata%outliers(pdata%noutliers),pdata%hess_sp(n,n),pdata%eig_hess_sp(n),&
-    pdata%WORK(pdata%LWORK),pdata%aux(n,n),pdata%IPIV(n),stat=allocerr)
+    pdata%WORK(pdata%LWORK),pdata%aux_mat(n,n),pdata%aux_vec(n),pdata%IPIV(n),stat=allocerr)
  
     if ( allocerr .ne. 0 ) then
        write(*,*) 'Allocation error.'
@@ -111,8 +111,8 @@ program main
         gamma = 1.0d+1
         epsilon = 1.0d-3
         alpha = 1.0d-8
-        max_iter_lovo = 0
-        max_iter_sub_lovo = 0
+        max_iter_lovo = 1000
+        max_iter_sub_lovo = 100
         iter_lovo = 0
         iter_sub_lovo = 0
         pdata%lovo_order = pdata%n_train - noutliers
@@ -121,23 +121,22 @@ program main
         
         call compute_sp(n,pdata%xk,pdata,fxk)  
 
-        call compute_Bkj(n,pdata)
-
   
-        ! write(*,*) "--------------------------------------------------------"
-        ! write(*,10) "#iter","#init","Sp(xstar)","Stop criteria","#Imin"
-        ! 10 format (2X,A5,4X,A5,6X,A9,6X,A13,2X,A5)
-        ! write(*,*) "--------------------------------------------------------"
+        write(*,*) "--------------------------------------------------------"
+        write(*,10) "#iter","#init","Sp(xstar)","Stop criteria","#Imin"
+        10 format (2X,A5,4X,A5,6X,A9,6X,A13,2X,A5)
+        write(*,*) "--------------------------------------------------------"
   
         do
             iter_lovo = iter_lovo + 1
     
             call compute_grad_sp(n,pdata%xk,pdata,pdata%grad_sp)
+            call compute_Bkj(n,pdata)
 
             termination = norm2(pdata%grad_sp(:))
             
-            ! write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination,pdata%dim_Imin
-            ! 20 format (I8,5X,I4,4X,ES14.6,3X,ES14.6,2X,I2)
+            write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination,pdata%dim_Imin
+            20 format (I8,5X,I4,4X,ES14.6,3X,ES14.6,2X,I2)
     
             if (termination .lt. epsilon) exit
             if (iter_lovo .gt. max_iter_lovo) exit
@@ -145,9 +144,8 @@ program main
             iter_sub_lovo = 1
             pdata%sigma = sigmin
 
-            do 
-                pdata%xtrial(:) = pdata%xk(:) - (1.d0 / pdata%sigma) * pdata%grad_sp(:)
-
+            do                 
+                call compute_xtrial(n,pdata,pdata%sigma,pdata%xtrial)
                 call compute_sp(n,pdata%xtrial,pdata,fxtrial)
 
                 if (fxtrial .le. (fxk - alpha * norm2(pdata%xtrial(:) - pdata%xk(:))**2)) exit
@@ -168,7 +166,7 @@ program main
         fobj = fxtrial
         pdata%counters(1) = iter_lovo
   
-        ! write(*,*) "--------------------------------------------------------"
+        write(*,*) "--------------------------------------------------------"
 
   
         outliers(:) = int(pdata%indices(pdata%n_train - noutliers + 1:))
@@ -319,9 +317,9 @@ program main
         call compute_hess_sp(n,pdata,pdata%hess_sp)
 
         do
-            pdata%aux(:,:) = pdata%hess_sp(:,:)
+            pdata%aux_mat(:,:) = pdata%hess_sp(:,:)
 
-            call dsyev(pdata%JOBZ,pdata%UPLO,n,pdata%aux,pdata%LDA,&
+            call dsyev(pdata%JOBZ,pdata%UPLO,n,pdata%aux_mat,pdata%LDA,&
             pdata%eig_hess_sp,pdata%WORK,pdata%LWORK,pdata%INFO)
 
             if (minval(pdata%eig_hess_sp) .gt. 0.0d0) exit
@@ -332,6 +330,32 @@ program main
         enddo
 
     end subroutine
+
+    !*****************************************************************
+    !*****************************************************************
+
+    subroutine compute_xtrial(n,pdata,sigma,res)
+        implicit none 
+
+        integer,            intent(in) :: n
+        real(kind=8),       intent(in) :: sigma
+        real(kind=8),       intent(out)::res(n)
+        type(pdata_type),   intent(inout) :: pdata
+
+        pdata%aux_mat(1,:) = (/1.d0,0.d0,0.d0/)
+        pdata%aux_mat(2,:) = (/0.d0,1.d0,0.d0/)
+        pdata%aux_mat(3,:) = (/0.d0,0.d0,1.d0/)
+
+        pdata%aux_mat(:,:) = pdata%hess_sp(:,:) + sigma * pdata%aux_mat(:,:)
+
+        pdata%aux_vec(:) = matmul(pdata%aux_mat(:,:),pdata%xk(:))
+        pdata%aux_vec(:) = pdata%aux_vec(:) - pdata%grad_sp(:)
+
+        call dsysv(pdata%UPLO,n,pdata%NRHS,pdata%aux_mat(:,:),pdata%LDA,pdata%IPIV,&
+        pdata%aux_vec(:),pdata%LDB,pdata%WORK,pdata%LWORK,pdata%INFO)
+
+        res(:) = pdata%aux_vec(:)
+    end subroutine compute_xtrial
 
     !*****************************************************************
     !*****************************************************************
