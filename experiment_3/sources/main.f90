@@ -8,8 +8,11 @@ program main
         integer :: samples,inf,sup,lovo_order,dim_Imin,n_train,n_test
         real(kind=8) :: sigma,theta
         real(kind=8), allocatable :: xstar(:),xtrial(:),xk(:),t(:),y(:),data(:,:),indices(:),sp_vector(:),&
-        grad_sp(:),gp(:),lbnd(:),ubnd(:),pred(:),re(:)
+        grad_sp(:),gp(:),lbnd(:),ubnd(:),pred(:),re(:),hess_sp(:,:),eig_hess_sp(:),aux_mat(:,:),aux_vec(:)
         integer, allocatable :: outliers(:)
+        character(len=1) :: JOBZ,UPLO ! lapack variables
+        integer :: LDA,LWORK,INFO,NRHS,LDB ! lapack variables
+        real(kind=8), allocatable :: WORK(:),IPIV(:) ! lapack variables
     end type pdata_type
 
     type(pdata_type), target :: pdata
@@ -20,6 +23,14 @@ program main
     call get_environment_variable('PWD',pwd)
 
     n = 4
+
+    ! lapack variables
+    pdata%JOBZ = 'N'
+    pdata%UPLO = 'U'
+    pdata%LDA = n
+    pdata%LDB = n
+    pdata%LWORK = 3*n - 1
+    pdata%NRHS = 1
     
     Open(Unit = 10, File = trim(pwd)//"/../data/cubic.txt", Access = "SEQUENTIAL")
 
@@ -37,6 +48,14 @@ program main
         stop
     end if
 
+    allocate(pdata%hess_sp(n,n),pdata%eig_hess_sp(n),pdata%WORK(pdata%LWORK),pdata%aux_mat(n,n),&
+    pdata%aux_vec(n),pdata%IPIV(n),stat=allocerr)
+
+    if ( allocerr .ne. 0 ) then
+        write(*,*) 'Allocation error.'
+        stop
+    end if
+
     do i = 1, pdata%samples
         read(10,*) pdata%data(:,i)
     enddo
@@ -48,7 +67,7 @@ program main
     pdata%t(1:pdata%n_train) = pdata%data(1,1:pdata%n_train)
     pdata%y(1:pdata%n_train) = pdata%data(2,1:pdata%n_train)
 
-    pdata%inf = 0
+    pdata%inf = 10
     pdata%sup = 10
  
     allocate(pdata%outliers(pdata%n_train*(pdata%sup-pdata%inf+1)),stat=allocerr)
@@ -140,15 +159,14 @@ program main
         real(kind=8), intent(out) :: fobj
         type(pdata_type), intent(inout) :: pdata
   
-        real(kind=8) :: sigmin,sigmin_old,epsilon,fxk,fxtrial,alpha,gamma,termination
-        integer :: iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo,k
+        real(kind=8) :: sigmin,epsilon,fxk,fxtrial,alpha,gamma,termination
+        integer :: iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo
   
         sigmin = 1.0d-1
-        sigmin_old = sigmin
         gamma = 1.d+1
-        epsilon = 1.0d-3
+        epsilon = 1.0d-8
         alpha = 1.0d-8
-        max_iter_lovo = 100000
+        max_iter_lovo = 100
         max_iter_sub_lovo = 100
         iter_lovo = 0
         iter_sub_lovo = 0
@@ -158,51 +176,41 @@ program main
   
         call compute_sp(n,pdata%xk,pdata,fxk)      
   
-        write(*,*) "--------------------------------------------------------"
-        write(*,10) "#iter","#init","Sp(xstar)","Stop criteria","#Imin"
-        10 format (2X,A5,4X,A5,6X,A9,6X,A13,2X,A5)
-        write(*,*) "--------------------------------------------------------"
+        ! write(*,*) "--------------------------------------------------------"
+        ! write(*,10) "#iter","#init","Sp(xstar)","Stop criteria","#Imin"
+        ! 10 format (2X,A5,4X,A5,6X,A9,6X,A13,2X,A5)
+        ! write(*,*) "--------------------------------------------------------"
   
         do
             iter_lovo = iter_lovo + 1
     
             call compute_grad_sp(n,pdata%xk,pdata,pdata%grad_sp)
+            call compute_Bkj(n,pdata)
     
             termination = norm2(pdata%grad_sp(1:n))
     
             write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination,pdata%dim_Imin
             20 format (I6,5X,I4,4X,ES14.6,3X,ES14.6,2X,I2)
     
-            if (termination .lt. epsilon) exit
-            if (iter_lovo .gt. max_iter_lovo) exit
+            if (termination .le. epsilon) exit
+            if (iter_lovo .ge. max_iter_lovo) exit
             
             iter_sub_lovo = 1
-            ! pdata%sigma = sigmin_old
-            pdata%sigma = sigmin
-            k = 1
+            pdata%sigma = 0.d0
 
-            do 
-                pdata%xtrial(:) = pdata%xk(:) - (1.d0 / pdata%sigma) * pdata%grad_sp(:)
+            do                 
+                call compute_xtrial(n,pdata)
 
+                ! pdata%xtrial(:) = pdata%xk(:) - (1.d0 / pdata%sigma) * pdata%grad_sp(:)
                 call compute_sp(n,pdata%xtrial,pdata,fxtrial)
 
                 if (fxtrial .le. (fxk - alpha * norm2(pdata%xtrial(1:n) - pdata%xk(1:n))**2)) exit
-                if (iter_sub_lovo .gt. max_iter_sub_lovo) exit
+                if (iter_sub_lovo .ge. max_iter_sub_lovo) exit
 
-                k = k + 1
-
-                ! if (k .eq. 2) then
-                !     pdata%sigma = sigmin
-                ! else
-                !     pdata%sigma = gamma * pdata%sigma
-                ! endif
-
-                pdata%sigma = gamma * pdata%sigma
+                pdata%sigma = max(sigmin,gamma * pdata%sigma)
                 iter_sub_lovo = iter_sub_lovo + 1
 
             enddo
-
-            sigmin_old = pdata%sigma
   
             fxk = fxtrial
             pdata%xk(:) = pdata%xtrial(:)
@@ -213,7 +221,7 @@ program main
         fobj = fxtrial
         pdata%counters(1) = iter_lovo
   
-        write(*,*) "--------------------------------------------------------"
+        ! write(*,*) "--------------------------------------------------------"
 
   
         outliers(:) = int(pdata%indices(pdata%n_train - noutliers + 1:))
@@ -308,17 +316,108 @@ program main
         res(:) = 0.0d0
   
         do i = 1, pdata%lovo_order
-           ti = pdata%t(int(pdata%indices(i)))
-           call model(n,x,int(pdata%indices(i)),pdata,gaux)
-           gaux = gaux - pdata%y(int(pdata%indices(i)))
-  
-           res(1) = res(1) + gaux
-           res(2) = res(2) + gaux * ti
-           res(3) = res(3) + gaux * (ti**2)
-           res(4) = res(4) + gaux * (ti**3)
+            ti = pdata%t(int(pdata%indices(i)))
+            call model(n,x,int(pdata%indices(i)),pdata,gaux)
+            gaux = gaux - pdata%y(int(pdata%indices(i)))
+
+            res(1) = res(1) + gaux
+            res(2) = res(2) + gaux * ti
+            res(3) = res(3) + gaux * (ti**2)
+            res(4) = res(4) + gaux * (ti**3)
         enddo
   
     end subroutine compute_grad_sp
+
+    !*****************************************************************
+    !*****************************************************************
+
+    subroutine compute_hess_sp(n,pdata,res)
+        implicit none
+
+        integer,       intent(in) :: n
+        real(kind=8),  intent(out) :: res(n,n)
+        type(pdata_type), intent(in) :: pdata
+
+        real(kind=8) :: ti
+        integer :: i
+
+        res(:,:) = 0.0d0
+
+        do i = 1, pdata%lovo_order
+            ti = pdata%t(int(pdata%indices(i)))
+
+            res(1,:) = res(1,:) + (/ti**0,ti**1,ti**2,ti**3/)
+            res(2,:) = res(2,:) + (/ti**1,ti**2,ti**3,ti**4/) 
+            res(3,:) = res(3,:) + (/ti**2,ti**3,ti**4,ti**5/)
+            res(4,:) = res(4,:) + (/ti**3,ti**4,ti**5,ti**6/)
+            
+        enddo
+    
+    end subroutine compute_hess_sp
+
+    !*****************************************************************
+    !*****************************************************************
+
+    subroutine compute_Bkj(n,pdata)
+        implicit none
+
+        integer,            intent(in) :: n
+        type(pdata_type),   intent(inout) :: pdata
+        real(kind=8) :: mu
+        integer :: max_it,it
+
+        mu = 1.0d-1
+        max_it = 1000
+        it = 0
+
+        call compute_hess_sp(n,pdata,pdata%hess_sp)
+
+        do
+            pdata%aux_mat(:,:) = pdata%hess_sp(:,:)
+
+            call dsyev(pdata%JOBZ,pdata%UPLO,n,pdata%aux_mat,pdata%LDA,&
+            pdata%eig_hess_sp,pdata%WORK,pdata%LWORK,pdata%INFO)
+
+            if (minval(pdata%eig_hess_sp) .gt. 0.0d0) exit
+
+            pdata%hess_sp(:,:) = pdata%hess_sp(:,:) + mu
+            mu =  max(1.d-8,10.d0 * mu)
+            it = it + 1
+        enddo
+               
+    end subroutine compute_Bkj
+
+    !*****************************************************************
+    !*****************************************************************
+
+    subroutine compute_xtrial(n,pdata)
+        implicit none 
+
+        integer,            intent(in) :: n
+        type(pdata_type),   intent(inout) :: pdata
+        integer :: i
+
+        pdata%aux_mat(1,:) = (/1.d0,0.d0,0.d0,0.d0/)
+        pdata%aux_mat(2,:) = (/0.d0,1.d0,0.d0,0.d0/)
+        pdata%aux_mat(3,:) = (/0.d0,0.d0,1.d0,0.d0/)
+        pdata%aux_mat(3,:) = (/0.d0,0.d0,0.d0,1.d0/)
+
+        pdata%aux_mat(:,:) = pdata%hess_sp(:,:) + pdata%sigma * pdata%aux_mat(:,:)
+
+        ! do i = 1, n
+        !     print*, pdata%aux_mat(i,:)
+        ! enddo
+
+        ! print*
+
+        pdata%aux_vec(:) = matmul(pdata%aux_mat(:,:),pdata%xk(:))
+        pdata%aux_vec(:) = pdata%aux_vec(:) - pdata%grad_sp(:)
+
+        call dsysv(pdata%UPLO,n,pdata%NRHS,pdata%aux_mat(:,:),pdata%LDA,pdata%IPIV,&
+        pdata%aux_vec(:),pdata%LDB,pdata%WORK,pdata%LWORK,pdata%INFO)
+
+        pdata%xtrial(:) = pdata%aux_vec(:)
+    end subroutine compute_xtrial
 
     !*****************************************************************
     !*****************************************************************
