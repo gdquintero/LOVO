@@ -5,7 +5,7 @@ program main
 
     type :: pdata_type
         integer :: counters(3) = 0
-        integer :: lovo_order,n_train,n_test,noutliers,dim_Imin
+        integer :: samples,lovo_order,n_train,n_test,days_test,noutliers,dim_Imin
         real(kind=8) :: sigma,fobj
         real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),t_test(:),y_test(:),indices(:),&
         sp_vector(:),grad_sp(:),hess_sp(:,:),eig_hess_sp(:),aux_mat(:,:),aux_vec(:)
@@ -33,7 +33,8 @@ program main
     pdata%LWORK = 3*n - 1
     pdata%NRHS = 1
  
-    call single_test()
+    ! call single_test()
+    call mixed_test()
  
     stop
 
@@ -83,7 +84,7 @@ program main
      
         Open(Unit = 100, File = trim(pwd)//"/../output/solution_covid.txt", ACCESS = "SEQUENTIAL")
     
-        call lovo_algorithm(n,pdata%noutliers,pdata%outliers,pdata,pdata%fobj)
+        call lovo_algorithm(n,pdata%noutliers,pdata%outliers,pdata,.true.,pdata%fobj)
     
         write(100,10) pdata%xk(1),pdata%xk(2),pdata%xk(3)
     
@@ -108,17 +109,30 @@ program main
     subroutine mixed_test()
         implicit none
 
+        Open(Unit = 100, File = trim(pwd)//"/../data/covid_mixed.txt", Access = "SEQUENTIAL")
+
+        read(100,*) pdata%samples
+
+        pdata%n_train  = 30
+        pdata%n_test   = 10
+        pdata%days_test = 10
+
+
+
+        close(100)
+
     end subroutine mixed_test
 
     !*****************************************************************
     !*****************************************************************
 
-    subroutine lovo_algorithm(n,noutliers,outliers,pdata,fobj)
+    subroutine lovo_algorithm(n,noutliers,outliers,pdata,single_type_test,fobj)
         implicit none
-  
-        integer, intent(in) :: n,noutliers
-        integer, intent(inout) :: outliers(noutliers)
-        real(kind=8), intent(out) :: fobj
+        
+        logical,        intent(in) :: single_type_test
+        integer,        intent(in) :: n,noutliers
+        integer,        intent(inout) :: outliers(noutliers)
+        real(kind=8),   intent(out) :: fobj
         type(pdata_type), intent(inout) :: pdata
   
         real(kind=8) :: sigmin,epsilon,fxk,fxtrial,alpha,gamma,termination
@@ -139,10 +153,12 @@ program main
         call compute_sp(n,pdata%xk,pdata,fxk)  
 
   
-        write(*,*) "--------------------------------------------------------"
-        write(*,10) "#iter","#init","Sp(xstar)","Stop criteria","#Imin"
-        10 format (2X,A5,4X,A5,6X,A9,6X,A13,2X,A5)
-        write(*,*) "--------------------------------------------------------"
+        if (single_type_test) then
+            write(*,*) "--------------------------------------------------------"
+            write(*,10) "#iter","#init","Sp(xstar)","Stop criteria","#Imin"
+            10 format (2X,A5,4X,A5,6X,A9,6X,A13,2X,A5)
+            write(*,*) "--------------------------------------------------------"
+        endif
   
         do
             iter_lovo = iter_lovo + 1
@@ -152,8 +168,10 @@ program main
 
             termination = norm2(pdata%grad_sp(:))
             
-            write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination,pdata%dim_Imin
-            20 format (I8,5X,I4,4X,ES14.6,3X,ES14.6,2X,I2)
+            if (single_type_test) then
+                write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination,pdata%dim_Imin
+                20 format (I8,5X,I4,4X,ES14.6,3X,ES14.6,2X,I2)
+            endif
     
             if (termination .le. epsilon) exit
             if (iter_lovo .gt. max_iter_lovo) exit
@@ -183,7 +201,9 @@ program main
         fobj = fxtrial
         pdata%counters(1) = iter_lovo
   
-        write(*,*) "--------------------------------------------------------"
+        if (single_type_test) then
+            write(*,*) "--------------------------------------------------------"
+        endif
 
   
         outliers(:) = int(pdata%indices(pdata%n_train - noutliers + 1:))
