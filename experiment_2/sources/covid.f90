@@ -5,10 +5,11 @@ program main
 
     type :: pdata_type
         integer :: counters(3) = 0
-        integer :: samples,lovo_order,n_train,n_test,days_test,noutliers,dim_Imin
+        integer :: lovo_order,n_train,n_test,days_test,noutliers,dim_Imin
         real(kind=8) :: sigma,fobj
         real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),t_test(:),y_test(:),indices(:),&
-        sp_vector(:),grad_sp(:),hess_sp(:,:),eig_hess_sp(:),aux_mat(:,:),aux_vec(:)
+        sp_vector(:),grad_sp(:),hess_sp(:,:),eig_hess_sp(:),aux_mat(:,:),aux_vec(:),train_set(:),&
+        test_set(:),test_data(:,:),train_data(:,:)
         integer, allocatable :: outliers(:)
         character(len=1) :: JOBZ,UPLO ! lapack variables
         integer :: LDA,LWORK,INFO,NRHS,LDB ! lapack variables
@@ -109,16 +110,32 @@ program main
     subroutine mixed_test()
         implicit none
 
+        integer :: samples
+        real(kind=8), allocatable :: covid_data(:)
+
         Open(Unit = 100, File = trim(pwd)//"/../data/covid_mixed.txt", Access = "SEQUENTIAL")
 
-        read(100,*) pdata%samples
+        read(100,*) samples
 
         pdata%n_train  = 30
         pdata%n_test   = 10
         pdata%days_test = 10
 
+        allocate(pdata%train_data(pdata%days_test,pdata%n_train),pdata%test_data(pdata%days_test,pdata%n_test),&
+        covid_data(samples),stat=allocerr)
+     
+        if ( allocerr .ne. 0 ) then
+           write(*,*) 'Allocation error.'
+           stop
+        end if
 
+        do i = 1, samples
+            read(100,*) covid_data(i)
+        enddo
 
+        call mount_dataset(pdata,covid_data)
+
+        
         close(100)
 
     end subroutine mixed_test
@@ -152,7 +169,6 @@ program main
         
         call compute_sp(n,pdata%xk,pdata,fxk)  
 
-  
         if (single_type_test) then
             write(*,*) "--------------------------------------------------------"
             write(*,10) "#iter","#init","Sp(xstar)","Stop criteria","#Imin"
@@ -205,11 +221,27 @@ program main
             write(*,*) "--------------------------------------------------------"
         endif
 
-  
         outliers(:) = int(pdata%indices(pdata%n_train - noutliers + 1:))
         
-  
     end subroutine lovo_algorithm
+
+    !*****************************************************************
+    !*****************************************************************
+
+    subroutine mount_dataset(pdata,covid_data)
+        implicit none
+  
+        type(pdata_type), intent(inout) :: pdata
+        real(kind=8), intent(in) :: covid_data(:)
+  
+        integer :: i
+  
+        do i = 1, pdata%days_test
+           pdata%train_data(i,:) = covid_data(i:i+pdata%n_train-1)
+           pdata%test_data(i,:) = covid_data(i+pdata%n_train:i+pdata%n_train+pdata%n_test-1)    
+        enddo
+  
+     end subroutine mount_dataset
 
     !*****************************************************************
     !*****************************************************************
