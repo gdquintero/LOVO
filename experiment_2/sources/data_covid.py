@@ -34,22 +34,14 @@ n_train = 30
 n_test = 5
 total_days = n_train + n_test  
 
-with open(parent+"/data/covid_train.txt","w") as f:
+with open(parent+"/data/covid.txt","w") as f:
     f.write("%i\n" % n_train)
-    for i in range(initial_date,initial_date + n_train):
-        x = df["new_deaths_smoothed_per_million"][i]
-
-        if pd.isna(x) == True:
-            f.write("%f\n" % 0.0)
-        else:
-            f.write("%f\n" % x)
-
-with open(parent+"/data/covid_test.txt","w") as f:
     f.write("%i\n" % n_test)
-    for i in range(initial_date + n_train,initial_date + total_days):
+    for i in range(initial_date,initial_date + total_days):
         x = df["new_deaths_smoothed_per_million"][i]
 
         if pd.isna(x) == True:
             f.write("%f\n" % 0.0)
         else:
             f.write("%f\n" % x)
+

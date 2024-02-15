@@ -33,67 +33,85 @@ program main
     pdata%LWORK = 3*n - 1
     pdata%NRHS = 1
  
-    Open(Unit = 100, File = trim(pwd)//"/../data/covid_train.txt", Access = "SEQUENTIAL")
-    Open(Unit = 200, File = trim(pwd)//"/../data/covid_test.txt", Access = "SEQUENTIAL")
-    
-    read(100,*) pdata%n_train
-    read(200,*) pdata%n_test
-
-    pdata%noutliers = 2*int(dble(pdata%n_train) / 7.0d0)
-
-    allocate(pdata%t(pdata%n_train),pdata%y(pdata%n_train),pdata%y_test(pdata%n_test),pdata%t_test(pdata%n_test),&
-    pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),pdata%indices(pdata%n_train),stat=allocerr)
+    call single_test()
  
-    if ( allocerr .ne. 0 ) then
-       write(*,*) 'Allocation error.'
-       stop
-    end if
-
-    allocate(pdata%sp_vector(pdata%n_train),pdata%outliers(pdata%noutliers),pdata%hess_sp(n,n),pdata%eig_hess_sp(n),&
-    pdata%WORK(pdata%LWORK),pdata%aux_mat(n,n),pdata%aux_vec(n),pdata%IPIV(n),stat=allocerr)
- 
-    if ( allocerr .ne. 0 ) then
-       write(*,*) 'Allocation error.'
-       stop
-    end if
-
-    do i = 1, pdata%n_train
-        read(100,*) pdata%y(i)
-    enddo
-
-    do i = 1, pdata%n_test
-        read(200,*) pdata%y_test(i)
-    enddo
-
-    close(100)
-    close(200)
-
-    pdata%t(1:pdata%n_train) = (/(i, i = 1, pdata%n_train)/)
-    pdata%t_test(1:pdata%n_test) = (/(i, i = pdata%n_train + 1, pdata%n_train + pdata%n_test)/)
- 
-    Open(Unit = 100, File = trim(pwd)//"/../output/solution_covid.txt", ACCESS = "SEQUENTIAL")
-
-    call lovo_algorithm(n,pdata%noutliers,pdata%outliers,pdata,pdata%fobj)
-
-    write(100,10) pdata%xk(1),pdata%xk(2),pdata%xk(3)
-
-    10 format (ES13.6,1X,ES13.6,1X,ES13.6) 
-    close(100)
- 
-    ! allocate(pdata%t(pdata%n_train),pdata%y(pdata%n_train),pdata%indices(pdata%n_train),&
-    !          pdata%sp_vector(pdata%n_train),pdata%outliers(pdata%noutliers),stat=allocerr)
- 
-    ! if ( allocerr .ne. 0 ) then
-    !    write(*,*) 'Allocation error.'
-    !    stop
-    ! end if
-
-    ! Open(Unit = 100, File = trim(pwd)//"/../output/solutions_covid.txt", ACCESS = "SEQUENTIAL")
- 
-    
     stop
 
     contains
+
+    !*****************************************************************
+    !*****************************************************************
+
+    subroutine single_test()
+        implicit none
+
+        Open(Unit = 100, File = trim(pwd)//"/../data/covid.txt", Access = "SEQUENTIAL")
+    
+        read(100,*) pdata%n_train
+        read(100,*) pdata%n_test
+    
+        pdata%noutliers = 2*int(dble(pdata%n_train) / 7.0d0)
+    
+        allocate(pdata%t(pdata%n_train),pdata%y(pdata%n_train),pdata%y_test(pdata%n_test),pdata%t_test(pdata%n_test),&
+        pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),pdata%indices(pdata%n_train),stat=allocerr)
+     
+        if ( allocerr .ne. 0 ) then
+           write(*,*) 'Allocation error.'
+           stop
+        end if
+    
+        allocate(pdata%sp_vector(pdata%n_train),pdata%outliers(pdata%noutliers),pdata%hess_sp(n,n),pdata%eig_hess_sp(n),&
+        pdata%WORK(pdata%LWORK),pdata%aux_mat(n,n),pdata%aux_vec(n),pdata%IPIV(n),stat=allocerr)
+     
+        if ( allocerr .ne. 0 ) then
+           write(*,*) 'Allocation error.'
+           stop
+        end if
+    
+        do i = 1, pdata%n_train
+            read(100,*) pdata%y(i)
+        enddo
+    
+        do i = 1, pdata%n_test
+            read(100,*) pdata%y_test(i)
+        enddo
+    
+        close(100)
+    
+        pdata%t(1:pdata%n_train) = (/(i, i = 1, pdata%n_train)/)
+        pdata%t_test(1:pdata%n_test) = (/(i, i = pdata%n_train + 1, pdata%n_train + pdata%n_test)/)
+     
+        Open(Unit = 100, File = trim(pwd)//"/../output/solution_covid.txt", ACCESS = "SEQUENTIAL")
+    
+        call lovo_algorithm(n,pdata%noutliers,pdata%outliers,pdata,pdata%fobj)
+    
+        write(100,10) pdata%xk(1),pdata%xk(2),pdata%xk(3)
+    
+        10 format (ES13.6,1X,ES13.6,1X,ES13.6) 
+    
+        close(100)
+
+        deallocate(pdata%t,pdata%y,pdata%y_test,pdata%t_test,pdata%xtrial,pdata%xk,pdata%grad_sp,&
+        pdata%indices,pdata%sp_vector,pdata%outliers,pdata%hess_sp,pdata%eig_hess_sp,pdata%WORK,&
+        pdata%aux_mat,pdata%aux_vec,pdata%IPIV,stat=allocerr)
+
+        if ( allocerr .ne. 0 ) then
+            write(*,*) 'Deallocation error.'
+            stop
+        end if
+
+    end subroutine single_test
+
+    !*****************************************************************
+    !*****************************************************************
+
+    subroutine mixed_test()
+        implicit none
+
+    end subroutine mixed_test
+
+    !*****************************************************************
+    !*****************************************************************
 
     subroutine lovo_algorithm(n,noutliers,outliers,pdata,fobj)
         implicit none

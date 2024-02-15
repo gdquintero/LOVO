@@ -19,7 +19,7 @@ country = countries["br"]
 cwd = os.getcwd()
 parent =  os.path.abspath(os.path.join(cwd,os.pardir))
 
-df = pd.read_excel(parent+"/data/"+country+".xlsx")
+df = pd.read_excel(parent+"/data/"+country)
 
 
 ind_excel_init  = 91 # 01-04-2020
