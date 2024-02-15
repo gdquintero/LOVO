@@ -8,8 +8,7 @@ program main
         integer :: lovo_order,n_train,n_test,days_test,noutliers,dim_Imin
         real(kind=8) :: sigma,fobj
         real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),t_test(:),y_test(:),indices(:),&
-        sp_vector(:),grad_sp(:),hess_sp(:,:),eig_hess_sp(:),aux_mat(:,:),aux_vec(:),train_set(:),&
-        test_set(:),test_data(:,:),train_data(:,:)
+        sp_vector(:),grad_sp(:),hess_sp(:,:),eig_hess_sp(:),aux_mat(:,:),aux_vec(:),test_data(:,:),train_data(:,:)
         integer, allocatable :: outliers(:)
         character(len=1) :: JOBZ,UPLO ! lapack variables
         integer :: LDA,LWORK,INFO,NRHS,LDB ! lapack variables
@@ -18,7 +17,7 @@ program main
 
     type(pdata_type), target :: pdata
 
-    integer :: allocerr,i,n
+    integer :: allocerr,n
 
     character(len=128) :: pwd
     call get_environment_variable('PWD',pwd)
@@ -46,6 +45,8 @@ program main
 
     subroutine single_test()
         implicit none
+
+        integer :: i
 
         Open(Unit = 100, File = trim(pwd)//"/../data/covid.txt", Access = "SEQUENTIAL")
     
@@ -110,7 +111,7 @@ program main
     subroutine mixed_test()
         implicit none
 
-        integer :: samples
+        integer :: samples,i,k
         real(kind=8), allocatable :: covid_data(:)
 
         Open(Unit = 100, File = trim(pwd)//"/../data/covid_mixed.txt", Access = "SEQUENTIAL")
@@ -129,14 +130,54 @@ program main
            stop
         end if
 
+        allocate(pdata%sp_vector(pdata%n_train),pdata%hess_sp(n,n),pdata%eig_hess_sp(n),&
+        pdata%WORK(pdata%LWORK),pdata%aux_mat(n,n),pdata%aux_vec(n),pdata%IPIV(n),stat=allocerr)
+     
+        if ( allocerr .ne. 0 ) then
+           write(*,*) 'Allocation error.'
+           stop
+        end if
+
         do i = 1, samples
             read(100,*) covid_data(i)
         enddo
 
         call mount_dataset(pdata,covid_data)
 
+        deallocate(covid_data,stat=allocerr)
+
+        if ( allocerr .ne. 0 ) then
+            write(*,*) 'Deallocation error.'
+            stop
+        end if
         
         close(100)
+
+        pdata%noutliers = 1*int(dble(pdata%n_train) / 7.0d0)
+
+        allocate(pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),pdata%t(pdata%n_train),&
+        pdata%y(pdata%n_train),pdata%y_test(pdata%n_test),pdata%indices(pdata%n_train),&
+        pdata%outliers(pdata%noutliers),stat=allocerr)
+
+        if ( allocerr .ne. 0 ) then
+            write(*,*) 'Allocation error.'
+            stop
+        end if
+
+        do k = 1, pdata%days_test
+ 
+            pdata%y(:)          = pdata%train_data(k,:)
+            pdata%y_test(:)     = pdata%test_data(k,:)
+            pdata%t(:)          = (/(i, i = 1, pdata%n_train)/)
+            pdata%indices(:)    = (/(i, i = 1, pdata%n_train)/)
+      
+            call lovo_algorithm(n,pdata%noutliers,pdata%outliers,pdata,.false.,pdata%fobj)
+            
+            ! write(100,10) pdata%xk(1), pdata%xk(2), pdata%xk(3)
+      
+            print*, k * 100/pdata%days_test,"%"
+      
+        enddo
 
     end subroutine mixed_test
 
@@ -222,7 +263,7 @@ program main
         endif
 
         outliers(:) = int(pdata%indices(pdata%n_train - noutliers + 1:))
-        
+
     end subroutine lovo_algorithm
 
     !*****************************************************************
