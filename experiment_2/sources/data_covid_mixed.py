@@ -23,7 +23,7 @@ df = pd.read_excel(parent+"/data/"+country)
 
 
 ind_excel_init  = 91 # 01-04-2020
-ind_excel_end   = 365 # 31-12-2020
+ind_excel_end   = 490 
 init_date       = ind_excel_init - 2
 end_date        = ind_excel_end - 2
 n = ind_excel_end-ind_excel_init + 1

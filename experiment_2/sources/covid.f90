@@ -34,7 +34,8 @@ program main
     pdata%NRHS = 1
  
     ! call single_test()
-    call mixed_test()
+    ! call mixed_test()
+    call find_parameters()
  
     stop
 
@@ -120,7 +121,7 @@ program main
 
         pdata%n_train  = 30
         pdata%n_test   = 10
-        pdata%days_test = 10
+        pdata%days_test = 100
 
         allocate(pdata%train_data(pdata%days_test,pdata%n_train),pdata%test_data(pdata%days_test,pdata%n_test),&
         covid_data(samples),stat=allocerr)
@@ -164,6 +165,8 @@ program main
             stop
         end if
 
+        Open(Unit = 100, File = trim(pwd)//"/../output/solutions_covid_mixed.txt", ACCESS = "SEQUENTIAL")
+
         do k = 1, pdata%days_test
  
             pdata%y(:)          = pdata%train_data(k,:)
@@ -173,13 +176,61 @@ program main
       
             call lovo_algorithm(n,pdata%noutliers,pdata%outliers,pdata,.false.,pdata%fobj)
             
-            ! write(100,10) pdata%xk(1), pdata%xk(2), pdata%xk(3)
+            write(100,10) pdata%xk(1), pdata%xk(2), pdata%xk(3)
       
             print*, k * 100/pdata%days_test,"%"
       
         enddo
 
+        10 format (ES13.6,1X,ES13.6,1X,ES13.6) 
+        close(100)
+
+        deallocate(pdata%train_data,pdata%test_data,pdata%sp_vector,pdata%hess_sp,pdata%eig_hess_sp,&
+        pdata%WORK,pdata%aux_mat,pdata%aux_vec,pdata%IPIV,pdata%xtrial,pdata%xk,pdata%grad_sp,pdata%t,&
+        pdata%y,pdata%y_test,pdata%indices,pdata%outliers,stat=allocerr)
+
+        if ( allocerr .ne. 0 ) then
+            write(*,*) 'Deallocation error.'
+            stop
+        end if
+
     end subroutine mixed_test
+
+    !*****************************************************************
+    !*****************************************************************
+
+    subroutine find_parameters()
+        implicit none
+
+        integer :: samples,i,ncv
+        real(kind=8), allocatable :: covid_data(:)
+
+        Open(Unit = 100, File = trim(pwd)//"/../data/covid_mixed.txt", Access = "SEQUENTIAL")
+    
+        read(100,*) samples
+
+        pdata%n_train  = 30
+        pdata%n_test   = 10
+        ncv = int(samples / (pdata%n_train + pdata%n_test)) ! ncv (n-cross-validation)
+
+        allocate(pdata%train_data(ncv,pdata%n_train),pdata%test_data(ncv,pdata%n_test),&
+        covid_data(samples),stat=allocerr)
+
+        if ( allocerr .ne. 0 ) then
+            write(*,*) 'Allocation error.'
+            stop
+        end if
+
+        do i = 1, samples
+            read(100,*) covid_data(i)
+        enddo
+
+        close(100)
+
+        call cross_validation(ncv,pdata,covid_data)
+
+        
+    end subroutine find_parameters
 
     !*****************************************************************
     !*****************************************************************
@@ -265,6 +316,28 @@ program main
         outliers(:) = int(pdata%indices(pdata%n_train - noutliers + 1:))
 
     end subroutine lovo_algorithm
+
+    !*****************************************************************
+    !*****************************************************************
+
+    subroutine cross_validation(ncv,pdata,covid_data)
+        implicit none
+
+        integer, intent(in) :: ncv
+        type(pdata_type), intent(inout) :: pdata
+        real(kind=8), intent(in) :: covid_data(:)
+
+        integer :: i,init,end
+        
+        do i = 1, ncv 
+            init = 1 + (i-1) * (pdata%n_train + pdata%n_test)
+            end = (i-1) * (pdata%n_train + pdata%n_test) + pdata%n_train
+            pdata%train_data(i,:) = covid_data(init:end)
+            pdata%test_data(i,:) = covid_data(end + 1:end + pdata%n_test)    
+        enddo
+
+
+    end subroutine cross_validation
 
     !*****************************************************************
     !*****************************************************************

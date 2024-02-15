@@ -24,14 +24,14 @@ country = countries["br"]
 # ind_excel = 166 # 15 jun 2020 estados unidos con outliers
 # ind_excel = 216 # 4 de agosto italia 
 
-ind_excel  = 122 # 01-04-2020
+ind_excel  = 91 # 01-04-2020
 
 
 df = pd.read_excel(parent+"/data/"+country)
 
 initial_date = ind_excel - 2
 n_train = 30
-n_test = 5
+n_test = 10
 total_days = n_train + n_test  
 
 with open(parent+"/data/covid.txt","w") as f:
