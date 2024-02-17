@@ -203,7 +203,7 @@ program main
         implicit none
 
         integer :: samples,i,ncv,k
-        real(kind=8) :: ti,err_msd
+        real(kind=8) :: tm,ti,err_msd
         real(kind=8), allocatable :: covid_data(:)
 
         Open(Unit = 100, File = trim(pwd)//"/../data/covid_mixed.txt", Access = "SEQUENTIAL")
@@ -261,6 +261,8 @@ program main
         pdata%t(:)      = (/(i, i = 1, pdata%n_train)/)
         pdata%t_test(:) = (/(i, i = 1 + pdata%n_train, pdata%n_train + pdata%n_test)/)
 
+        tm = pdata%t(pdata%n_train)
+
         do k = 1, ncv
  
             pdata%y(:)          = pdata%train_data(k,:)
@@ -272,13 +274,14 @@ program main
             write(100,10) pdata%xk(1), pdata%xk(2), pdata%xk(3)
 
             do i = 1, pdata%n_test
-                ti = pdata%t_test(i+pdata%n_train)
-                pdata%pred(i) = pdata%xk(1) + (pdata%xk(2) * ti) + (pdata%xk(3) * (ti**2)) + (pdata%xk(4) * (ti**3))
-                call relative_error(pdata%y_test(i+pdata%n_train),pdata%pred(i),pdata%re(i))
+                ti = pdata%t_test(i)
+                pdata%pred(i) = pdata%y(pdata%n_train) + pdata%xk(1) * (ti - tm) + &
+                pdata%xk(2) * ((ti - tm)**2) + pdata%xk(3) * ((ti - tm)**3)
+                call relative_error(pdata%y_test(i),pdata%pred(i),pdata%re(i))
             enddo
 
-            call rmsd(n,pdata%y_test(pdata%n_train + 1:),pdata%pred,err_msd)
-            
+            call rmsd(n,pdata%y_test,pdata%pred,err_msd)
+
             print*, k * 100/ncv,"%"
             
         enddo
