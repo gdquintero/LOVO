@@ -202,7 +202,7 @@ program main
     subroutine find_parameters()
         implicit none
 
-        integer :: samples,i,ncv
+        integer :: samples,i,ncv,k
         real(kind=8), allocatable :: covid_data(:)
 
         Open(Unit = 100, File = trim(pwd)//"/../data/covid_mixed.txt", Access = "SEQUENTIAL")
@@ -229,6 +229,51 @@ program main
 
         call cross_validation(ncv,pdata,covid_data)
 
+        deallocate(covid_data,stat=allocerr)
+
+        if ( allocerr .ne. 0 ) then
+            write(*,*) 'Deallocation error.'
+            stop
+        end if
+
+        allocate(pdata%sp_vector(pdata%n_train),pdata%hess_sp(n,n),pdata%eig_hess_sp(n),&
+        pdata%WORK(pdata%LWORK),pdata%aux_mat(n,n),pdata%aux_vec(n),pdata%IPIV(n),stat=allocerr)
+     
+        if ( allocerr .ne. 0 ) then
+           write(*,*) 'Allocation error.'
+           stop
+        end if
+
+        allocate(pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),pdata%t(pdata%n_train),&
+        pdata%y(pdata%n_train),pdata%y_test(pdata%n_test),pdata%indices(pdata%n_train),&
+        pdata%outliers(pdata%noutliers),stat=allocerr)
+
+        if ( allocerr .ne. 0 ) then
+            write(*,*) 'Allocation error.'
+            stop
+        end if
+
+        Open(Unit = 100, File = trim(pwd)//"/../output/solutions_find_parameters.txt", ACCESS = "SEQUENTIAL")
+
+        pdata%noutliers = 1*int(dble(pdata%n_train) / 7.0d0)
+
+        do k = 1, ncv
+ 
+            ! pdata%y(:)          = pdata%train_data(k,:)
+            ! pdata%y_test(:)     = pdata%test_data(k,:)
+            ! pdata%t(:)          = (/(i, i = 1, pdata%n_train)/)
+            ! pdata%indices(:)    = (/(i, i = 1, pdata%n_train)/)
+      
+            ! call lovo_algorithm(n,pdata%noutliers,pdata%outliers,pdata,.false.,pdata%fobj)
+            
+            ! write(100,10) pdata%xk(1), pdata%xk(2), pdata%xk(3)
+      
+            print*, k * 100/ncv,"%"
+      
+        enddo
+
+        ! 10 format (ES13.6,1X,ES13.6,1X,ES13.6) 
+        ! close(100)
         
     end subroutine find_parameters
 
