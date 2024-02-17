@@ -7,7 +7,7 @@ program main
         integer :: counters(3) = 0
         integer :: lovo_order,n_train,n_test,days_test,noutliers,dim_Imin
         real(kind=8) :: sigma,fobj
-        real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),t_test(:),y_test(:),indices(:),&
+        real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),t_test(:),y_test(:),indices(:),pred(:),re(:),&
         sp_vector(:),grad_sp(:),hess_sp(:,:),eig_hess_sp(:),aux_mat(:,:),aux_vec(:),test_data(:,:),train_data(:,:)
         integer, allocatable :: outliers(:)
         character(len=1) :: JOBZ,UPLO ! lapack variables
@@ -158,7 +158,7 @@ program main
 
         allocate(pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),pdata%t(pdata%n_train),&
         pdata%y(pdata%n_train),pdata%y_test(pdata%n_test),pdata%indices(pdata%n_train),&
-        pdata%outliers(pdata%noutliers),stat=allocerr)
+        pdata%outliers(pdata%noutliers),pdata%pred(pdata%n_test),stat=allocerr)
 
         if ( allocerr .ne. 0 ) then
             write(*,*) 'Allocation error.'
@@ -203,6 +203,7 @@ program main
         implicit none
 
         integer :: samples,i,ncv,k
+        real(kind=8) :: ti,err_msd
         real(kind=8), allocatable :: covid_data(:)
 
         Open(Unit = 100, File = trim(pwd)//"/../data/covid_mixed.txt", Access = "SEQUENTIAL")
@@ -214,7 +215,7 @@ program main
         ncv = int(samples / (pdata%n_train + pdata%n_test)) ! ncv (n-cross-validation)
 
         allocate(pdata%train_data(ncv,pdata%n_train),pdata%test_data(ncv,pdata%n_test),&
-        covid_data(samples),stat=allocerr)
+        covid_data(samples),pdata%pred(pdata%n_test),pdata%re(pdata%n_test),stat=allocerr)
 
         if ( allocerr .ne. 0 ) then
             write(*,*) 'Allocation error.'
@@ -246,7 +247,7 @@ program main
 
         allocate(pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),pdata%t(pdata%n_train),&
         pdata%y(pdata%n_train),pdata%y_test(pdata%n_test),pdata%indices(pdata%n_train),&
-        pdata%outliers(pdata%noutliers),stat=allocerr)
+        pdata%outliers(pdata%noutliers),pdata%t_test(pdata%n_test),stat=allocerr)
 
         if ( allocerr .ne. 0 ) then
             write(*,*) 'Allocation error.'
@@ -257,23 +258,33 @@ program main
 
         pdata%noutliers = 1*int(dble(pdata%n_train) / 7.0d0)
 
+        pdata%t(:)      = (/(i, i = 1, pdata%n_train)/)
+        pdata%t_test(:) = (/(i, i = 1 + pdata%n_train, pdata%n_train + pdata%n_test)/)
+
         do k = 1, ncv
  
-            ! pdata%y(:)          = pdata%train_data(k,:)
-            ! pdata%y_test(:)     = pdata%test_data(k,:)
-            ! pdata%t(:)          = (/(i, i = 1, pdata%n_train)/)
-            ! pdata%indices(:)    = (/(i, i = 1, pdata%n_train)/)
+            pdata%y(:)          = pdata%train_data(k,:)
+            pdata%y_test(:)     = pdata%test_data(k,:)
+            pdata%indices(:)    = (/(i, i = 1, pdata%n_train)/)
       
-            ! call lovo_algorithm(n,pdata%noutliers,pdata%outliers,pdata,.false.,pdata%fobj)
+            call lovo_algorithm(n,pdata%noutliers,pdata%outliers,pdata,.false.,pdata%fobj)
             
-            ! write(100,10) pdata%xk(1), pdata%xk(2), pdata%xk(3)
-      
+            write(100,10) pdata%xk(1), pdata%xk(2), pdata%xk(3)
+
+            do i = 1, pdata%n_test
+                ti = pdata%t_test(i+pdata%n_train)
+                pdata%pred(i) = pdata%xk(1) + (pdata%xk(2) * ti) + (pdata%xk(3) * (ti**2)) + (pdata%xk(4) * (ti**3))
+                call relative_error(pdata%y_test(i+pdata%n_train),pdata%pred(i),pdata%re(i))
+            enddo
+
+            call rmsd(n,pdata%y_test(pdata%n_train + 1:),pdata%pred,err_msd)
+            
             print*, k * 100/ncv,"%"
-      
+            
         enddo
 
-        ! 10 format (ES13.6,1X,ES13.6,1X,ES13.6) 
-        ! close(100)
+        10 format (ES13.6,1X,ES13.6,1X,ES13.6) 
+        close(100)
         
     end subroutine find_parameters
 
