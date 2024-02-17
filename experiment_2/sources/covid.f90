@@ -255,6 +255,7 @@ program main
         end if
 
         Open(Unit = 100, File = trim(pwd)//"/../output/solutions_find_parameters.txt", ACCESS = "SEQUENTIAL")
+        Open(Unit = 200, File = trim(pwd)//"/../output/output_latex.txt", ACCESS = "SEQUENTIAL")
 
         pdata%noutliers = 1*int(dble(pdata%n_train) / 7.0d0)
 
@@ -270,8 +271,6 @@ program main
             pdata%indices(:)    = (/(i, i = 1, pdata%n_train)/)
       
             call lovo_algorithm(n,pdata%noutliers,pdata%outliers,pdata,.false.,pdata%fobj)
-            
-            write(100,10) pdata%xk(1), pdata%xk(2), pdata%xk(3)
 
             do i = 1, pdata%n_test
                 ti = pdata%t_test(i)
@@ -282,11 +281,15 @@ program main
 
             call rmsd(n,pdata%y_test,pdata%pred,err_msd)
 
+            write(100,1000) pdata%xk(1), pdata%xk(2), pdata%xk(3)
+            write(200,1100) pdata%re,err_msd
+
             print*, k * 100/ncv,"%"
             
         enddo
 
-        10 format (ES13.6,1X,ES13.6,1X,ES13.6) 
+        1000 format (ES13.6,1X,ES13.6,1X,ES13.6) 
+        1100 format (11ES13.6)
         close(100)
         
     end subroutine find_parameters
