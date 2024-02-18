@@ -255,7 +255,8 @@ program main
         end if
 
         Open(Unit = 100, File = trim(pwd)//"/../output/solutions_find_parameters.txt", ACCESS = "SEQUENTIAL")
-        Open(Unit = 200, File = trim(pwd)//"/../output/output_latex.txt", ACCESS = "SEQUENTIAL")
+        Open(Unit = 200, File = trim(pwd)//"/../output/latex.txt", ACCESS = "SEQUENTIAL")
+        Open(Unit = 300, File = trim(pwd)//"/../output/error.txt", ACCESS = "SEQUENTIAL")
 
         pdata%noutliers = 1*int(dble(pdata%n_train) / 7.0d0)
 
@@ -275,7 +276,8 @@ program main
             do i = 1, pdata%n_test
                 ti = pdata%t_test(i)
                 pdata%pred(i) = pdata%y(pdata%n_train) + pdata%xk(1) * (ti - tm) + &
-                pdata%xk(2) * ((ti - tm)**2) + pdata%xk(3) * ((ti - tm)**3)
+                                pdata%xk(2) * ((ti - tm)**2) + pdata%xk(3) * ((ti - tm)**3)
+                                
                 call relative_error(pdata%y_test(i),pdata%pred(i),pdata%re(i))
             enddo
 
@@ -283,7 +285,7 @@ program main
 
             write(100,1000) pdata%xk(1), pdata%xk(2), pdata%xk(3)
             write(200,1100) pdata%re,err_msd
-
+            write(300,*) pdata%re,err_msd
             print*, k * 100/ncv,"%"
             
         enddo
@@ -291,6 +293,8 @@ program main
         1000 format (ES13.6,1X,ES13.6,1X,ES13.6) 
         1100 format (11ES13.6)
         close(100)
+        close(200)
+        close(300)
         
     end subroutine find_parameters
 
@@ -397,7 +401,6 @@ program main
             pdata%train_data(i,:) = covid_data(init:end)
             pdata%test_data(i,:) = covid_data(end + 1:end + pdata%n_test)    
         enddo
-
 
     end subroutine cross_validation
 
