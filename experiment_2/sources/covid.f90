@@ -244,7 +244,7 @@ program main
 
         Open(Unit = 100, File = trim(pwd)//"/../output/solutions_find_parameters.txt", ACCESS = "SEQUENTIAL")
         Open(Unit = 200, File = trim(pwd)//"/../output/latex.txt", ACCESS = "SEQUENTIAL")
-        Open(Unit = 300, File = trim(pwd)//"/../output/error.txt", ACCESS = "SEQUENTIAL")
+        Open(Unit = 300, File = trim(pwd)//"/../output/rmsd.txt", ACCESS = "SEQUENTIAL")
 
         pdata%noutliers = 1*int(dble(pdata%n_train) / 7.0d0)
 
