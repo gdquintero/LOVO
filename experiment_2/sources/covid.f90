@@ -7,8 +7,9 @@ program main
         integer :: counters(3) = 0
         integer :: lovo_order,n_train,n_test,days_test,noutliers,dim_Imin
         real(kind=8) :: sigma,fobj
-        real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),t_test(:),y_test(:),indices(:),pred(:),re(:),&
-        sp_vector(:),grad_sp(:),hess_sp(:,:),eig_hess_sp(:),aux_mat(:,:),aux_vec(:),test_data(:,:),train_data(:,:)
+        real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),t_test(:),y_test(:),indices(:),&
+        pred(:),re(:),sp_vector(:),grad_sp(:),hess_sp(:,:),eig_hess_sp(:),aux_mat(:,:),aux_vec(:),&
+        test_data(:,:),train_data(:,:)
         integer, allocatable :: outliers(:)
         character(len=1) :: JOBZ,UPLO ! lapack variables
         integer :: LDA,LWORK,INFO,NRHS,LDB ! lapack variables
@@ -212,10 +213,14 @@ program main
 
         pdata%n_train  = 30
         pdata%n_test   = 10
-        ncv = int(samples / (pdata%n_train + pdata%n_test)) ! ncv (n-cross-validation)
+        ncv = 10 ! ncv (n-cross-validation)
 
-        allocate(pdata%train_data(ncv,pdata%n_train),pdata%test_data(ncv,pdata%n_test),&
-        covid_data(samples),pdata%pred(pdata%n_test),pdata%re(pdata%n_test),stat=allocerr)
+        allocate(pdata%train_data(ncv,pdata%n_train),pdata%test_data(ncv,pdata%n_test),covid_data(samples),&
+        pdata%pred(pdata%n_test),pdata%re(pdata%n_test),pdata%sp_vector(pdata%n_train),&
+        pdata%hess_sp(n,n),pdata%eig_hess_sp(n),pdata%WORK(pdata%LWORK),pdata%aux_mat(n,n),pdata%aux_vec(n),&
+        pdata%IPIV(n),pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),pdata%t(pdata%n_train),pdata%y(pdata%n_train),&
+        pdata%y_test(pdata%n_test),pdata%indices(pdata%n_train),pdata%outliers(pdata%noutliers),&
+        pdata%t_test(pdata%n_test),stat=allocerr)
 
         if ( allocerr .ne. 0 ) then
             write(*,*) 'Allocation error.'
@@ -234,23 +239,6 @@ program main
 
         if ( allocerr .ne. 0 ) then
             write(*,*) 'Deallocation error.'
-            stop
-        end if
-
-        allocate(pdata%sp_vector(pdata%n_train),pdata%hess_sp(n,n),pdata%eig_hess_sp(n),&
-        pdata%WORK(pdata%LWORK),pdata%aux_mat(n,n),pdata%aux_vec(n),pdata%IPIV(n),stat=allocerr)
-     
-        if ( allocerr .ne. 0 ) then
-           write(*,*) 'Allocation error.'
-           stop
-        end if
-
-        allocate(pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),pdata%t(pdata%n_train),&
-        pdata%y(pdata%n_train),pdata%y_test(pdata%n_test),pdata%indices(pdata%n_train),&
-        pdata%outliers(pdata%noutliers),pdata%t_test(pdata%n_test),stat=allocerr)
-
-        if ( allocerr .ne. 0 ) then
-            write(*,*) 'Allocation error.'
             stop
         end if
 
@@ -284,9 +272,10 @@ program main
             call rmsd(n,pdata%y_test,pdata%pred,err_msd)
 
             write(100,1000) pdata%xk(1), pdata%xk(2), pdata%xk(3)
-            write(200,1100) pdata%re,err_msd
-            write(300,*) pdata%re,err_msd
-            print*, k * 100/ncv,"%"
+            write(200,1100) err_msd,pdata%re
+            write(300,*) err_msd
+
+            ! print*, k * 100/ncv,"%"
             
         enddo
 
@@ -396,12 +385,12 @@ program main
         integer :: i,init,end
         
         do i = 1, ncv 
-            init = 1 + (i-1) * (pdata%n_train + pdata%n_test)
-            end = (i-1) * (pdata%n_train + pdata%n_test) + pdata%n_train
+            init = 1 + (30 - pdata%n_train) + (i-1) * 40
+            end = (30 - pdata%n_train) + (i-1) * 40 + pdata%n_train
             pdata%train_data(i,:) = covid_data(init:end)
-            pdata%test_data(i,:) = covid_data(end + 1:end + pdata%n_test)    
+            pdata%test_data(i,:) = covid_data(end+1:end + pdata%n_test) 
         enddo
-
+        
     end subroutine cross_validation
 
     !*****************************************************************
