@@ -20,18 +20,19 @@ for i in range(10):
         means[1,i,j] = np.mean(df_error_20.values[i][1:j+2])
         means[2,i,j] = np.mean(df_error_30.values[i][1:j+2])
 
-
-# with open(parent+"/output/mean_re_10.txt","w") as f:
-#     for i in range(10):
-#         f.write("%f %f %f %f %f %f %f %f %f %f\n" % (means[0][0],means[0][1],means[0][2],means[0][3],means[0][4],\
-#                                                      means[0][5],means[0][6],means[0][7],means[0][8],means[0][9]))
-    
-# with open(parent+"/output/mean_re_20.txt","w") as f:
-#     f.write("%f %f %f %f %f %f %f %f %f %f\n" % (means[1][0],means[1][1],means[1][2],means[1][3],means[1][4],\
-#                                                  means[1][5],means[1][6],means[1][7],means[1][8],means[1][9]))
-    
-# with open(parent+"/output/mean_re_30.txt","w") as f:
-#     f.write("%f %f %f %f %f %f %f %f %f %f\n" % (means[2][0],means[2][1],means[2][2],means[2][3],means[2][4],\
-#                                                  means[2][5],means[2][6],means[2][7],means[2][8],means[2][9]))
+with open(parent+"/output/mean_re_10.txt","w") as f:
+    for i in range(10):
+        f.write("%f %f %f %f %f %f %f %f %f %f\n" % (means[0,i,0],means[0,i,1],means[0,i,2],means[0,i,3],means[0,i,4],\
+                                                     means[0,i,5],means[0,i,6],means[0,i,7],means[0,i,8],means[0,i,9]))
         
+with open(parent+"/output/mean_re_20.txt","w") as f:
+    for i in range(10):
+        f.write("%f %f %f %f %f %f %f %f %f %f\n" % (means[1,i,0],means[1,i,1],means[1,i,2],means[1,i,3],means[1,i,4],\
+                                                     means[1,i,5],means[1,i,6],means[1,i,7],means[1,i,8],means[1,i,9]))
+        
+with open(parent+"/output/mean_re_30.txt","w") as f:
+    for i in range(10):
+        f.write("%f %f %f %f %f %f %f %f %f %f\n" % (means[2,i,0],means[2,i,1],means[2,i,2],means[2,i,3],means[2,i,4],\
+                                                     means[2,i,5],means[2,i,6],means[2,i,7],means[2,i,8],means[2,i,9]))
+    
 
