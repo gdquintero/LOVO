@@ -5,20 +5,38 @@ import os
 cwd = os.getcwd()
 parent =  os.path.abspath(os.path.join(cwd,os.pardir))
 
+df= pd.read_table(parent+"/output/latex_5.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
+df.to_excel(parent+"/output/latex_5.xlsx")
+
 df= pd.read_table(parent+"/output/latex_10.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
 df.to_excel(parent+"/output/latex_10.xlsx")
+
+df= pd.read_table(parent+"/output/latex_15.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
+df.to_excel(parent+"/output/latex_15.xlsx")
 
 df= pd.read_table(parent+"/output/latex_20.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
 df.to_excel(parent+"/output/latex_20.xlsx")
 
+df= pd.read_table(parent+"/output/latex_25.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
+df.to_excel(parent+"/output/latex_25.xlsx")
+
 df= pd.read_table(parent+"/output/latex_30.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
 df.to_excel(parent+"/output/latex_30.xlsx")
 
-df= pd.read_table(parent+"/output/mean_re_10.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
-df.to_excel(parent+"/output/mean_re_10.xlsx")
+# df= pd.read_table(parent+"/output/mean_re_5.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
+# df.to_excel(parent+"/output/mean_re_10.xlsx")
 
-df= pd.read_table(parent+"/output/mean_re_20.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
-df.to_excel(parent+"/output/mean_re_20.xlsx")
+# df= pd.read_table(parent+"/output/mean_re_10.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
+# df.to_excel(parent+"/output/mean_re_20.xlsx")
 
-df= pd.read_table(parent+"/output/mean_re_30.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
-df.to_excel(parent+"/output/mean_re_30.xlsx")
+# df= pd.read_table(parent+"/output/mean_re_15.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
+# df.to_excel(parent+"/output/mean_re_30.xlsx")
+
+# df= pd.read_table(parent+"/output/mean_re_20.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
+# df.to_excel(parent+"/output/mean_re_10.xlsx")
+
+# df= pd.read_table(parent+"/output/mean_re_25.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
+# df.to_excel(parent+"/output/mean_re_20.xlsx")
+
+# df= pd.read_table(parent+"/output/mean_re_30.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
+# df.to_excel(parent+"/output/mean_re_30.xlsx")
