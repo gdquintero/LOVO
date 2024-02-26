@@ -12,7 +12,7 @@ df_error_20 = pd.read_table(parent+"/output/latex_20.txt",delimiter=" ",header=N
 df_error_25 = pd.read_table(parent+"/output/latex_25.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
 df_error_30 = pd.read_table(parent+"/output/latex_30.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
 
-threshold = 0.2
+threshold = 0.1
 
 successfull_threshold = np.zeros((6,10),dtype=int)
 
