@@ -34,9 +34,8 @@ program main
     pdata%LWORK = 3*n - 1
     pdata%NRHS = 1
  
-    ! call single_test()
-    ! call mixed_test()
-    call find_parameters()
+    call single_test()
+    ! call find_parameters()
  
     stop
 
@@ -55,7 +54,7 @@ program main
         read(100,*) pdata%n_train
         read(100,*) pdata%n_test
     
-        pdata%noutliers = 2*int(dble(pdata%n_train) / 7.0d0)
+        pdata%noutliers = 1*int(dble(pdata%n_train) / 7.0d0)
     
         allocate(pdata%t(pdata%n_train),pdata%y(pdata%n_train),pdata%y_test(pdata%n_test),pdata%t_test(pdata%n_test),&
         pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),pdata%indices(pdata%n_train),stat=allocerr)
