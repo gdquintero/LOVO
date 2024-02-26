@@ -14,36 +14,41 @@ df_error_30 = pd.read_table(parent+"/output/latex_30.txt",delimiter=" ",header=N
 
 threshold = 0.2
 
-successfull_treshold = np.zeros((6,10),dtype=int)
+successfull_threshold = np.zeros((6,10),dtype=int)
 
 for i in range(10):
     for j in range(10):
         if df_error_5[i+1].values[j] <= threshold:
-            successfull_treshold[0,i] += 1
+            successfull_threshold[0,i] += 1
 
 for i in range(10):
     for j in range(10):
         if df_error_10[i+1].values[j] <= threshold:
-            successfull_treshold[1,i] += 1
+            successfull_threshold[1,i] += 1
 
 for i in range(10):
     for j in range(10):
         if df_error_15[i+1].values[j] <= threshold:
-            successfull_treshold[2,i] += 1
+            successfull_threshold[2,i] += 1
 
 for i in range(10):
     for j in range(10):
         if df_error_20[i+1].values[j] <= threshold:
-            successfull_treshold[3,i] += 1
+            successfull_threshold[3,i] += 1
 
 for i in range(10):
     for j in range(10):
         if df_error_25[i+1].values[j] <= threshold:
-            successfull_treshold[4,i] += 1
+            successfull_threshold[4,i] += 1
 
 for i in range(10):
     for j in range(10):
         if df_error_30[i+1].values[j] <= threshold:
-            successfull_treshold[5,i] += 1
+            successfull_threshold[5,i] += 1
             
 
+with open(parent+"/output/successfull_threshold.txt","w") as f:
+        for i in range(6):
+            f.write("%i %i %i %i %i %i %i %i %i %i\n" % (
+                    successfull_threshold[i,0],successfull_threshold[i,1],successfull_threshold[i,2],successfull_threshold[i,3],successfull_threshold[i,4],\
+                    successfull_threshold[i,5],successfull_threshold[i,6],successfull_threshold[i,7],successfull_threshold[i,8],successfull_threshold[i,9]))

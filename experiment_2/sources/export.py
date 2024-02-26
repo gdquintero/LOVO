@@ -43,3 +43,6 @@ df.to_excel(parent+"/output/cumulative_mean_re_30.xlsx")
 
 df= pd.read_table(parent+"/output/mean_per_day_re.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
 df.to_excel(parent+"/output/mean_per_day_re.xlsx")
+
+df= pd.read_table(parent+"/output/successfull_threshold.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
+df.to_excel(parent+"/output/successfull_threshold.xlsx")
