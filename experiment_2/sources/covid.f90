@@ -34,8 +34,8 @@ program main
     pdata%LWORK = 3*n - 1
     pdata%NRHS = 1
  
-    call single_test()
-    ! call find_parameters()
+    ! call single_test()
+    call find_parameters()
  
     stop
 
@@ -54,7 +54,7 @@ program main
         read(100,*) pdata%n_train
         read(100,*) pdata%n_test
     
-        pdata%noutliers = 0*int(dble(pdata%n_train) / 7.0d0)
+        pdata%noutliers = 1*int(dble(pdata%n_train) / 7.0d0)
     
         allocate(pdata%t(pdata%n_train),pdata%y(pdata%n_train),pdata%y_test(pdata%n_test),pdata%t_test(pdata%n_test),&
         pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),pdata%indices(pdata%n_train),stat=allocerr)
@@ -124,6 +124,8 @@ program main
         pdata%n_test   = 10
         ncv = 10 ! ncv (n-cross-validation)
 
+        pdata%noutliers = 1*int(dble(pdata%n_train) / 7.0d0)
+
         allocate(pdata%train_data(ncv,pdata%n_train),pdata%test_data(ncv,pdata%n_test),covid_data(samples),&
         pdata%pred(pdata%n_test),pdata%re(pdata%n_test),pdata%sp_vector(pdata%n_train),&
         pdata%hess_sp(n,n),pdata%eig_hess_sp(n),pdata%WORK(pdata%LWORK),pdata%aux_mat(n,n),pdata%aux_vec(n),&
@@ -154,8 +156,6 @@ program main
         Open(Unit = 100, File = trim(pwd)//"/../output/solutions_find_parameters.txt", ACCESS = "SEQUENTIAL")
         Open(Unit = 200, File = trim(pwd)//"/../output/latex.txt", ACCESS = "SEQUENTIAL")
         Open(Unit = 300, File = trim(pwd)//"/../output/rmsd.txt", ACCESS = "SEQUENTIAL")
-
-        pdata%noutliers = 1*int(dble(pdata%n_train) / 7.0d0)
 
         pdata%t(:)      = (/(i, i = 1, pdata%n_train)/)
         pdata%t_test(:) = (/(i, i = 1 + pdata%n_train, pdata%n_train + pdata%n_test)/)
