@@ -33,14 +33,7 @@ for i in range(noutliers):
     cubic_outliers[0,i] = df_data[0].values[outliers[i]-1]
     cubic_outliers[1,i] = df_data[1].values[outliers[i]-1]
 
-t = np.linspace(df_data[0].values[0],df_data[0].values[-1],1000)
-
-for i in range(noutliers):
-        point1 = [cubic_outliers[0,i],poly(df_sol.iloc[0].values,cubic_outliers[0,i])]
-        point2 = [cubic_outliers[0,i],cubic_outliers[1,i]]
-        x_values = [point1[0], point2[0]]
-        y_values = [point1[1], point2[1]]
-        
+t = np.linspace(df_data[0].values[0],df_data[0].values[-1],1000)        
 
 plt.plot(t,poly(df_sol.values[0][:4],t),lw=2)
 plt.plot(cubic_outliers[0],cubic_outliers[1],'ro',mfc='none',ms=10)

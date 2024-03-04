@@ -92,6 +92,7 @@ program main
         call lovo_algorithm(n,pdata%noutliers,pdata%outliers,pdata,.true.,pdata%fobj)
     
         write(100,10) pdata%xk(1),pdata%xk(2),pdata%xk(3)
+        write(200,20) pdata%noutliers
 
         do i = 1, pdata%noutliers
             write(200,20) pdata%outliers(i)
