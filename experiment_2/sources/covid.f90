@@ -34,8 +34,9 @@ program main
     pdata%LWORK = 3*n - 1
     pdata%NRHS = 1
  
-    ! call single_test()
-    call find_parameters()
+    call single_test()
+    ! call find_parameters()
+
  
     stop
 
@@ -86,14 +87,21 @@ program main
         pdata%t_test(1:pdata%n_test) = (/(i, i = pdata%n_train + 1, pdata%n_train + pdata%n_test)/)
      
         Open(Unit = 100, File = trim(pwd)//"/../output/solution_covid.txt", ACCESS = "SEQUENTIAL")
+        Open(Unit = 200, File = trim(pwd)//"/../output/outliers.txt", ACCESS = "SEQUENTIAL")
     
         call lovo_algorithm(n,pdata%noutliers,pdata%outliers,pdata,.true.,pdata%fobj)
     
         write(100,10) pdata%xk(1),pdata%xk(2),pdata%xk(3)
+
+        do i = 1, pdata%noutliers
+            write(200,20) pdata%outliers(i)
+        enddo
     
         10 format (ES13.6,1X,ES13.6,1X,ES13.6) 
+        20 format (I2)
     
         close(100)
+        close(200)
 
         deallocate(pdata%t,pdata%y,pdata%y_test,pdata%t_test,pdata%xtrial,pdata%xk,pdata%grad_sp,&
         pdata%indices,pdata%sp_vector,pdata%outliers,pdata%hess_sp,pdata%eig_hess_sp,pdata%WORK,&
@@ -124,7 +132,7 @@ program main
         pdata%n_test   = 10
         ncv = 10 ! ncv (n-cross-validation)
 
-        pdata%noutliers = 1*int(dble(pdata%n_train) / 7.0d0)
+        pdata%noutliers = 0*int(dble(pdata%n_train) / 7.0d0)
 
         allocate(pdata%train_data(ncv,pdata%n_train),pdata%test_data(ncv,pdata%n_test),covid_data(samples),&
         pdata%pred(pdata%n_test),pdata%re(pdata%n_test),pdata%sp_vector(pdata%n_train),&
