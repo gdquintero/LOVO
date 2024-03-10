@@ -5,7 +5,7 @@ program main
 
     type :: pdata_type
         integer :: counters(3) = 0
-        integer :: lovo_order,n_train,n_test,days_test,noutliers,dim_Imin
+        integer :: lovo_order,n_train,noutliers,dim_Imin
         real(kind=8) :: sigma,fobj
         real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),t_test(:),y_test(:),indices(:),&
         pred(:),re(:),sp_vector(:),grad_sp(:),hess_sp(:,:),eig_hess_sp(:),aux_mat(:,:),aux_vec(:),&
@@ -46,7 +46,7 @@ program main
     subroutine hard_test()
         implicit none
 
-        integer :: samples,i,k
+        integer :: samples,i,j,k
         real(kind=8) :: tm,ti,err_msd
         real(kind=8), allocatable :: covid_data(:)
 
@@ -54,9 +54,7 @@ program main
     
         read(100,*) samples
 
-        pdata%noutliers = 0*int(dble(pdata%n_train) / 7.0d0)
-
-        allocate(covid_data(samples),stat=allocerr)
+        allocate(covid_data(samples),pdata%train_data(1000,30),pdata%test_data(1000,5),stat=allocerr)
 
         if ( allocerr .ne. 0 ) then
             write(*,*) 'Allocation error.'
@@ -67,10 +65,24 @@ program main
             read(100,*) covid_data(i)
         enddo
 
-        samples = 50
+        call mount_dataset(pdata,covid_data)
 
-        do i = 1, samples - 30
-            call find_mtrain(covid_data(i:30),covid_data(i+30:i+35))
+        do i = 1,1
+            do j = 1, 6
+                allocate(pdata%y(5*j),pdata%t(5*j),stat=allocerr)
+                if ( allocerr .ne. 0 ) then
+                    write(*,*) 'Allocation error.'
+                    stop
+                end if
+    
+                pdata%t(1:5*j) = (/(k,k = 1,5*j)/)
+                pdata%y(1:5*j) = covid_data(i:)
+
+                print*, int(pdata%t)
+                print*
+    
+                deallocate(pdata%y,pdata%t)
+            enddo
         enddo
 
         close(100)
@@ -88,21 +100,6 @@ program main
         end if
         
     end subroutine hard_test
-
-    !*****************************************************************
-    !*****************************************************************
-    subroutine find_mtrain(train,test)
-        implicit none
-        
-        real(kind=8),       intent(in) :: train(30),test(5)
-        integer :: i
-
-        do i = 1,30
-            print*, train(i)
-        enddo
-
-        print*
-    end subroutine find_mtrain
 
     !*****************************************************************
     !*****************************************************************
@@ -166,7 +163,6 @@ program main
                 if (fxtrial .le. (fxk - alpha * norm2(pdata%xtrial(:) - pdata%xk(:))**2)) exit
                 if (iter_sub_lovo .gt. max_iter_sub_lovo) exit
 
-                ! pdata%sigma = max(sigmin,gamma * pdata%sigma)
                 pdata%sigma = max(sigmin,gamma * pdata%sigma)
                 iter_sub_lovo = iter_sub_lovo + 1
 
@@ -189,26 +185,6 @@ program main
 
     end subroutine lovo_algorithm
 
-    !*****************************************************************
-    !*****************************************************************
-
-    subroutine cross_validation(ncv,pdata,covid_data)
-        implicit none
-
-        integer, intent(in) :: ncv
-        type(pdata_type), intent(inout) :: pdata
-        real(kind=8), intent(in) :: covid_data(:)
-
-        integer :: i,init,end
-        
-        do i = 1, ncv 
-            init = 1 + (30 - pdata%n_train) + (i-1) * 40
-            end = (30 - pdata%n_train) + (i-1) * 40 + pdata%n_train
-            pdata%train_data(i,:) = covid_data(init:end)
-            pdata%test_data(i,:) = covid_data(end+1:end + pdata%n_test) 
-        enddo
-        
-    end subroutine cross_validation
 
     !*****************************************************************
     !*****************************************************************
@@ -221,9 +197,9 @@ program main
   
         integer :: i
   
-        do i = 1, pdata%days_test
-           pdata%train_data(i,:) = covid_data(i:i+pdata%n_train-1)
-           pdata%test_data(i,:) = covid_data(i+pdata%n_train:i+pdata%n_train+pdata%n_test-1)    
+        do i = 1, 1000
+            pdata%train_data(i,:) = covid_data(i:i+29)
+            pdata%test_data(i,:) = covid_data(i+30:i+34)
         enddo
   
      end subroutine mount_dataset
