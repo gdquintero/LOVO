@@ -69,18 +69,21 @@ program main
 
         do i = 1,1
             do j = 1, 6
-                allocate(pdata%y(5*j),pdata%t(5*j),stat=allocerr)
+                pdata%n_train = 5*j
+                pdata%noutliers = 0*int(dble(pdata%n_train) / 7.0d0)
+                allocate(pdata%y(pdata%n_train),pdata%t(pdata%n_train),pdata%indices(pdata%n_train),stat=allocerr)
+
                 if ( allocerr .ne. 0 ) then
                     write(*,*) 'Allocation error.'
                     stop
                 end if
     
-                pdata%t(1:5*j) = (/(k,k = 1,5*j)/)
-                pdata%y(1:5*j) = covid_data(i:)
-
-                print*, int(pdata%t)
-                print*
-    
+                pdata%t(1:pdata%n_train) = (/(k,k = 1,pdata%n_train)/)
+                pdata%y(1:pdata%n_train) = covid_data(31-pdata%n_train:30)
+                pdata%indices(1:pdata%n_train)    = (/(i, i = 1, pdata%n_train)/)
+                
+                call lovo_algorithm(n,pdata%noutliers,pdata%outliers,pdata,.false.,pdata%fobj)
+                
                 deallocate(pdata%y,pdata%t)
             enddo
         enddo
