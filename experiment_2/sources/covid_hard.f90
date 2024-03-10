@@ -33,10 +33,8 @@ program main
     pdata%LDB = n
     pdata%LWORK = 3*n - 1
     pdata%NRHS = 1
- 
-    call single_test()
-    ! call find_parameters()
-
+    
+    call hard_test()
  
     stop
 
@@ -45,83 +43,10 @@ program main
     !*****************************************************************
     !*****************************************************************
 
-    subroutine single_test()
-        implicit none
-
-        integer :: i
-
-        Open(Unit = 100, File = trim(pwd)//"/../data/covid.txt", Access = "SEQUENTIAL")
-    
-        read(100,*) pdata%n_train
-        read(100,*) pdata%n_test
-    
-        pdata%noutliers = 0*int(dble(pdata%n_train) / 7.0d0)
-    
-        allocate(pdata%t(pdata%n_train),pdata%y(pdata%n_train),pdata%y_test(pdata%n_test),pdata%t_test(pdata%n_test),&
-        pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),pdata%indices(pdata%n_train),stat=allocerr)
-     
-        if ( allocerr .ne. 0 ) then
-           write(*,*) 'Allocation error.'
-           stop
-        end if
-    
-        allocate(pdata%sp_vector(pdata%n_train),pdata%outliers(pdata%noutliers),pdata%hess_sp(n,n),pdata%eig_hess_sp(n),&
-        pdata%WORK(pdata%LWORK),pdata%aux_mat(n,n),pdata%aux_vec(n),pdata%IPIV(n),stat=allocerr)
-     
-        if ( allocerr .ne. 0 ) then
-           write(*,*) 'Allocation error.'
-           stop
-        end if
-    
-        do i = 1, pdata%n_train
-            read(100,*) pdata%y(i)
-        enddo
-    
-        do i = 1, pdata%n_test
-            read(100,*) pdata%y_test(i)
-        enddo
-    
-        close(100)
-    
-        pdata%t(1:pdata%n_train) = (/(i, i = 1, pdata%n_train)/)
-        pdata%t_test(1:pdata%n_test) = (/(i, i = pdata%n_train + 1, pdata%n_train + pdata%n_test)/)
-     
-        Open(Unit = 100, File = trim(pwd)//"/../output/solution_covid.txt", ACCESS = "SEQUENTIAL")
-        Open(Unit = 200, File = trim(pwd)//"/../output/outliers.txt", ACCESS = "SEQUENTIAL")
-    
-        call lovo_algorithm(n,pdata%noutliers,pdata%outliers,pdata,.true.,pdata%fobj)
-    
-        write(100,10) pdata%xk(1),pdata%xk(2),pdata%xk(3)
-        write(200,20) pdata%noutliers
-
-        do i = 1, pdata%noutliers
-            write(200,20) pdata%outliers(i)
-        enddo
-    
-        10 format (ES13.6,1X,ES13.6,1X,ES13.6) 
-        20 format (I2)
-    
-        close(100)
-        close(200)
-
-        deallocate(pdata%t,pdata%y,pdata%y_test,pdata%t_test,pdata%xtrial,pdata%xk,pdata%grad_sp,&
-        pdata%indices,pdata%sp_vector,pdata%outliers,pdata%hess_sp,pdata%eig_hess_sp,pdata%WORK,&
-        pdata%aux_mat,pdata%aux_vec,pdata%IPIV,stat=allocerr)
-
-        if ( allocerr .ne. 0 ) then
-            write(*,*) 'Deallocation error.'
-            stop
-        end if
-
-    end subroutine single_test
-
-    !*****************************************************************
-    !*****************************************************************
-
     subroutine hard_test()
         implicit none
 
-        integer :: samples,i,ncv,k
+        integer :: samples,i,k
         real(kind=8) :: tm,ti,err_msd
         real(kind=8), allocatable :: covid_data(:)
 
@@ -129,18 +54,9 @@ program main
     
         read(100,*) samples
 
-        pdata%n_train  = 30
-        pdata%n_test   = 10
-        ncv = 10 ! ncv (n-cross-validation)
-
         pdata%noutliers = 0*int(dble(pdata%n_train) / 7.0d0)
 
-        allocate(pdata%train_data(ncv,pdata%n_train),pdata%test_data(ncv,pdata%n_test),covid_data(samples),&
-        pdata%pred(pdata%n_test),pdata%re(pdata%n_test),pdata%sp_vector(pdata%n_train),&
-        pdata%hess_sp(n,n),pdata%eig_hess_sp(n),pdata%WORK(pdata%LWORK),pdata%aux_mat(n,n),pdata%aux_vec(n),&
-        pdata%IPIV(n),pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),pdata%t(pdata%n_train),pdata%y(pdata%n_train),&
-        pdata%y_test(pdata%n_test),pdata%indices(pdata%n_train),pdata%outliers(pdata%noutliers),&
-        pdata%t_test(pdata%n_test),stat=allocerr)
+        allocate(covid_data(samples),stat=allocerr)
 
         if ( allocerr .ne. 0 ) then
             write(*,*) 'Allocation error.'
@@ -151,44 +67,13 @@ program main
             read(100,*) covid_data(i)
         enddo
 
-        close(100)
+        samples = 50
 
-        call cross_validation(ncv,pdata,covid_data)
-
-        Open(Unit = 100, File = trim(pwd)//"/../output/solutions_hard_test.txt", ACCESS = "SEQUENTIAL")
-        Open(Unit = 200, File = trim(pwd)//"/../output/latex.txt", ACCESS = "SEQUENTIAL")
-        Open(Unit = 300, File = trim(pwd)//"/../output/rmsd.txt", ACCESS = "SEQUENTIAL")
-
-        pdata%t(:)      = (/(i, i = 1, pdata%n_train)/)
-        pdata%t_test(:) = (/(i, i = 1 + pdata%n_train, pdata%n_train + pdata%n_test)/)
-
-        tm = pdata%t(pdata%n_train)
-
-        do k = 1, ncv
- 
-            pdata%y(:)          = pdata%train_data(k,:)
-            pdata%y_test(:)     = pdata%test_data(k,:)
-            pdata%indices(:)    = (/(i, i = 1, pdata%n_train)/)
-      
-            call lovo_algorithm(n,pdata%noutliers,pdata%outliers,pdata,.false.,pdata%fobj)
-
-            do i = 1, pdata%n_test
-                ti = pdata%t_test(i)
-                pdata%pred(i) = pdata%y(pdata%n_train) + pdata%xk(1) * (ti - tm) + &
-                                pdata%xk(2) * ((ti - tm)**2) + pdata%xk(3) * ((ti - tm)**3)
-                                
-                call relative_error(pdata%y_test(i),pdata%pred(i),pdata%re(i))
-            enddo
-
-            call rmsd(n,pdata%y_test,pdata%pred,err_msd)
-
-            write(100,1000) pdata%xk(1), pdata%xk(2), pdata%xk(3)
-            write(200,1100) err_msd,pdata%re
-            write(300,*) err_msd
-
-            ! print*, k * 100/ncv,"%"
-            
+        do i = 1, samples - 30
+            call find_mtrain(covid_data(i:30),covid_data(i+30:i+35))
         enddo
+
+        close(100)
 
         1000 format (ES13.6,1X,ES13.6,1X,ES13.6) 
         1100 format (11ES13.6)
@@ -196,9 +81,6 @@ program main
         close(200)
         close(300)
 
-        deallocate(pdata%train_data,pdata%test_data,covid_data,pdata%pred,pdata%re,pdata%sp_vector,&
-        pdata%hess_sp,pdata%eig_hess_sp,pdata%WORK,pdata%aux_mat,pdata%aux_vec,pdata%IPIV,pdata%xtrial,&
-        pdata%xk,pdata%grad_sp,pdata%t,pdata%y,pdata%y_test,pdata%indices,pdata%outliers,pdata%t_test,stat=allocerr)
 
         if ( allocerr .ne. 0 ) then
             write(*,*) 'Deallocation error.'
@@ -206,6 +88,21 @@ program main
         end if
         
     end subroutine hard_test
+
+    !*****************************************************************
+    !*****************************************************************
+    subroutine find_mtrain(train,test)
+        implicit none
+        
+        real(kind=8),       intent(in) :: train(30),test(5)
+        integer :: i
+
+        do i = 1,30
+            print*, train(i)
+        enddo
+
+        print*
+    end subroutine find_mtrain
 
     !*****************************************************************
     !*****************************************************************
