@@ -68,7 +68,7 @@ program main
         ! call mount_dataset(pdata,covid_data)
 
         allocate(pdata%hess_sp(n,n),pdata%eig_hess_sp(n),pdata%WORK(pdata%LWORK),pdata%aux_mat(n,n),pdata%aux_vec(n),&
-        pdata%IPIV(n),pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),pdata%sp_vector(pdata%n_train),stat=allocerr)
+        pdata%IPIV(n),pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),stat=allocerr)
 
         if ( allocerr .ne. 0 ) then
             write(*,*) 'Allocation error.'
@@ -79,7 +79,8 @@ program main
             do j = 1, 6
                 pdata%n_train = 5*j
                 pdata%noutliers = 0*int(dble(pdata%n_train) / 7.0d0)
-                allocate(pdata%y(pdata%n_train),pdata%t(pdata%n_train),pdata%indices(pdata%n_train),stat=allocerr)
+                allocate(pdata%y(pdata%n_train),pdata%t(pdata%n_train),pdata%indices(pdata%n_train),&
+                pdata%sp_vector(pdata%n_train),stat=allocerr)
 
                 if ( allocerr .ne. 0 ) then
                     write(*,*) 'Allocation error.'
@@ -92,7 +93,7 @@ program main
                 
                 call lovo_algorithm(n,pdata%noutliers,pdata%outliers,pdata,.false.,pdata%fobj)
                 
-                deallocate(pdata%y,pdata%t,pdata%indices)
+                deallocate(pdata%y,pdata%t,pdata%indices,pdata%sp_vector)
             enddo
         enddo
 
