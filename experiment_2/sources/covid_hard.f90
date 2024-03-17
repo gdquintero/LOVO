@@ -71,13 +71,14 @@ program main
 
         start_date = 36
 
-        do i = 1, 1
+        do i = 1, 2
             ! Find optimal n_train
             do j = 1, 6
                 n_train = 5 * j
                 noutliers = 0*int(dble(n_train) / 7.0d0)
-                call lovo_algorithm(t,covid_data,indices,outliers,n,n_train,noutliers,sp_vector,pdata,.true.,fobj)
-            enddo         
+                call lovo_algorithm(t(1:n_train),covid_data(i+start_date-n_train-6:i+start_date-6),indices(1:n_train),&
+                outliers,n,n_train,noutliers,sp_vector(1:n_train),pdata,.true.,fobj)
+            enddo     
         enddo
 
     end subroutine hard_test
@@ -167,25 +168,6 @@ program main
         outliers(:) = int(indices(n_train - noutliers + 1:))
 
     end subroutine lovo_algorithm
-
-
-    !*****************************************************************
-    !*****************************************************************
-
-    subroutine mount_dataset(pdata,covid_data)
-        implicit none
-  
-        type(pdata_type),   intent(inout) :: pdata
-        real(kind=8),       intent(in) :: covid_data(:)
-  
-        integer :: i
-  
-        do i = 1, 1000
-            pdata%train_data(i,:) = covid_data(i:i+29)
-            pdata%test_data(i,:) = covid_data(i+30:i+34)
-        enddo
-  
-     end subroutine mount_dataset
 
     !*****************************************************************
     !*****************************************************************
