@@ -5,7 +5,6 @@ program main
 
     type :: pdata_type
         integer :: counters(3) = 0
-        integer :: lovo_order,n_train,noutliers,dim_Imin
         real(kind=8) :: sigma,fobj
         real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),t_test(:),y_test(:),indices(:),&
         pred(:),re(:),sp_vector(:),grad_sp(:),hess_sp(:,:),eig_hess_sp(:),aux_mat(:,:),aux_vec(:),&
@@ -18,7 +17,7 @@ program main
 
     type(pdata_type), target :: pdata
 
-    integer :: allocerr,n
+    integer :: n,n_train
 
     character(len=128) :: pwd
     call get_environment_variable('PWD',pwd)
@@ -46,7 +45,7 @@ program main
     !*****************************************************************
     !*****************************************************************
 
-    subroutine lovo_algorithm(n,noutliers,outliers,t,y,indices,sp_vector,n_train,pdata,single_type_test,fobj)
+    subroutine lovo_algorithm(n,n_train,noutliers,outliers,t,y,indices,sp_vector,pdata,single_type_test,fobj)
         implicit none
         
         logical,        intent(in) :: single_type_test
@@ -85,12 +84,12 @@ program main
             iter_lovo = iter_lovo + 1
     
             call compute_grad_sp(pdata%xk,t,y,indices,n,n_train,lovo_order,pdata%grad_sp)
-            call compute_Bkj(n,pdata)
+            call compute_Bkj(t,indices,n,n_train,lovo_order,pdata)
 
             termination = norm2(pdata%grad_sp(:))
             
             if (single_type_test) then
-                write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination,pdata%dim_Imin
+                write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination
                 20 format (I8,5X,I4,4X,ES14.6,3X,ES14.6,2X,I2)
             endif
     
@@ -125,7 +124,7 @@ program main
             write(*,*) "--------------------------------------------------------"
         endif
 
-        outliers(:) = int(pdata%indices(pdata%n_train - noutliers + 1:))
+        outliers(:) = int(indices(n_train - noutliers + 1:))
 
     end subroutine lovo_algorithm
 
@@ -136,8 +135,8 @@ program main
     subroutine mount_dataset(pdata,covid_data)
         implicit none
   
-        type(pdata_type), intent(inout) :: pdata
-        real(kind=8), intent(in) :: covid_data(:)
+        type(pdata_type),   intent(inout) :: pdata
+        real(kind=8),       intent(in) :: covid_data(:)
   
         integer :: i
   
@@ -199,7 +198,7 @@ program main
         kflag = 2
         indices(:) = (/(i, i = 1,n_train)/)
 
-        do i = 1, pdata%n_train
+        do i = 1, n_train
             call fi(x,i,t,y,n,n_train,sp_vector(i))
         end do
 
@@ -269,14 +268,16 @@ program main
     !*****************************************************************
     !*****************************************************************
 
-    subroutine compute_Bkj(n,pdata)
+    subroutine compute_Bkj(t,indices,n,n_train,lovo_order,pdata)
         implicit none
 
-        integer,            intent(in) :: n
+        integer,            intent(in) :: n,n_train,lovo_order
+        real(kind=8),       intent(in) :: t(n_train)
+        real(kind=8),       intent(inout) :: indices(n_train)
         type(pdata_type),   intent(inout) :: pdata
         real(kind=8) :: lambda_min
 
-        call compute_hess_sp(n,pdata,pdata%hess_sp)
+        call compute_hess_sp(t,indices,n,n_train,lovo_order,pdata%hess_sp)
 
         pdata%aux_mat(:,:) = pdata%hess_sp(:,:)
 
