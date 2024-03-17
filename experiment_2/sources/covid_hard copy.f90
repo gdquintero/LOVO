@@ -33,7 +33,8 @@ program main
     pdata%LDB = n
     pdata%LWORK = 3*n - 1
     pdata%NRHS = 1
-
+    
+    call hard_test()
  
     stop
 
@@ -42,23 +43,90 @@ program main
     !*****************************************************************
     !*****************************************************************
 
+    subroutine hard_test()
+        implicit none
+
+        integer :: samples,i,j,k
+        real(kind=8) :: tm,ti,err_msd
+        real(kind=8), allocatable :: covid_data(:)
+
+        Open(Unit = 100, File = trim(pwd)//"/../data/covid_mixed.txt", Access = "SEQUENTIAL")
+    
+        read(100,*) samples
+
+        allocate(covid_data(samples),pdata%train_data(1000,30),pdata%test_data(1000,5),stat=allocerr)
+
+        if ( allocerr .ne. 0 ) then
+            write(*,*) 'Allocation error.'
+            stop
+        end if
+
+        do i = 1, samples
+            read(100,*) covid_data(i)
+        enddo
+
+        call mount_dataset(pdata,covid_data)
+
+        allocate(pdata%hess_sp(n,n),pdata%eig_hess_sp(n),pdata%WORK(pdata%LWORK),pdata%aux_mat(n,n),pdata%aux_vec(n),&
+        pdata%IPIV(n),pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),stat=allocerr)
+
+        if ( allocerr .ne. 0 ) then
+            write(*,*) 'Allocation error.'
+            stop
+        end if
+
+        do i = 1,1
+            do j = 1, 6
+                pdata%n_train = 5*j
+                pdata%noutliers = 0*int(dble(pdata%n_train) / 7.0d0)
+                allocate(pdata%y(pdata%n_train),pdata%t(pdata%n_train),pdata%indices(pdata%n_train),&
+                pdata%sp_vector(pdata%n_train),stat=allocerr)
+
+                if ( allocerr .ne. 0 ) then
+                    write(*,*) 'Allocation error.'
+                    stop
+                end if
+    
+                pdata%t(1:pdata%n_train) = (/(k,k = 1,pdata%n_train)/)
+                pdata%y(1:pdata%n_train) = covid_data(31-pdata%n_train:30)
+                pdata%indices(1:pdata%n_train)    = (/(i, i = 1, pdata%n_train)/)
+                
+                ! call lovo_algorithm(n,pdata%noutliers,pdata%outliers,pdata,.false.,pdata%fobj)
+                
+                deallocate(pdata%y,pdata%t,pdata%indices,pdata%sp_vector)
+            enddo
+        enddo
+
+        close(100)
+
+        1000 format (ES13.6,1X,ES13.6,1X,ES13.6) 
+        1100 format (11ES13.6)
+        close(100)
+        close(200)
+        close(300)
+
+
+        if ( allocerr .ne. 0 ) then
+            write(*,*) 'Deallocation error.'
+            stop
+        end if
+        
+    end subroutine hard_test
 
     !*****************************************************************
     !*****************************************************************
 
-    subroutine lovo_algorithm(n,noutliers,outliers,t,y,indices,sp_vector,n_train,pdata,single_type_test,fobj)
+    subroutine lovo_algorithm(n,noutliers,outliers,pdata,single_type_test,fobj)
         implicit none
         
         logical,        intent(in) :: single_type_test
-        integer,        intent(in) :: n,n_train,noutliers
-        real(kind=8),   intent(in) :: y(n_train),t(n_train)
+        integer,        intent(in) :: n,noutliers
         integer,        intent(inout) :: outliers(noutliers)
-        real(kind=8),   intent(inout) :: indices(n_train),sp_vector(n_train)
         real(kind=8),   intent(out) :: fobj
         type(pdata_type), intent(inout) :: pdata
   
         real(kind=8) :: sigmin,epsilon,fxk,fxtrial,alpha,gamma,termination
-        integer :: iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo,lovo_order
+        integer :: iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo
   
         sigmin = 1.0d-1
         gamma = 1.0d+1
@@ -68,11 +136,11 @@ program main
         max_iter_sub_lovo = 100
         iter_lovo = 0
         iter_sub_lovo = 0
-        lovo_order = n_train - noutliers
+        pdata%lovo_order = pdata%n_train - noutliers
   
         pdata%xk(:) = 1.0d-1
         
-        call compute_sp(pdata%xk,t,y,indices,sp_vector,n,n_train,lovo_order,fxk)
+        call compute_sp(n,pdata%xk,pdata,fxk)  
 
         if (single_type_test) then
             write(*,*) "--------------------------------------------------------"
@@ -84,7 +152,7 @@ program main
         do
             iter_lovo = iter_lovo + 1
     
-            call compute_grad_sp(pdata%xk,t,y,indices,n,n_train,lovo_order,pdata%grad_sp)
+            call compute_grad_sp(n,pdata%xk,pdata,pdata%grad_sp)
             call compute_Bkj(n,pdata)
 
             termination = norm2(pdata%grad_sp(:))
@@ -102,7 +170,7 @@ program main
 
             do                 
                 call compute_xtrial(n,pdata)
-                call compute_sp(pdata%xk,t,y,indices,sp_vector,n,n_train,lovo_order,fxk)
+                call compute_sp(n,pdata%xtrial,pdata,fxtrial)
 
                 if (fxtrial .le. (fxk - alpha * norm2(pdata%xtrial(:) - pdata%xk(:))**2)) exit
                 if (iter_sub_lovo .gt. max_iter_sub_lovo) exit
@@ -186,55 +254,62 @@ program main
     !*****************************************************************
     !*****************************************************************
 
-    subroutine compute_sp(x,t,y,indices,sp_vector,n,n_train,lovo_order,res)
+    subroutine compute_sp(n,x,pdata,res)
         implicit none
-        integer,        intent(in) :: n,n_train,lovo_order
-        real(kind=8),   intent(in) :: x(n),y(n_train),t(n_train)
-        real(kind=8),   intent(inout) :: indices(n_train),sp_vector(n_train)
-        real(kind=8),   intent(out) :: res
+        integer,       intent(in) :: n
+        real(kind=8),  intent(in) :: x(n)
+        real(kind=8),  intent(out) :: res
+
+        type(pdata_type), intent(inout) :: pdata
 
         integer :: i,kflag
 
         pdata%sp_vector(:) = 0.0d0
         kflag = 2
-        indices(:) = (/(i, i = 1,n_train)/)
+        pdata%indices(:) = (/(i, i = 1, pdata%n_train)/)
 
         do i = 1, pdata%n_train
-            call fi(x,i,t,y,n,n_train,sp_vector(i))
+            call fi(n,x,i,pdata,pdata%sp_vector(i))
         end do
 
         ! Sorting
-        call DSORT(sp_vector,indices,n_train,kflag)
+        call DSORT(pdata%sp_vector,pdata%indices,pdata%n_train,kflag)
 
         ! Lovo function
-        res = sum(sp_vector(1:lovo_order))
+        res = sum(pdata%sp_vector(1:pdata%lovo_order))
+
+        pdata%dim_Imin = 1
+
+        if ( pdata%sp_vector(pdata%lovo_order) .eq. pdata%sp_vector(pdata%lovo_order + 1) ) then
+            pdata%dim_Imin = 2
+        endif
 
     end subroutine compute_sp
 
     !*****************************************************************
     !*****************************************************************
 
-    subroutine compute_grad_sp(x,t,y,indices,n,n_train,lovo_order,res)
+    subroutine compute_grad_sp(n,x,pdata,res)
         implicit none
   
-        integer,        intent(in) :: n,n_train,lovo_order
-        real(kind=8),   intent(in) :: x(n),y(n_train),t(n_train)
-        real(kind=8),   intent(inout) :: indices(n_train)
-        real(kind=8),   intent(out) :: res(n)
+        integer,       intent(in) :: n
+        real(kind=8),  intent(in) :: x(n)
+        real(kind=8),  intent(out) :: res(n)
+        type(pdata_type), intent(in) :: pdata
   
         real(kind=8) :: gaux,ti
         integer :: i
         
         res(:) = 0.0d0
   
-        do i = 1, lovo_order
-            ti = t(int(indices(i)))
-            call model(x,int(indices(i)),t,y,n,n_train,gaux)
-            gaux = gaux - y(int(indices(i)))
+        do i = 1, pdata%lovo_order
+            ti = pdata%t(int(pdata%indices(i)))
+            call model(n,x,int(pdata%indices(i)),pdata,gaux)
+            gaux = gaux - pdata%y(int(pdata%indices(i)))
             
-            res(1) = res(1) + gaux * (ti - t(n_train))
-            res(2) = res(2) + gaux * ((ti - t(n_train))**2)
-            res(3) = res(3) + gaux * ((ti - t(n_train))**3)
+            res(1) = res(1) + gaux * (ti - pdata%t(pdata%n_train))
+            res(2) = res(2) + gaux * ((ti - pdata%t(pdata%n_train))**2)
+            res(3) = res(3) + gaux * ((ti - pdata%t(pdata%n_train))**3)
          enddo
   
     end subroutine compute_grad_sp
@@ -242,21 +317,21 @@ program main
     !*****************************************************************
     !*****************************************************************
 
-    subroutine compute_hess_sp(t,indices,n,n_train,lovo_order,res)
+    subroutine compute_hess_sp(n,pdata,res)
         implicit none
 
-        integer,        intent(in) :: n,n_train,lovo_order
-        real(kind=8),   intent(in) :: t(n_train),indices(n_train)
-        real(kind=8),   intent(out) :: res(n,n)
+        integer,       intent(in) :: n
+        real(kind=8),  intent(out) :: res(n,n)
+        type(pdata_type), intent(in) :: pdata
 
         real(kind=8) :: ti,tm
         integer :: i
 
         res(:,:) = 0.0d0
-        tm = t(n_train)
+        tm = pdata%t(pdata%n_train)
 
-        do i = 1, lovo_order
-            ti = t(int(indices(i)))
+        do i = 1, pdata%lovo_order
+            ti = pdata%t(int(pdata%indices(i)))
 
             res(1,:) = res(1,:) + (/(ti-tm)**2,(ti-tm)**3,(ti-tm)**4/) 
             res(2,:) = res(2,:) + (/(ti-tm)**3,(ti-tm)**4,(ti-tm)**5/) 
@@ -333,32 +408,36 @@ program main
     !*****************************************************************
     !*****************************************************************
 
-    subroutine fi(x,i,t,y,n,n_train,res)
-        implicit none
+    subroutine model(n,x,i,pdata,res)
+        implicit none 
 
-        integer,        intent(in) :: n,n_train,i
-        real(kind=8),   intent(in) :: x(n),y(n_train),t(n_train)
+        integer,        intent(in) :: n,i
+        real(kind=8),   intent(in) :: x(n)
         real(kind=8),   intent(out) :: res
 
-        call model(x,i,t,y,n,n_train,res)
-        res = res - y(i)
+        type(pdata_type), intent(in) :: pdata
+   
+        res = pdata%y(pdata%n_train) + x(1) * (pdata%t(i) - pdata%t(pdata%n_train)) + &
+        x(2) * ((pdata%t(i) - pdata%t(pdata%n_train))**2) + x(3) * ((pdata%t(i) - pdata%t(pdata%n_train))**3)
+
+    end subroutine model
+
+    !*****************************************************************
+    !*****************************************************************
+
+    subroutine fi(n,x,i,pdata,res)
+        implicit none
+
+        integer,        intent(in) :: n,i
+        real(kind=8),   intent(in) :: x(n)
+        real(kind=8),   intent(out) :: res
+
+        type(pdata_type), intent(in) :: pdata
+
+        call model(n,x,i,pdata,res)
+        res = res - pdata%y(i)
         res = 0.5d0 * (res**2)
 
     end subroutine fi
-
-    !*****************************************************************
-    !*****************************************************************
-
-    subroutine model(x,i,t,y,n,n_train,res)
-        implicit none 
-
-        integer,        intent(in) :: n,n_train,i
-        real(kind=8),   intent(in) :: x(n),y(n_train),t(n_train)
-        real(kind=8),   intent(out) :: res
-   
-        res = y(n_train) + x(1) * (t(i) - t(n_train)) + &
-        x(2) * ((t(i) - t(n_train))**2) + x(3) * ((t(i) - t(n_train))**3)
-
-    end subroutine model
     
 end program main
