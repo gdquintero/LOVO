@@ -75,10 +75,10 @@ program main
 
         do i = 1, 1
             ! Find optimal n_train
-            do j = 1, 6
+            do j = 1, 1
                 n_train = 5 * j
                 noutliers = 0*int(dble(n_train) / 7.0d0)
-                call lovo_algorithm(t(1:n_train),covid_data(i+start_date-n_train-6:i+start_date-6),indices(1:n_train),&
+                call lovo_algorithm(t(1:n_train),covid_data(i+start_date-n_train-6:i+start_date-7),indices(1:n_train),&
                 outliers,n_train,noutliers,sp_vector(1:n_train),pdata,.true.,fobj)
             enddo     
         enddo
@@ -100,19 +100,20 @@ program main
         type(pdata_type), intent(inout) :: pdata
   
         real(kind=8) :: sigmin,epsilon,fxk,fxtrial,alpha,gamma,termination
-        integer :: iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo,lovo_order
+        integer :: i,iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo,lovo_order
   
         sigmin = 1.0d-1
         gamma = 1.0d+1
         epsilon = 1.0d-8
         alpha = 1.0d-8
-        max_iter_lovo = 1000
+        max_iter_lovo = 10
         max_iter_sub_lovo = 100
         iter_lovo = 0
         iter_sub_lovo = 0
         lovo_order = n_train - noutliers
   
         pdata%xk(:) = 1.0d-1
+        indices(:) = (/(i, i = 1, n_train)/)
         
         call compute_sp(pdata%xk,t,y,indices,sp_vector,pdata%n,n_train,lovo_order,fxk)
 
@@ -143,7 +144,7 @@ program main
             pdata%sigma = 0.d0
 
             do                 
-                call compute_xtrial(n,pdata)
+                call compute_xtrial(pdata)
                 call compute_sp(pdata%xk,t,y,indices,sp_vector,n,n_train,lovo_order,fxk)
 
                 if (fxtrial .le. (fxk - alpha * norm2(pdata%xtrial(:) - pdata%xk(:))**2)) exit
@@ -308,11 +309,11 @@ program main
         call dsyev(pdata%JOBZ,pdata%UPLO,pdata%n,pdata%aux_mat,pdata%LDA,&
         pdata%eig_hess_sp,pdata%WORK,pdata%LWORK,pdata%INFO)
 
-        ! lambda_min = minval(pdata%eig_hess_sp)
-        ! call compute_eye(n,pdata%aux_mat)
+        lambda_min = minval(pdata%eig_hess_sp)
+        call compute_eye(n,pdata%aux_mat)
 
-        ! pdata%hess_sp(:,:) = pdata%hess_sp(:,:) + &
-        ! max(0.d0,-lambda_min + 1.d-8) * pdata%aux_mat(:,:)
+        pdata%hess_sp(:,:) = pdata%hess_sp(:,:) + &
+        max(0.d0,-lambda_min + 1.d-8) * pdata%aux_mat(:,:)
                
     end subroutine compute_Bkj
 
