@@ -6,7 +6,7 @@ program main
     type :: pdata_type
         integer :: counters(3) = 0
         real(kind=8) :: sigma,fobj
-        real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),t_test(:),y_test(:),indices(:),&
+        real(kind=8), allocatable :: xtrial(:),xk(:),&
         pred(:),re(:),sp_vector(:),grad_sp(:),hess_sp(:,:),eig_hess_sp(:),aux_mat(:,:),aux_vec(:),&
         test_data(:,:),train_data(:,:)
         integer, allocatable :: outliers(:)
@@ -17,7 +17,7 @@ program main
 
     type(pdata_type), target :: pdata
 
-    integer :: n,n_train
+    integer :: n
 
     character(len=128) :: pwd
     call get_environment_variable('PWD',pwd)
@@ -33,6 +33,7 @@ program main
     pdata%LWORK = 3*n - 1
     pdata%NRHS = 1
 
+    call hard_test()
  
     stop
 
@@ -40,7 +41,42 @@ program main
 
     !*****************************************************************
     !*****************************************************************
+    subroutine hard_test
+        implicit none
 
+        integer :: samples,i,j,n_train,optimal_ntrain,noutliers,start_date,allocerr
+        real(kind=8), allocatable :: t(:),covid_data(:)
+
+        Open(Unit = 100, File = trim(pwd)//"/../data/covid_mixed.txt", Access = "SEQUENTIAL")
+    
+        read(100,*) samples
+
+        allocate(covid_data(samples),t(30),stat=allocerr)
+
+        if ( allocerr .ne. 0 ) then
+            write(*,*) 'Allocation error.'
+            stop
+        end if
+
+        t(:) = (/(i, i = 1, 30)/)
+
+        do i = 1, samples
+            read(100,*) covid_data(i)
+        enddo
+
+        close(100)
+
+        start_date = 36
+
+        do i = 1, 1
+            ! Find optimal n_train
+            do j = 1, 6
+                n_train = 5 * j
+                noutliers = 0*int(dble(n_train) / 7.0d0)
+            enddo         
+        enddo
+
+    end subroutine hard_test
 
     !*****************************************************************
     !*****************************************************************
