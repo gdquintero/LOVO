@@ -384,8 +384,6 @@ program main
         res = y(n_train) + x(1) * (t(i) - t(n_train)) + &
         x(2) * ((t(i) - t(n_train))**2) + x(3) * ((t(i) - t(n_train))**3)
 
-        print*, t(n_train)
-
     end subroutine model
     
 end program main
