@@ -45,13 +45,15 @@ program main
         implicit none
 
         integer :: samples,i,j,n_train,optimal_ntrain,noutliers,start_date,allocerr
-        real(kind=8), allocatable :: t(:),covid_data(:)
+        real(kind=8) :: fobj
+        real(kind=8), allocatable :: t(:),covid_data(:),indices(:),sp_vector(:)
+        integer, allocatable :: outliers(:)
 
         Open(Unit = 100, File = trim(pwd)//"/../data/covid_mixed.txt", Access = "SEQUENTIAL")
     
         read(100,*) samples
 
-        allocate(covid_data(samples),t(30),stat=allocerr)
+        allocate(covid_data(samples),t(30),indices(30),sp_vector(30),outliers(4),stat=allocerr)
 
         if ( allocerr .ne. 0 ) then
             write(*,*) 'Allocation error.'
@@ -59,6 +61,7 @@ program main
         end if
 
         t(:) = (/(i, i = 1, 30)/)
+        indices(:) = (/(i, i = 1, 30)/)
 
         do i = 1, samples
             read(100,*) covid_data(i)
@@ -73,6 +76,7 @@ program main
             do j = 1, 6
                 n_train = 5 * j
                 noutliers = 0*int(dble(n_train) / 7.0d0)
+                call lovo_algorithm(t,covid_data,indices,outliers,n,n_train,noutliers,sp_vector,pdata,.true.,fobj)
             enddo         
         enddo
 
@@ -81,7 +85,7 @@ program main
     !*****************************************************************
     !*****************************************************************
 
-    subroutine lovo_algorithm(n,n_train,noutliers,outliers,t,y,indices,sp_vector,pdata,single_type_test,fobj)
+    subroutine lovo_algorithm(t,y,indices,outliers,n,n_train,noutliers,sp_vector,pdata,single_type_test,fobj)
         implicit none
         
         logical,        intent(in) :: single_type_test
