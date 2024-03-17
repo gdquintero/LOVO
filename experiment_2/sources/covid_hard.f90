@@ -65,7 +65,7 @@ program main
             read(100,*) covid_data(i)
         enddo
 
-        ! call mount_dataset(pdata,covid_data)
+        call mount_dataset(pdata,covid_data)
 
         allocate(pdata%hess_sp(n,n),pdata%eig_hess_sp(n),pdata%WORK(pdata%LWORK),pdata%aux_mat(n,n),pdata%aux_vec(n),&
         pdata%IPIV(n),pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),stat=allocerr)
@@ -91,7 +91,7 @@ program main
                 pdata%y(1:pdata%n_train) = covid_data(31-pdata%n_train:30)
                 pdata%indices(1:pdata%n_train)    = (/(i, i = 1, pdata%n_train)/)
                 
-                call lovo_algorithm(n,pdata%noutliers,pdata%outliers,pdata,.false.,pdata%fobj)
+                ! call lovo_algorithm(n,pdata%noutliers,pdata%outliers,pdata,.false.,pdata%fobj)
                 
                 deallocate(pdata%y,pdata%t,pdata%indices,pdata%sp_vector)
             enddo
@@ -142,58 +142,58 @@ program main
         
         call compute_sp(n,pdata%xk,pdata,fxk)  
 
-        ! if (single_type_test) then
-        !     write(*,*) "--------------------------------------------------------"
-        !     write(*,10) "#iter","#init","Sp(xstar)","Stop criteria","#Imin"
-        !     10 format (2X,A5,4X,A5,6X,A9,6X,A13,2X,A5)
-        !     write(*,*) "--------------------------------------------------------"
-        ! endif
+        if (single_type_test) then
+            write(*,*) "--------------------------------------------------------"
+            write(*,10) "#iter","#init","Sp(xstar)","Stop criteria","#Imin"
+            10 format (2X,A5,4X,A5,6X,A9,6X,A13,2X,A5)
+            write(*,*) "--------------------------------------------------------"
+        endif
   
-        ! do
-        !     iter_lovo = iter_lovo + 1
+        do
+            iter_lovo = iter_lovo + 1
     
-        !     call compute_grad_sp(n,pdata%xk,pdata,pdata%grad_sp)
-        !     call compute_Bkj(n,pdata)
+            call compute_grad_sp(n,pdata%xk,pdata,pdata%grad_sp)
+            call compute_Bkj(n,pdata)
 
-        !     termination = norm2(pdata%grad_sp(:))
+            termination = norm2(pdata%grad_sp(:))
             
-        !     if (single_type_test) then
-        !         write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination,pdata%dim_Imin
-        !         20 format (I8,5X,I4,4X,ES14.6,3X,ES14.6,2X,I2)
-        !     endif
+            if (single_type_test) then
+                write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination,pdata%dim_Imin
+                20 format (I8,5X,I4,4X,ES14.6,3X,ES14.6,2X,I2)
+            endif
     
-        !     if (termination .le. epsilon) exit
-        !     if (iter_lovo .gt. max_iter_lovo) exit
+            if (termination .le. epsilon) exit
+            if (iter_lovo .gt. max_iter_lovo) exit
             
-        !     iter_sub_lovo = 1
-        !     pdata%sigma = 0.d0
+            iter_sub_lovo = 1
+            pdata%sigma = 0.d0
 
-        !     do                 
-        !         call compute_xtrial(n,pdata)
-        !         call compute_sp(n,pdata%xtrial,pdata,fxtrial)
+            do                 
+                call compute_xtrial(n,pdata)
+                call compute_sp(n,pdata%xtrial,pdata,fxtrial)
 
-        !         if (fxtrial .le. (fxk - alpha * norm2(pdata%xtrial(:) - pdata%xk(:))**2)) exit
-        !         if (iter_sub_lovo .gt. max_iter_sub_lovo) exit
+                if (fxtrial .le. (fxk - alpha * norm2(pdata%xtrial(:) - pdata%xk(:))**2)) exit
+                if (iter_sub_lovo .gt. max_iter_sub_lovo) exit
 
-        !         pdata%sigma = max(sigmin,gamma * pdata%sigma)
-        !         iter_sub_lovo = iter_sub_lovo + 1
+                pdata%sigma = max(sigmin,gamma * pdata%sigma)
+                iter_sub_lovo = iter_sub_lovo + 1
 
-        !     enddo
+            enddo
   
-        !     fxk = fxtrial
-        !     pdata%xk(:) = pdata%xtrial(:)
-        !     pdata%counters(2) = iter_sub_lovo + pdata%counters(2)
+            fxk = fxtrial
+            pdata%xk(:) = pdata%xtrial(:)
+            pdata%counters(2) = iter_sub_lovo + pdata%counters(2)
   
-        ! enddo
+        enddo
   
-        ! fobj = fxtrial
-        ! pdata%counters(1) = iter_lovo
+        fobj = fxtrial
+        pdata%counters(1) = iter_lovo
   
-        ! if (single_type_test) then
-        !     write(*,*) "--------------------------------------------------------"
-        ! endif
+        if (single_type_test) then
+            write(*,*) "--------------------------------------------------------"
+        endif
 
-        ! outliers(:) = int(pdata%indices(pdata%n_train - noutliers + 1:))
+        outliers(:) = int(pdata%indices(pdata%n_train - noutliers + 1:))
 
     end subroutine lovo_algorithm
 
