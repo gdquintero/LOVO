@@ -17,8 +17,6 @@ program main
 
     type(pdata_type), target :: pdata
 
-    integer :: n
-
     character(len=128) :: pwd
     call get_environment_variable('PWD',pwd)
 
@@ -75,13 +73,15 @@ program main
 
         do i = 1, 1
             ! Find optimal n_train
-            do j = 1, 1
+            do j = 1, 6
                 n_train = 5 * j
-                noutliers = 0*int(dble(n_train) / 7.0d0)
+                noutliers = 2*int(dble(n_train) / 7.0d0)
                 call lovo_algorithm(t(1:n_train),covid_data(i+start_date-n_train-6:i+start_date-7),indices(1:n_train),&
                 outliers,n_train,noutliers,sp_vector(1:n_train),pdata,.true.,fobj)
             enddo     
         enddo
+
+        ! print*, pdata%xk
 
     end subroutine hard_test
 
@@ -127,7 +127,7 @@ program main
         do
             iter_lovo = iter_lovo + 1
     
-            call compute_grad_sp(pdata%xk,t,y,indices,n,n_train,lovo_order,pdata%grad_sp)
+            call compute_grad_sp(pdata%xk,t,y,indices,pdata%n,n_train,lovo_order,pdata%grad_sp)
             call compute_Bkj(t,indices,n_train,lovo_order,pdata)
 
             termination = norm2(pdata%grad_sp(:))
@@ -145,7 +145,7 @@ program main
 
             do                 
                 call compute_xtrial(pdata)
-                call compute_sp(pdata%xk,t,y,indices,sp_vector,n,n_train,lovo_order,fxk)
+                call compute_sp(pdata%xk,t,y,indices,sp_vector,pdata%n,n_train,lovo_order,fxk)
 
                 if (fxtrial .le. (fxk - alpha * norm2(pdata%xtrial(:) - pdata%xk(:))**2)) exit
                 if (iter_sub_lovo .gt. max_iter_sub_lovo) exit
@@ -310,7 +310,7 @@ program main
         pdata%eig_hess_sp,pdata%WORK,pdata%LWORK,pdata%INFO)
 
         lambda_min = minval(pdata%eig_hess_sp)
-        call compute_eye(n,pdata%aux_mat)
+        call compute_eye(pdata%n,pdata%aux_mat)
 
         pdata%hess_sp(:,:) = pdata%hess_sp(:,:) + &
         max(0.d0,-lambda_min + 1.d-8) * pdata%aux_mat(:,:)
