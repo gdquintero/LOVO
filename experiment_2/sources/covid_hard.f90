@@ -64,7 +64,6 @@ program main
 
 
         t(:) = (/(i, i = 1, 30)/)
-        indices(:) = (/(i, i = 1, 30)/)
 
         do i = 1, samples
             read(100,*) covid_data(i)
@@ -81,6 +80,8 @@ program main
                 noutliers = 0*int(dble(n_train) / 7.0d0)
                 t_test = (/(k+1, k = n_train,n_train+4)/)
 
+                indices(:) = (/(k, k = 1, 30)/)
+
                 call lovo_algorithm(t(1:n_train),covid_data(i+start_date-n_train-6:i+start_date-7),indices(1:n_train),&
                 outliers,n_train,noutliers,sp_vector(1:n_train),pdata,.false.,fobj)
 
@@ -96,9 +97,9 @@ program main
             enddo     
             
             call find_optimal_ntrain(pred_rmsd,6,optimal_ntrain)
-            print*, indices(1:optimal_ntrain)
-            ! call lovo_algorithm(t(1:optimal_ntrain),covid_data(i+start_date-optimal_ntrain-1:i+start_date-2),&
-            ! indices(1:optimal_ntrain),outliers,optimal_ntrain,noutliers,sp_vector(1:optimal_ntrain),pdata,.false.,fobj)
+            
+            call lovo_algorithm(t(1:optimal_ntrain),covid_data(i+start_date-optimal_ntrain-1:i+start_date-2),&
+            indices(1:optimal_ntrain),outliers,optimal_ntrain,noutliers,sp_vector(1:optimal_ntrain),pdata,.false.,fobj)
         enddo
 
         
@@ -120,7 +121,7 @@ program main
         type(pdata_type), intent(inout) :: pdata
   
         real(kind=8) :: sigmin,epsilon,fxk,fxtrial,alpha,gamma,termination
-        integer :: i,iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo,lovo_order
+        integer :: iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo,lovo_order
   
         sigmin = 1.0d-1
         gamma = 1.0d+1
@@ -133,7 +134,6 @@ program main
         lovo_order = n_train - noutliers
   
         pdata%xk(:) = 1.0d-1
-        indices(:) = (/(i, i = 1, n_train)/)
         
         call compute_sp(pdata%xk,t,y,indices,sp_vector,pdata%n,n_train,lovo_order,fxk)
 
