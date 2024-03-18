@@ -6,9 +6,7 @@ program main
     type :: pdata_type
         integer :: counters(3) = 0,n
         real(kind=8) :: sigma,fobj
-        real(kind=8), allocatable :: xtrial(:),xk(:),&
-        pred(:),re(:),sp_vector(:),grad_sp(:),hess_sp(:,:),eig_hess_sp(:),aux_mat(:,:),aux_vec(:),&
-        test_data(:,:),train_data(:,:)
+        real(kind=8), allocatable :: xtrial(:),xk(:),sp_vector(:),grad_sp(:),hess_sp(:,:),eig_hess_sp(:),aux_mat(:,:),aux_vec(:)
         integer, allocatable :: outliers(:)
         character(len=1) :: JOBZ,UPLO ! lapack variables
         integer :: LDA,LWORK,INFO,NRHS,LDB ! lapack variables
@@ -42,23 +40,27 @@ program main
     subroutine hard_test()
         implicit none
 
-        integer :: samples,i,j,n_train,optimal_ntrain,noutliers,start_date,allocerr
-        real(kind=8) :: fobj
-        real(kind=8), allocatable :: t(:),covid_data(:),indices(:),sp_vector(:),x_sols(:,:)
+        integer :: samples,i,j,k,n_train,n_test,optimal_ntrain,noutliers,start_date,allocerr
+        real(kind=8) :: fobj,ti,tm
+        real(kind=8), allocatable :: t(:),t_test(:),covid_data(:),indices(:),sp_vector(:),pred(:)
         integer, allocatable :: outliers(:)
 
         Open(Unit = 100, File = trim(pwd)//"/../data/covid_mixed.txt", Access = "SEQUENTIAL")
     
         read(100,*) samples
 
-        allocate(covid_data(samples),x_sols(6,pdata%n),t(30),indices(30),sp_vector(30),outliers(4),pdata%hess_sp(pdata%n,pdata%n),&
+        start_date = 36
+        n_test = 5
+
+        allocate(covid_data(samples),t(30),t_test(n_test),indices(30),sp_vector(30),outliers(4),pdata%hess_sp(pdata%n,pdata%n),&
         pdata%eig_hess_sp(pdata%n),pdata%WORK(pdata%LWORK),pdata%aux_mat(pdata%n,pdata%n),pdata%aux_vec(pdata%n),&
-        pdata%IPIV(pdata%n),pdata%xtrial(pdata%n),pdata%xk(pdata%n),pdata%grad_sp(pdata%n),stat=allocerr)
+        pdata%IPIV(pdata%n),pdata%xtrial(pdata%n),pdata%xk(pdata%n),pdata%grad_sp(pdata%n),pred(n_test),stat=allocerr)
 
         if ( allocerr .ne. 0 ) then
             write(*,*) 'Allocation error.'
             stop
         end if
+
 
         t(:) = (/(i, i = 1, 30)/)
         indices(:) = (/(i, i = 1, 30)/)
@@ -69,18 +71,27 @@ program main
 
         close(100)
 
-        start_date = 36
+
 
         do i = 1, 1
             ! Find optimal n_train
-            do j = 1, 6
+            do j = 1, 1
                 n_train = 5 * j
                 noutliers = 0*int(dble(n_train) / 7.0d0)
-                call lovo_algorithm(t(1:n_train),covid_data(i+start_date-n_train-6:i+start_date-7),indices(1:n_train),&
-                outliers,n_train,noutliers,sp_vector(1:n_train),pdata,.false.,fobj)
-                x_sols(j,:) = pdata%xk(:)
+                t_test = (/(k+1, k = n_train,n_train+4)/)
+
+                ! call lovo_algorithm(t(1:n_train),covid_data(i+start_date-n_train-6:i+start_date-7),indices(1:n_train),&
+                ! outliers,n_train,noutliers,sp_vector(1:n_train),pdata,.false.,fobj)
+
+                
+
+                do k = 1, n_test
+                    print*,covid_data(k+start_date-n_train-1)
+                !     ti = t_test(k)
+                !     pred(k) = covid_data(i+start_date-n_train-1) + pdata%xk(1) * (ti - tm) + &
+                !                     pdata%xk(2) * ((ti - tm)**2) + pdata%xk(3) * ((ti - tm)**3)
+                enddo
             enddo     
-            x_sols(:,:) = 0.0d0
         enddo
 
         
