@@ -44,14 +44,14 @@ program main
 
         integer :: samples,i,j,n_train,optimal_ntrain,noutliers,start_date,allocerr
         real(kind=8) :: fobj
-        real(kind=8), allocatable :: t(:),covid_data(:),indices(:),sp_vector(:)
+        real(kind=8), allocatable :: t(:),covid_data(:),indices(:),sp_vector(:),x_sols(:,:)
         integer, allocatable :: outliers(:)
 
         Open(Unit = 100, File = trim(pwd)//"/../data/covid_mixed.txt", Access = "SEQUENTIAL")
     
         read(100,*) samples
 
-        allocate(covid_data(samples),t(30),indices(30),sp_vector(30),outliers(4),pdata%hess_sp(pdata%n,pdata%n),&
+        allocate(covid_data(samples),x_sols(6,pdata%n),t(30),indices(30),sp_vector(30),outliers(4),pdata%hess_sp(pdata%n,pdata%n),&
         pdata%eig_hess_sp(pdata%n),pdata%WORK(pdata%LWORK),pdata%aux_mat(pdata%n,pdata%n),pdata%aux_vec(pdata%n),&
         pdata%IPIV(pdata%n),pdata%xtrial(pdata%n),pdata%xk(pdata%n),pdata%grad_sp(pdata%n),stat=allocerr)
 
@@ -75,13 +75,15 @@ program main
             ! Find optimal n_train
             do j = 1, 6
                 n_train = 5 * j
-                noutliers = 2*int(dble(n_train) / 7.0d0)
+                noutliers = 0*int(dble(n_train) / 7.0d0)
                 call lovo_algorithm(t(1:n_train),covid_data(i+start_date-n_train-6:i+start_date-7),indices(1:n_train),&
-                outliers,n_train,noutliers,sp_vector(1:n_train),pdata,.true.,fobj)
+                outliers,n_train,noutliers,sp_vector(1:n_train),pdata,.false.,fobj)
+                x_sols(j,:) = pdata%xk(:)
             enddo     
+            x_sols(:,:) = 0.0d0
         enddo
 
-        ! print*, pdata%xk
+        
 
     end subroutine hard_test
 
