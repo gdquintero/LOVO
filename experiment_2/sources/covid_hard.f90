@@ -75,7 +75,7 @@ program main
 
         do i = 1, 1
             ! Find optimal n_train
-            do j = 1, 1
+            do j = 6, 6
                 n_train = 5 * j
                 noutliers = 0*int(dble(n_train) / 7.0d0)
                 t_test = (/(k+1, k = n_train,n_train+4)/)
