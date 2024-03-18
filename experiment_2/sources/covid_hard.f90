@@ -94,7 +94,7 @@ program main
                 enddo
                 call rmsd(pdata%n,covid_data(i+start_date-1:i+start_date+3),pred,pred_rmsd(j))
             enddo     
-            print*,minloc(pred_rmsd)
+            print*,int(minloc(pred_rmsd))
             
         enddo
 
