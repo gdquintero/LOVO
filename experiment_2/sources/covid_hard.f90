@@ -70,21 +70,16 @@ program main
         close(100)
 
         start_date = 36
-        noutliers = 0
-        n_train = 30
 
-        call lovo_algorithm(t(1:n_train),covid_data(start_date:start_date+n_train-1),indices(1:n_train),&
+        do i = 1, 1
+            ! Find optimal n_train
+            do j = 1, 6
+                n_train = 5 * j
+                noutliers = 2*int(dble(n_train) / 7.0d0)
+                call lovo_algorithm(t(1:n_train),covid_data(i+start_date-n_train-6:i+start_date-7),indices(1:n_train),&
                 outliers,n_train,noutliers,sp_vector(1:n_train),pdata,.true.,fobj)
-
-        ! do i = 1, 1
-        !     ! Find optimal n_train
-        !     do j = 6, 6
-        !         n_train = 5 * j
-        !         noutliers = 0*int(dble(n_train) / 7.0d0)
-        !         call lovo_algorithm(t(1:n_train),covid_data(i+start_date-n_train-6:i+start_date-7),indices(1:n_train),&
-        !         outliers,n_train,noutliers,sp_vector(1:n_train),pdata,.true.,fobj)
-        !     enddo     
-        ! enddo
+            enddo     
+        enddo
 
         ! print*, pdata%xk
 
@@ -109,10 +104,10 @@ program main
   
         sigmin = 1.0d-1
         gamma = 1.0d+1
-        epsilon = 1.0d-8
+        epsilon = 1.0d-4
         alpha = 1.0d-8
-        max_iter_lovo = 1
-        max_iter_sub_lovo = 1
+        max_iter_lovo = 1000
+        max_iter_sub_lovo = 100
         iter_lovo = 0
         iter_sub_lovo = 0
         lovo_order = n_train - noutliers
