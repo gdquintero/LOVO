@@ -94,7 +94,10 @@ program main
                 enddo
                 call rmsd(pdata%n,covid_data(i+start_date-1:i+start_date+3),pred,pred_rmsd(j))
             enddo     
-            print*,int(minloc(pred_rmsd))
+            
+            call find_optimal_ntrain(pred_rmsd,6,optimal_ntrain)
+
+            
             
         enddo
 
@@ -188,6 +191,23 @@ program main
         outliers(:) = int(indices(n_train - noutliers + 1:))
 
     end subroutine lovo_algorithm
+
+    !*****************************************************************
+    !*****************************************************************
+    subroutine find_optimal_ntrain(x,n,res)
+        implicit none
+
+        integer,        intent(in) :: n
+        real(kind=8),   intent(in) :: x(n)
+        integer,        intent(out) :: res
+        integer :: i
+
+        do i = 1, n
+            if (x(i) .eq. minval(x)) then
+                res = 5*i
+            endif
+        enddo
+    end subroutine find_optimal_ntrain
 
     !*****************************************************************
     !*****************************************************************
