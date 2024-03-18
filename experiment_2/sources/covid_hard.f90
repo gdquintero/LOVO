@@ -325,14 +325,14 @@ program main
 
         type(pdata_type),   intent(inout) :: pdata
 
-        call compute_eye(n,pdata%aux_mat)
+        call compute_eye(pdata%n,pdata%aux_mat)
 
         pdata%aux_mat(:,:) = pdata%hess_sp(:,:) + pdata%sigma * pdata%aux_mat(:,:)
 
         pdata%aux_vec(:) = matmul(pdata%aux_mat(:,:),pdata%xk(:))
         pdata%aux_vec(:) = pdata%aux_vec(:) - pdata%grad_sp(:)
 
-        call dsysv(pdata%UPLO,n,pdata%NRHS,pdata%aux_mat(:,:),pdata%LDA,pdata%IPIV,&
+        call dsysv(pdata%UPLO,pdata%n,pdata%NRHS,pdata%aux_mat(:,:),pdata%LDA,pdata%IPIV,&
         pdata%aux_vec(:),pdata%LDB,pdata%WORK,pdata%LWORK,pdata%INFO)
 
         pdata%xtrial(:) = pdata%aux_vec(:)
