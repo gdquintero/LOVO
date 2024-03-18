@@ -96,9 +96,9 @@ program main
             enddo     
             
             call find_optimal_ntrain(pred_rmsd,6,optimal_ntrain)
-
-            
-            
+            print*, indices(1:optimal_ntrain)
+            ! call lovo_algorithm(t(1:optimal_ntrain),covid_data(i+start_date-optimal_ntrain-1:i+start_date-2),&
+            ! indices(1:optimal_ntrain),outliers,optimal_ntrain,noutliers,sp_vector(1:optimal_ntrain),pdata,.false.,fobj)
         enddo
 
         
