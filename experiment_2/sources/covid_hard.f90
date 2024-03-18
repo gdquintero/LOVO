@@ -46,6 +46,7 @@ program main
         integer, allocatable :: outliers(:)
 
         Open(Unit = 100, File = trim(pwd)//"/../data/covid_mixed.txt", Access = "SEQUENTIAL")
+        Open(Unit = 200, File = trim(pwd)//"/../output/solutions_covid_mixed.txt", Access = "SEQUENTIAL")
     
         read(100,*) samples
 
@@ -71,9 +72,7 @@ program main
 
         close(100)
 
-
-
-        do i = 1, 1
+        do i = 1, 1000
             ! Find optimal n_train
             do j = 1, 6
                 n_train = 5 * j
@@ -100,9 +99,12 @@ program main
             
             call lovo_algorithm(t(1:optimal_ntrain),covid_data(i+start_date-optimal_ntrain-1:i+start_date-2),&
             indices(1:optimal_ntrain),outliers,optimal_ntrain,noutliers,sp_vector(1:optimal_ntrain),pdata,.false.,fobj)
+
+            write(200,10) pdata%xk(1),pdata%xk(2),pdata%xk(3)
+
         enddo
 
-        
+        10 format (ES13.6,1X,ES13.6,1X,ES13.6)
 
     end subroutine hard_test
 
@@ -199,7 +201,7 @@ program main
 
         integer,        intent(in) :: n
         real(kind=8),   intent(in) :: x(n)
-        integer,        intent(out) :: res
+        integer,        intent(inout) :: res
         integer :: i
 
         do i = 1, n
