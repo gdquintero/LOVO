@@ -70,16 +70,21 @@ program main
         close(100)
 
         start_date = 36
+        noutliers = 0
+        n_train = 30
 
-        do i = 1, 1
-            ! Find optimal n_train
-            do j = 1, 6
-                n_train = 5 * j
-                noutliers = 2*int(dble(n_train) / 7.0d0)
-                call lovo_algorithm(t(1:n_train),covid_data(i+start_date-n_train-6:i+start_date-7),indices(1:n_train),&
+        call lovo_algorithm(t(1:n_train),covid_data(start_date:start_date+n_train-1),indices(1:n_train),&
                 outliers,n_train,noutliers,sp_vector(1:n_train),pdata,.true.,fobj)
-            enddo     
-        enddo
+
+        ! do i = 1, 1
+        !     ! Find optimal n_train
+        !     do j = 6, 6
+        !         n_train = 5 * j
+        !         noutliers = 0*int(dble(n_train) / 7.0d0)
+        !         call lovo_algorithm(t(1:n_train),covid_data(i+start_date-n_train-6:i+start_date-7),indices(1:n_train),&
+        !         outliers,n_train,noutliers,sp_vector(1:n_train),pdata,.true.,fobj)
+        !     enddo     
+        ! enddo
 
         ! print*, pdata%xk
 
@@ -106,8 +111,8 @@ program main
         gamma = 1.0d+1
         epsilon = 1.0d-8
         alpha = 1.0d-8
-        max_iter_lovo = 10
-        max_iter_sub_lovo = 100
+        max_iter_lovo = 1
+        max_iter_sub_lovo = 1
         iter_lovo = 0
         iter_sub_lovo = 0
         lovo_order = n_train - noutliers
@@ -145,7 +150,7 @@ program main
 
             do                 
                 call compute_xtrial(pdata)
-                call compute_sp(pdata%xk,t,y,indices,sp_vector,pdata%n,n_train,lovo_order,fxk)
+                call compute_sp(pdata%xtrial,t,y,indices,sp_vector,pdata%n,n_train,lovo_order,fxtrial)
 
                 if (fxtrial .le. (fxk - alpha * norm2(pdata%xtrial(:) - pdata%xk(:))**2)) exit
                 if (iter_sub_lovo .gt. max_iter_sub_lovo) exit
@@ -221,7 +226,7 @@ program main
 
         sp_vector(:) = 0.0d0
         kflag = 2
-        indices(:) = (/(i, i = 1,n_train)/)
+        indices(1:n_train) = (/(i, i = 1,n_train)/)
 
         do i = 1, n_train
             call fi(x,i,t,y,n,n_train,sp_vector(i))

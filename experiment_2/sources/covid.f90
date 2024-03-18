@@ -224,8 +224,8 @@ program main
         gamma = 1.0d+1
         epsilon = 1.0d-8
         alpha = 1.0d-8
-        max_iter_lovo = 1000
-        max_iter_sub_lovo = 100
+        max_iter_lovo = 1
+        max_iter_sub_lovo = 1
         iter_lovo = 0
         iter_sub_lovo = 0
         pdata%lovo_order = pdata%n_train - noutliers
