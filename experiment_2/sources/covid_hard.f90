@@ -47,6 +47,7 @@ program main
 
         Open(Unit = 100, File = trim(pwd)//"/../data/covid_mixed.txt", Access = "SEQUENTIAL")
         Open(Unit = 200, File = trim(pwd)//"/../output/solutions_covid_mixed.txt", Access = "SEQUENTIAL")
+        Open(Unit = 300, File = trim(pwd)//"/../output/optimal_ntrains.txt", Access = "SEQUENTIAL")
     
         read(100,*) samples
 
@@ -101,10 +102,15 @@ program main
             indices(1:optimal_ntrain),outliers,optimal_ntrain,noutliers,sp_vector(1:optimal_ntrain),pdata,.false.,fobj)
 
             write(200,10) pdata%xk(1),pdata%xk(2),pdata%xk(3)
+            write(300,20) optimal_ntrain
 
         enddo
 
         10 format (ES13.6,1X,ES13.6,1X,ES13.6)
+        20 format (I2)
+
+        close(200)
+        close(300)
 
     end subroutine hard_test
 
