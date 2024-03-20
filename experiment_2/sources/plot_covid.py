@@ -15,19 +15,19 @@ plt.rc('font', family='serif')
 
 df_data = pd.read_table(parent+"/data/covid_mixed.txt",delimiter=" ",header=None,skiprows=1,skipinitialspace=True)
 df_sol = pd.read_table(parent+"/output/solutions_covid_mixed.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
+df_optimal_ntrains = pd.read_table(parent+"/output/optimal_ntrains.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
 
-n_test = 5
+n_test      = 5
+ind_excel   = 250
+pred        = ind_excel - 86
+n_train     = df_optimal_ntrains[0].values[pred]
 
-# n_train = int(df_data[0].values[0])
-# n_test = int(df_data[0].values[1])
+y = np.zeros(n_train)
+y[:n_train] = df_data[0].values[pred-n_train:pred]
+days = [i for i in range(1,n_train+n_test+1)]
+x = df_sol[:].values[pred]
 
-# y = np.zeros(n_train)
-# y = df_data[0].values[2:len(df_data)]
-
-# days = [i for i in range(1,n_train+n_test+1)]
-# x = df_sol[:].values[0]
-
-# t = np.linspace(days[0],days[-1],1000)
+t = np.linspace(days[0],days[-1],1000)
 
 # with open(parent+"/output/outliers.txt") as f:
 #     lines = f.readlines()
@@ -45,16 +45,16 @@ n_test = 5
 #     cubic_outliers[1,i] = df_data.values[outliers[i]+1]
 
 
-# plt.plot(t,models.cubic(x[0],x[1],x[2],t,y[len(y)-n_test-1],days[len(y)-n_test-1]),lw=2)
+plt.plot(t,models.cubic(x[0],x[1],x[2],t,y[len(y)-n_test-1],days[len(y)-n_test-1]),lw=2)
 
 # plt.plot(cubic_outliers[0],cubic_outliers[1],'ro',mfc='none',ms=10)
 
-# l1 = plt.plot(days[:n_train],y[:n_train],"ok")
-# plt.setp(l1, 'markersize')
+l1 = plt.plot(days[:n_train],y[:n_train],"ok")
+plt.setp(l1, 'markersize')
 
 # l2 = plt.plot(days[n_train:],y[n_train:],"ok",mfc='none',ms=6,marker="s")
 # plt.setp(l2, 'markersize')
 
 # # plt.xticks(range(-1, 4, 1))
 # # plt.yticks(range(-4, 5, 2))
-# plt.show()
+plt.show()
