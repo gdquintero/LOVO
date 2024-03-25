@@ -18,7 +18,7 @@ df_sol = pd.read_table(parent+"/output/solutions_covid_mixed.txt",delimiter=" ",
 df_optimal_ntrains = pd.read_table(parent+"/output/optimal_ntrains.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
 
 n_test      = 5
-ind_excel   = 100
+ind_excel   = 121
 pred        = ind_excel - 86
 n_train     = df_optimal_ntrains[0].values[pred]
 

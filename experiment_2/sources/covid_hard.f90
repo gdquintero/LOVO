@@ -70,7 +70,7 @@ program main
         do i = 1, samples
             read(100,*) covid_data(i)
         enddo
-
+    
         close(100)
 
         do i = 1, 1000
