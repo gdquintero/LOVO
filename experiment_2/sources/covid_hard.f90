@@ -73,7 +73,7 @@ program main
     
         close(100)
 
-        do i = 1, 5
+        do i = 1, 1000
             ! Find optimal n_train
             do j = 1, 6
                 n_train = 5 * j

@@ -18,14 +18,16 @@ df_sol = pd.read_table(parent+"/output/solutions_covid_mixed.txt",delimiter=" ",
 df_optimal_ntrains = pd.read_table(parent+"/output/optimal_ntrains.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
 
 n_test      = 5
-ind_excel   = 121
+ind_excel   = 500
 pred        = ind_excel - 86
-n_train     = df_optimal_ntrains[0].values[pred]
+n_train     = df_optimal_ntrains[0].values[ind_excel-121]
 
-y = np.zeros(n_train)
-y[:n_train] = df_data[0].values[pred-n_train:pred]
+y = df_data[0].values[pred-n_train:pred+n_test]
+
+
 days = [i for i in range(1,n_train+n_test+1)]
-x = df_sol[:].values[pred]
+
+x = df_sol[:].values[ind_excel-121]
 
 t = np.linspace(days[0],days[-1],1000)
 
@@ -51,6 +53,7 @@ plt.plot(t,models.cubic(x[0],x[1],x[2],t,y[len(y)-n_test-1],days[len(y)-n_test-1
 
 l1 = plt.plot(days[:n_train],y[:n_train],"ok")
 plt.setp(l1, 'markersize')
+
 
 # l2 = plt.plot(days[n_train:],y[n_train:],"ok",mfc='none',ms=6,marker="s")
 # plt.setp(l2, 'markersize')

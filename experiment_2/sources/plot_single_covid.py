@@ -20,7 +20,6 @@ df_sol = pd.read_table(parent+"/output/solution_covid.txt",delimiter=" ",header=
 n_train = int(df_data[0].values[0])
 n_test = int(df_data[0].values[1])
 
-y = np.zeros(n_train)
 y = df_data[0].values[2:len(df_data)]
 
 days = [i for i in range(1,n_train+n_test+1)]
@@ -56,4 +55,4 @@ plt.setp(l2, 'markersize')
 
 # plt.xticks(range(-1, 4, 1))
 # plt.yticks(range(-4, 5, 2))
-plt.show()
+# plt.show()
