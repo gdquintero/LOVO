@@ -80,7 +80,7 @@ program main
         do i = 1, pdata%n_test
             read(100,*) pdata%y_test(i)
         enddo
-    
+
         close(100)
     
         pdata%t(1:pdata%n_train) = (/(i, i = 1, pdata%n_train)/)
@@ -90,6 +90,8 @@ program main
         Open(Unit = 200, File = trim(pwd)//"/../output/outliers.txt", ACCESS = "SEQUENTIAL")
     
         call lovo_algorithm(n,pdata%noutliers,pdata%outliers,pdata,.true.,pdata%fobj)
+
+        print*,pdata%xk
     
         write(100,10) pdata%xk(1),pdata%xk(2),pdata%xk(3)
         write(200,20) pdata%noutliers

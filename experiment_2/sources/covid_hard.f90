@@ -73,7 +73,7 @@ program main
     
         close(100)
 
-        do i = 1, 1000
+        do i = 1, 5
             ! Find optimal n_train
             do j = 1, 6
                 n_train = 5 * j
@@ -94,7 +94,7 @@ program main
                             pdata%xk(2) * ((ti - tm)**2) + pdata%xk(3) * ((ti - tm)**3)
                 enddo
                 call rmsd(pdata%n,covid_data(i+start_date-1:i+start_date+3),pred,pred_rmsd(j))
-            enddo     
+            enddo    
             
             call find_optimal_ntrain(pred_rmsd,6,optimal_ntrain)
             

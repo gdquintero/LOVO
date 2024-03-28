@@ -24,12 +24,12 @@ country = countries["br"]
 # ind_excel = 166 # 15 jun 2020 estados unidos con outliers
 # ind_excel = 216 # 4 de agosto italia 
 
-ind_excel = 86
+ind_excel = 110
 
 df = pd.read_excel(parent+"/data/"+country)
 
 initial_date = ind_excel - 2
-n_train = 30
+n_train = 15
 n_test = 5
 total_days = n_train + n_test  
 
