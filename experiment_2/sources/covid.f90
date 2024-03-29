@@ -81,10 +81,6 @@ program main
             read(100,*) pdata%y_test(i)
         enddo
 
-        print*, pdata%y
-
-        stop
-
         close(100)
     
         pdata%t(1:pdata%n_train) = (/(i, i = 1, pdata%n_train)/)
