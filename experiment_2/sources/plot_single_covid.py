@@ -14,7 +14,6 @@ plt.rc('text', usetex=True)
 plt.rc('font', family='serif')
 
 df_data = pd.read_table(parent+"/data/covid.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
-df_data = pd.read_table(parent+"/data/covid.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
 df_sol = pd.read_table(parent+"/output/solution_covid.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
 
 n_train = int(df_data[0].values[0])
@@ -55,4 +54,4 @@ plt.setp(l2, 'markersize')
 
 # plt.xticks(range(-1, 4, 1))
 # plt.yticks(range(-4, 5, 2))
-# plt.show()
+plt.show()
