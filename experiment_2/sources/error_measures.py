@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import os
 import models
+import statistics as st
 
 cwd = os.getcwd()
 parent =  os.path.abspath(os.path.join(cwd,os.pardir))
@@ -34,4 +35,19 @@ for i in range(1000):
         o = df_data[0].values[i+j+35]
         errors[i,j] = relative_error(o,p)
 
-print(errors[:9,:])
+
+print("\nAverages: ")
+print(st.mean(errors[:,0]))
+print(st.mean(errors[:,1]))
+print(st.mean(errors[:,2]))
+print(st.mean(errors[:,3]))
+print(st.mean(errors[:,4]))
+
+successes = np.zeros(5,dtype=int)
+
+for i in range(1000):
+    for j in range(5):
+        if errors[i,j] <= 0.1:
+            successes[j] += 1
+
+print(successes)
