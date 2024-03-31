@@ -5,6 +5,10 @@ import models
 import statistics as st
 import matplotlib.pyplot as plt
 
+plt.rcParams.update({'font.size': 14})
+plt.rc('text', usetex=True)
+plt.rc('font', family='serif')
+
 cwd = os.getcwd()
 parent =  os.path.abspath(os.path.join(cwd,os.pardir))
 
@@ -57,9 +61,13 @@ fig, ax = plt.subplots()
 mtrains = df_optimal_ntrains[0].values[:]
 labels = ["%s"%i for i in range(5,31,5)]
 unique, counts = np.unique(mtrains, return_counts=True)
-rects = ax.bar(unique, counts, 3)
+rects = ax.bar(unique,counts, 3)
 ax.set_xticks(unique)
 ax.set_xticklabels(labels)
+
+print("\nFrecuencia: ")
+print(counts/10)
+
+plt.xlabel('Days for training',fontsize=16)
+plt.ylabel('Frequency',fontsize=16)
 plt.show()
-
-
