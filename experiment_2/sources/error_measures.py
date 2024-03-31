@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import models
 import statistics as st
+import matplotlib.pyplot as plt
 
 cwd = os.getcwd()
 parent =  os.path.abspath(os.path.join(cwd,os.pardir))
@@ -37,11 +38,9 @@ for i in range(1000):
 
 
 print("\nAverages: ")
-print(st.mean(errors[:,0]))
-print(st.mean(errors[:,1]))
-print(st.mean(errors[:,2]))
-print(st.mean(errors[:,3]))
-print(st.mean(errors[:,4]))
+
+for i in range(5):
+    print("%.4f" % st.mean(errors[:,i]))
 
 successes = np.zeros(5,dtype=int)
 
@@ -50,4 +49,17 @@ for i in range(1000):
         if errors[i,j] <= 0.1:
             successes[j] += 1
 
+
+print("\nSuccesses: ")
 print(successes)
+
+fig, ax = plt.subplots()
+mtrains = df_optimal_ntrains[0].values[:]
+labels = ["%s"%i for i in range(5,31,5)]
+unique, counts = np.unique(mtrains, return_counts=True)
+rects = ax.bar(unique, counts, 3)
+ax.set_xticks(unique)
+ax.set_xticklabels(labels)
+plt.show()
+
+
