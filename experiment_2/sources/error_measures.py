@@ -50,7 +50,7 @@ successes = np.zeros(5,dtype=int)
 
 for i in range(1000):
     for j in range(5):
-        if errors[i,j] <= 0.1:
+        if errors[i,j] <= 0.2:
             successes[j] += 1
 
 
