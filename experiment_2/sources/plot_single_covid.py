@@ -43,7 +43,6 @@ for i in range(noutliers):
 
 
 plt.plot(t,models.cubic(x[0],x[1],x[2],t,y[len(y)-n_test-1],days[len(y)-n_test-1]),lw=2)
-
 plt.plot(cubic_outliers[0],cubic_outliers[1],'ro',mfc='none',ms=10)
 
 l1 = plt.plot(days[:n_train],y[:n_train],"ok")

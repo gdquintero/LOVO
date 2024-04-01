@@ -55,7 +55,8 @@ program main
         read(100,*) pdata%n_train
         read(100,*) pdata%n_test
     
-        pdata%noutliers = 0*int(dble(pdata%n_train) / 7.0d0)
+        ! pdata%noutliers = 0*int(dble(pdata%n_train) / 7.0d0)
+        pdata%noutliers = 7
     
         allocate(pdata%t(pdata%n_train),pdata%y(pdata%n_train),pdata%y_test(pdata%n_test),pdata%t_test(pdata%n_test),&
         pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),pdata%indices(pdata%n_train),stat=allocerr)

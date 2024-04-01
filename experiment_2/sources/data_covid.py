@@ -17,19 +17,19 @@ countries = {
     "us" : "us.xlsx"
 }
 
-country = countries["br"]
+country = countries["it"]
 # ind_excel = 100 # 10 abr 2020 desorden panama
 # ind_excel = 122 # 2 de mayo 2020 subida brasil - bajada uk
 # ind_excel = 171 # 20 de junio usa
 # ind_excel = 166 # 15 jun 2020 estados unidos con outliers
 # ind_excel = 216 # 4 de agosto italia 
 
-ind_excel = 111
+ind_excel = 226
 
 df = pd.read_excel(parent+"/data/"+country)
 
 initial_date = ind_excel - 2
-n_train = 10
+n_train = 15
 n_test = 5
 total_days = n_train + n_test  
 
