@@ -41,6 +41,9 @@ print("Relative errors: ")
 for i in range(3):
     print("%.4f" % errors[i])
 
+print("\nMean RE: ")
+print("%.4f" % st.mean(errors))
+
 print("\nRMSD: ")
-print(rmsd(3,obs,pred))
+print("%.4f" % rmsd(3,obs,pred))
 
