@@ -9,7 +9,7 @@ plt.rcParams.update({'font.size': 14})
 plt.rc('text', usetex=True)
 plt.rc('font', family='serif')
 
-n_pred_days = 1000
+n_pred_days = 100
 
 cwd = os.getcwd()
 parent =  os.path.abspath(os.path.join(cwd,os.pardir))
@@ -87,8 +87,9 @@ ax.set_xticks(unique)
 ax.set_xticklabels(labels)
 
 print("\nFrecuencia: ")
-print(counts/10)
+print(counts/(n_pred_days / 100))
 
 plt.xlabel('Days for training',fontsize=16)
 plt.ylabel('Frequency',fontsize=16)
-plt.show()
+plt.savefig(parent+"/images/err.pdf",bbox_inches = "tight")
+# plt.show()
