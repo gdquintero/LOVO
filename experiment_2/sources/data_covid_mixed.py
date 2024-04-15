@@ -12,7 +12,7 @@ countries = {
     "us" : "us.xlsx"
 }
 
-country = countries["it"]
+country = countries["uk"]
 
 cwd = os.getcwd()
 parent =  os.path.abspath(os.path.join(cwd,os.pardir))

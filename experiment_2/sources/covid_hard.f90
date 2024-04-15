@@ -64,7 +64,6 @@ program main
             stop
         end if
 
-
         t(:) = (/(i, i = 1, 30)/)
 
         do i = 1, samples

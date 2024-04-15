@@ -53,4 +53,6 @@ plt.setp(l2, 'markersize')
 
 # plt.xticks(range(-1, 4, 1))
 # plt.yticks(range(-4, 5, 2))
-plt.show()
+plt.ylim([0,0.5])
+plt.savefig(parent+"/images/it.pdf",bbox_inches = "tight")
+# plt.show()
