@@ -8,7 +8,7 @@ program main
         integer :: samples,inf,sup,lovo_order,dim_Imin,n_train,n_test
         real(kind=8) :: sigma,theta
         real(kind=8), allocatable :: xstar(:),xtrial(:),xk(:),t(:),y(:),data(:,:),indices(:),sp_vector(:),&
-        grad_sp(:),gp(:),lbnd(:),ubnd(:),pred(:),re(:),hess_sp(:,:),eig_hess_sp(:),aux_mat(:,:),aux_vec(:)
+        grad_sp(:),gp(:),lbnd(:),ubnd(:),pred(:),errors(:),hess_sp(:,:),eig_hess_sp(:),aux_mat(:,:),aux_vec(:)
         integer, allocatable :: outliers(:)
         character(len=1) :: JOBZ,UPLO ! lapack variables
         integer :: LDA,LWORK,INFO,NRHS,LDB ! lapack variables
@@ -41,7 +41,7 @@ program main
 
     allocate(pdata%xstar(n),pdata%xtrial(n),pdata%xk(n),pdata%t(pdata%n_train),pdata%y(pdata%n_train),&
     pdata%indices(pdata%n_train),pdata%sp_vector(pdata%n_train),pdata%grad_sp(n),pdata%gp(n),&
-    pdata%data(2,pdata%samples),pdata%pred(pdata%n_test),pdata%re(pdata%n_test),stat=allocerr)
+    pdata%data(2,pdata%samples),pdata%pred(pdata%n_test),pdata%errors(pdata%n_test),stat=allocerr)
 
     if ( allocerr .ne. 0 ) then
         write(*,*) 'Allocation error.'
@@ -67,8 +67,8 @@ program main
     pdata%t(1:pdata%n_train) = pdata%data(1,1:pdata%n_train)
     pdata%y(1:pdata%n_train) = pdata%data(2,1:pdata%n_train)
 
-    pdata%inf = 7
-    pdata%sup = 7
+    pdata%inf = 0
+    pdata%sup = 10
  
     allocate(pdata%outliers(pdata%n_train*(pdata%sup-pdata%inf+1)),stat=allocerr)
  
@@ -98,37 +98,40 @@ program main
   
         integer, intent(in) :: n
         integer :: noutliers,i
-        real(kind=8) :: fobj,start,finish,err_msd,ti
+        real(kind=8) :: fobj,start,finish,ti,mean_abs_err
         type(pdata_type), intent(inout) :: pdata
 
         Open(Unit = 100, File = trim(pwd)//"/../output/solution_cubic.txt", ACCESS = "SEQUENTIAL")
         Open(Unit = 200, File = trim(pwd)//"/../output/output_latex.txt", ACCESS = "SEQUENTIAL")
         Open(Unit = 300, File = trim(pwd)//"/../output/log_sp.txt", ACCESS = "SEQUENTIAL")
-        Open(Unit = 400, File = trim(pwd)//"/../output/relative_error.txt", ACCESS = "SEQUENTIAL")
-  
+        Open(Unit = 400, File = trim(pwd)//"/../output/errors.txt", ACCESS = "SEQUENTIAL")
+
+        
         do noutliers = pdata%inf, pdata%sup
-            ! write(*,*) "LOVO Algorithm for Measles:"
+            write(*,*)
+            write(*,*) "Outliers: ", noutliers
 
             call cpu_time(start)
             call lovo_algorithm(n,noutliers,pdata%outliers,pdata,fobj)
             call cpu_time(finish)
 
-            print*, pdata%xk
+            ! print*, pdata%xk
 
             do i = 1, pdata%n_test
                 ti = pdata%data(1,i+pdata%n_train)
                 pdata%pred(i) = pdata%xk(1) + (pdata%xk(2) * ti) + (pdata%xk(3) * (ti**2)) + (pdata%xk(4) * (ti**3))
-                call relative_error(pdata%data(2,i+pdata%n_train),pdata%pred(i),pdata%re(i))
+                call absolute_error(pdata%data(2,i+pdata%n_train),pdata%pred(i),pdata%errors(i))
+                ! call relative_error(pdata%data(2,i+pdata%n_train),pdata%pred(i),pdata%errors(i))
             enddo
-        
-            call rmsd(n,pdata%data(2,pdata%n_train + 1:),pdata%pred,err_msd)
+
+            mean_abs_err = sum(pdata%errors)/pdata%n_test
 
             write(100,1000) pdata%xk(1),pdata%xk(2),pdata%xk(3),pdata%xk(4)
             write(200,1100) pdata%xk(1),pdata%xk(2),pdata%xk(3),pdata%xk(4),fobj,norm2(pdata%xk-pdata%xstar),&
-            maxval(abs(pdata%xk-pdata%xstar)),err_msd,pdata%counters(1),pdata%counters(2)
+            maxval(abs(pdata%xk-pdata%xstar)),mean_abs_err,pdata%counters(1),pdata%counters(2)
             write(300,1300) fobj
 
-            write(400,1400) pdata%re
+            write(400,1400) pdata%errors
   
             pdata%counters(:) = 0
            
@@ -178,10 +181,10 @@ program main
   
         call compute_sp(n,pdata%xk,pdata,fxk)      
   
-        ! write(*,*) "--------------------------------------------------------"
-        ! write(*,10) "#iter","#init","Sp(xstar)","Stop criteria","#Imin"
-        ! 10 format (2X,A5,4X,A5,6X,A9,6X,A13,2X,A5)
-        ! write(*,*) "--------------------------------------------------------"
+        write(*,*) "--------------------------------------------------------"
+        write(*,10) "#iter","#init","Sp(xstar)","Stop criteria","#Imin"
+        10 format (2X,A5,4X,A5,6X,A9,6X,A13,2X,A5)
+        write(*,*) "--------------------------------------------------------"
   
         do
             iter_lovo = iter_lovo + 1
@@ -265,6 +268,19 @@ program main
         ! res = res * 100.d0
     
     end subroutine relative_error
+
+    !*****************************************************************
+    !*****************************************************************
+
+    subroutine absolute_error(o,p,res)
+        implicit none
+
+        real(kind=8),   intent(in) :: o,p
+        real(kind=8),   intent(out):: res
+
+        res = abs(p - o)
+    
+    end subroutine absolute_error
 
     !*****************************************************************
     !*****************************************************************

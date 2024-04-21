@@ -11,5 +11,5 @@ df.to_excel(parent+"/data/cubic_latex.xlsx")
 df= pd.read_table(parent+"/output/output_latex.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
 df.to_excel(parent+"/output/output_latex.xlsx")
 
-df= pd.read_table(parent+"/output/relative_error.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
-df.to_excel(parent+"/output/relative_error.xlsx")
+df= pd.read_table(parent+"/output/errors.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
+df.to_excel(parent+"/output/errors.xlsx")
