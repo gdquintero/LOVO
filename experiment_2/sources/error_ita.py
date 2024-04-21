@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 cwd = os.getcwd()
 parent =  os.path.abspath(os.path.join(cwd,os.pardir))
-population = 41128772
+population = 59037472
 
 def rmsd (n,o,p):
 
