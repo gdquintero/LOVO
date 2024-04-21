@@ -55,5 +55,6 @@ with open(parent+"/data/covid.txt","w") as f:
         j += 1
 
 
-plt.plot(np.linspace(1,n_train,n_train),data,"or")
+plt.plot(np.linspace(1,n_train,n_train),data,"--go")
+plt.savefig(parent+"/images/data_ita.pdf",bbox_inches = "tight")
 plt.show()

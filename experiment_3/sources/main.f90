@@ -67,8 +67,8 @@ program main
     pdata%t(1:pdata%n_train) = pdata%data(1,1:pdata%n_train)
     pdata%y(1:pdata%n_train) = pdata%data(2,1:pdata%n_train)
 
-    pdata%inf = 0
-    pdata%sup = 10
+    pdata%inf = 7
+    pdata%sup = 7
  
     allocate(pdata%outliers(pdata%n_train*(pdata%sup-pdata%inf+1)),stat=allocerr)
  
@@ -97,8 +97,8 @@ program main
         implicit none
   
         integer, intent(in) :: n
-        integer :: noutliers,i
-        real(kind=8) :: fobj,start,finish,ti,mean_abs_err
+        integer :: noutliers,i,j
+        real(kind=8) :: fobj,start,finish,ti,mean_abs_err,mae_train,p,o,aux
         type(pdata_type), intent(inout) :: pdata
 
         Open(Unit = 100, File = trim(pwd)//"/../output/solution_cubic.txt", ACCESS = "SEQUENTIAL")
@@ -125,10 +125,24 @@ program main
             enddo
 
             mean_abs_err = sum(pdata%errors)/pdata%n_test
+            mae_train = 0.d0
+
+            do i = 1, pdata%n_train - noutliers
+                j = int(pdata%indices(i))
+                ti = pdata%data(1,j)
+                p = pdata%xk(1) + (pdata%xk(2) * ti) + (pdata%xk(3) * (ti**2)) + (pdata%xk(4) * (ti**3))
+                o = pdata%data(2,j)
+                call absolute_error(o,p,aux)
+                mae_train = mae_train + aux
+            enddo
+
+            mae_train = mae_train / (pdata%n_train - noutliers)
+
+
 
             write(100,1000) pdata%xk(1),pdata%xk(2),pdata%xk(3),pdata%xk(4)
             write(200,1100) pdata%xk(1),pdata%xk(2),pdata%xk(3),pdata%xk(4),fobj,norm2(pdata%xk-pdata%xstar),&
-            maxval(abs(pdata%xk-pdata%xstar)),mean_abs_err,pdata%counters(1),pdata%counters(2)
+            maxval(abs(pdata%xk-pdata%xstar)),mean_abs_err,mae_train,pdata%counters(1),pdata%counters(2)
             write(300,1300) fobj
 
             write(400,1400) pdata%errors
@@ -143,7 +157,7 @@ program main
   
         1000 format (ES13.6,1X,ES13.6,1X,ES13.6,1X,ES13.6)
         1200 format (I2)
-        1100 format (F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,I4,1X,I4)
+        1100 format (F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,I4,1X,I4)
         1300 format (ES13.6)
         1400 format (20ES13.6)
 
