@@ -42,14 +42,17 @@ for i in range(3):
 errors[:] = absolute_error(obs,pred)
 
 print("Obs: ",obs)
-print("pred: ",pred)
+
+print("\nPredictions: ")
+for i in range(3):
+    print("%.3f" % pred[i])
 
 print("\nAbsolute errors: ")
 for i in range(3):
-    print("%.4f" % errors[i])
+    print("%.3f" % errors[i])
 
 print("\nMean AE: ")
-print("%.4f" % st.mean(errors))
+print("%.3f" % st.mean(errors))
 
 # print("\nRMSD: ")
 # print("%.4f" % rmsd(3,obs,pred))
