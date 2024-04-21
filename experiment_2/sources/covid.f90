@@ -4,7 +4,7 @@ program main
     implicit none
 
     type :: pdata_type
-        integer :: counters(3) = 0
+        integer :: counters(2) = 0
         integer :: lovo_order,n_train,n_test,days_test,noutliers,dim_Imin
         real(kind=8) :: sigma,fobj
         real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),t_test(:),y_test(:),indices(:),&
@@ -54,7 +54,7 @@ program main
         read(100,*) pdata%n_test
     
         ! pdata%noutliers = 0*int(dble(pdata%n_train) / 7.0d0)
-        pdata%noutliers = 10
+        pdata%noutliers = 0
     
         allocate(pdata%t(pdata%n_train),pdata%y(pdata%n_train),pdata%y_test(pdata%n_test),pdata%t_test(pdata%n_test),&
         pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),pdata%indices(pdata%n_train),stat=allocerr)

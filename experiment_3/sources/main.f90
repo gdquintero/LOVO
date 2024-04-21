@@ -139,7 +139,6 @@ program main
             mae_train = mae_train / (pdata%n_train - noutliers)
 
 
-
             write(100,1000) pdata%xk(1),pdata%xk(2),pdata%xk(3),pdata%xk(4)
             write(200,1100) pdata%xk(1),pdata%xk(2),pdata%xk(3),pdata%xk(4),fobj,norm2(pdata%xk-pdata%xstar),&
             maxval(abs(pdata%xk-pdata%xstar)),mean_abs_err,mae_train,pdata%counters(1),pdata%counters(2)
