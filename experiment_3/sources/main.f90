@@ -67,8 +67,8 @@ program main
     pdata%t(1:pdata%n_train) = pdata%data(1,1:pdata%n_train)
     pdata%y(1:pdata%n_train) = pdata%data(2,1:pdata%n_train)
 
-    pdata%inf = 10
-    pdata%sup = 10
+    pdata%inf = 7
+    pdata%sup = 7
  
     allocate(pdata%outliers(pdata%n_train*(pdata%sup-pdata%inf+1)),stat=allocerr)
  
@@ -112,6 +112,8 @@ program main
             call cpu_time(start)
             call lovo_algorithm(n,noutliers,pdata%outliers,pdata,fobj)
             call cpu_time(finish)
+
+            print*, pdata%xk
 
             do i = 1, pdata%n_test
                 ti = pdata%data(1,i+pdata%n_train)
@@ -164,7 +166,7 @@ program main
   
         sigmin = 1.0d-1
         gamma = 1.d+1
-        epsilon = 1.0d-8
+        epsilon = 1.0d-4
         alpha = 1.0d-8
         max_iter_lovo = 100
         max_iter_sub_lovo = 100
