@@ -12,6 +12,12 @@ plt.rcParams.update({'font.size': 13})
 plt.rc('text', usetex=True)
 plt.rc('font', family='serif')
 
+font = {'family': 'serif',
+        'color':  'darkred',
+        'weight': 'normal',
+        'size': 16,
+        }
+
 def poly(x,t):
     return x[0] + x[1] * t + x[2] * (t**2) + x[3] * (t**3)
 
@@ -46,4 +52,8 @@ plt.setp(l2, 'markersize', 4)
 
 plt.xticks(range(-1, 4, 1))
 plt.yticks(range(-4, 5, 2))
-plt.show()
+plt.xlabel("$t$",fontdict=font)
+plt.ylabel("$y$",fontdict=font)
+plt.ylim([-4.5,4.5])
+plt.savefig(parent+"/images/cubic.pdf",bbox_inches = "tight")
+# plt.show()

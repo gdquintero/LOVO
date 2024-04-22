@@ -6,7 +6,15 @@ import os
 cwd = os.getcwd()
 parent =  os.path.abspath(os.path.join(cwd,os.pardir))
 
-# countries = ["ar.xlsx","br.xlsx","co.xlsx","es.xlsx","it.xlsx","pa.xlsx","uk.xlsx","us.xlsx"]
+plt.rcParams.update({'font.size': 13})
+plt.rc('text', usetex=True)
+plt.rc('font', family='serif')
+
+font = {'family': 'serif',
+        'color':  'darkred',
+        'weight': 'normal',
+        'size': 16,
+        }
 
 countries = {
     "ar" : "ar.xlsx",
@@ -54,7 +62,9 @@ with open(parent+"/data/covid.txt","w") as f:
         
         j += 1
 
-
-plt.plot(np.linspace(1,n_train,n_train),data,"--go")
+plt.plot(np.linspace(1,n_train,n_train),data,"--o",color="darkgreen")
+plt.ylim([0,0.5])
+plt.xlabel("Days",fontdict=font)
+plt.ylabel("New deaths per million",fontdict=font)
 plt.savefig(parent+"/images/data_ita.pdf",bbox_inches = "tight")
 plt.show()
