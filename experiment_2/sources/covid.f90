@@ -54,7 +54,7 @@ program main
         read(100,*) pdata%n_test
     
         ! pdata%noutliers = 0*int(dble(pdata%n_train) / 7.0d0)
-        pdata%noutliers = 0
+        pdata%noutliers = 10
     
         allocate(pdata%t(pdata%n_train),pdata%y(pdata%n_train),pdata%y_test(pdata%n_test),pdata%t_test(pdata%n_test),&
         pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),pdata%indices(pdata%n_train),stat=allocerr)
@@ -90,7 +90,7 @@ program main
     
         call lovo_algorithm(n,pdata%noutliers,pdata%outliers,pdata,.true.,pdata%fobj)
 
-        write(*,30) pdata%fobj
+        print*, pdata%counters
     
         write(100,10) pdata%xk(1),pdata%xk(2),pdata%xk(3)
         write(200,20) pdata%noutliers
