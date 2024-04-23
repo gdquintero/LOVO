@@ -20,7 +20,7 @@ countries = {
     "us" : "us.xlsx"
 }
 
-country = countries["uk"]
+country = countries["br"]
 
 cwd = os.getcwd()
 parent =  os.path.abspath(os.path.join(cwd,os.pardir))
@@ -46,9 +46,15 @@ with open(parent+"/data/covid_mixed.txt","w") as f:
         else:
             f.write("%f\n" % x)
 
-t = np.linspace(1,139,139)
+t = np.linspace(1,30,30)
 
-plt.plot(t,data[:139],color="darkgreen")
+# ind = 80
+# ind = 100
+# ind = 200
+# ind = 500
+ind = 600
+
+plt.plot(t,data[ind:ind+30],"--o",color="darkgreen")
 plt.xlabel("Days",fontdict=font)
 plt.ylabel("New deaths per million",fontdict=font)
 plt.savefig(parent+"/images/data.pdf",bbox_inches = "tight")
