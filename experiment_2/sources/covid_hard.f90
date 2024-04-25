@@ -40,7 +40,7 @@ program main
     subroutine hard_test()
         implicit none
 
-        integer :: samples,i,j,k,n_train,n_test,optimal_ntrain,noutliers,start_date,allocerr
+        integer :: samples,i,j,k,n_train,n_test,optimal_ntrain,noutliers,start,allocerr
         real(kind=8) :: fobj,ti,tm,ym
         real(kind=8), allocatable :: t(:),t_test(:),covid_data(:),indices(:),sp_vector(:),pred(:),pred_rmsd(:)
         integer, allocatable :: outliers(:)
@@ -49,9 +49,7 @@ program main
         Open(Unit = 200, File = trim(pwd)//"/../output/solutions_covid_mixed.txt", Access = "SEQUENTIAL")
         Open(Unit = 300, File = trim(pwd)//"/../output/optimal_ntrains.txt", Access = "SEQUENTIAL")
     
-        read(100,*) samples
-
-        start_date = 36
+        samples = 100
         n_test = 5
 
         allocate(covid_data(samples),t(30),t_test(n_test),indices(30),sp_vector(30),outliers(4),&
@@ -64,7 +62,7 @@ program main
             stop
         end if
 
-        t(:) = (/(i, i = 1, 30)/)
+        t(:) = (/(i, i = 1, 25)/)
 
         do i = 1, samples
             read(100,*) covid_data(i)
@@ -72,36 +70,37 @@ program main
     
         close(100)
 
-        do i = 1, 100
+        do i = 1, 1
             ! Find optimal n_train
-            do j = 1, 6
+            do j = 1, 5
                 n_train = 5 * j
                 noutliers = 0*int(dble(n_train) / 7.0d0)
                 t_test = (/(k+1, k = n_train,n_train+4)/)
 
-                indices(:) = (/(k, k = 1, 30)/)
+                indices(:) = (/(k, k = 1, 25)/)
 
-                call lovo_algorithm(t(1:n_train),covid_data(i+start_date-n_train-6:i+start_date-7),indices(1:n_train),&
-                outliers,n_train,noutliers,sp_vector(1:n_train),pdata,.false.,fobj)
+                print*, 25+i-n_train,24+i
+                ! call lovo_algorithm(t(1:n_train),covid_data(i+start_date-n_train-6:i+start_date-7),indices(1:n_train),&
+                ! outliers,n_train,noutliers,sp_vector(1:n_train),pdata,.false.,fobj)
 
-                tm = t(n_train)
-                ym = covid_data(i+start_date-n_test-2)
+                ! tm = t(n_train)
+                ! ym = covid_data(i+start_date-n_test-2)
 
-                do k = 1, n_test
-                    ti = t_test(k)
-                    pred(k) = ym + pdata%xk(1) * (ti - tm) + &
-                            pdata%xk(2) * ((ti - tm)**2) + pdata%xk(3) * ((ti - tm)**3)
-                enddo
-                call rmsd(pdata%n,covid_data(i+start_date-1:i+start_date+3),pred,pred_rmsd(j))
+                ! do k = 1, n_test
+                !     ti = t_test(k)
+                !     pred(k) = ym + pdata%xk(1) * (ti - tm) + &
+                !             pdata%xk(2) * ((ti - tm)**2) + pdata%xk(3) * ((ti - tm)**3)
+                ! enddo
+                ! call rmsd(pdata%n,covid_data(i+start_date-1:i+start_date+3),pred,pred_rmsd(j))
             enddo    
             
-            call find_optimal_ntrain(pred_rmsd,6,optimal_ntrain)
+            ! call find_optimal_ntrain(pred_rmsd,6,optimal_ntrain)
             
-            call lovo_algorithm(t(1:optimal_ntrain),covid_data(i+start_date-optimal_ntrain-1:i+start_date-2),&
-            indices(1:optimal_ntrain),outliers,optimal_ntrain,noutliers,sp_vector(1:optimal_ntrain),pdata,.false.,fobj)
+            ! call lovo_algorithm(t(1:optimal_ntrain),covid_data(i+start_date-optimal_ntrain-1:i+start_date-2),&
+            ! indices(1:optimal_ntrain),outliers,optimal_ntrain,noutliers,sp_vector(1:optimal_ntrain),pdata,.false.,fobj)
 
-            write(200,10) pdata%xk(1),pdata%xk(2),pdata%xk(3)
-            write(300,20) optimal_ntrain
+            ! write(200,10) pdata%xk(1),pdata%xk(2),pdata%xk(3)
+            ! write(300,20) optimal_ntrain
 
         enddo
 

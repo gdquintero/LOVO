@@ -27,16 +27,15 @@ parent =  os.path.abspath(os.path.join(cwd,os.pardir))
 
 df = pd.read_excel(parent+"/data/"+country)
 
-ind_excel_init  = 86 # 27-03-2020
-ind_excel_end   = 1124 # 25-05-2023
+ind_excel_init  = 456
+ind_excel_end   = ind_excel_init + 99 
 init_date       = ind_excel_init - 2
 end_date        = ind_excel_end - 2
 n = ind_excel_end-ind_excel_init + 1
 data = np.empty(n)
 
-
 with open(parent+"/data/covid_mixed.txt","w") as f:
-    f.write("%i\n" % n)
+    # f.write("%i\n" % n)
     for i in range(n):
         x = df["new_deaths_smoothed_per_million"][i+init_date]
         data[i] = x
@@ -46,15 +45,12 @@ with open(parent+"/data/covid_mixed.txt","w") as f:
         else:
             f.write("%f\n" % x)
 
-t = np.linspace(1,30,30)
+t = np.linspace(1,100,100)
 
 # ind = 80
 # ind = 100
-# ind = 200
-# ind = 500
-ind = 600
 
-plt.plot(t,data[ind:ind+30],"--o",color="darkgreen")
+plt.plot(t,data[:100],"--o",color="darkgreen")
 plt.xlabel("Days",fontdict=font)
 plt.ylabel("New deaths per million",fontdict=font)
 plt.savefig(parent+"/images/data.pdf",bbox_inches = "tight")
