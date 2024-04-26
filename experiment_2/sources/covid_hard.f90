@@ -55,7 +55,7 @@ program main
         allocate(covid_data(samples),t(30),t_test(n_test),indices(30),sp_vector(30),outliers(4),&
         pdata%hess_sp(pdata%n,pdata%n),pdata%eig_hess_sp(pdata%n),pdata%WORK(pdata%LWORK),&
         pdata%aux_mat(pdata%n,pdata%n),pdata%aux_vec(pdata%n),pdata%IPIV(pdata%n),pdata%xtrial(pdata%n),&
-        pdata%xk(pdata%n),pdata%grad_sp(pdata%n),pred(n_test),pred_rmsd(6),stat=allocerr)
+        pdata%xk(pdata%n),pdata%grad_sp(pdata%n),pred(n_test),pred_rmsd(n_test),stat=allocerr)
 
         if ( allocerr .ne. 0 ) then
             write(*,*) 'Allocation error.'
@@ -84,13 +84,16 @@ program main
                 outliers,n_train,noutliers,sp_vector(1:n_train),pdata,.false.,fobj)
 
                 tm = t(n_train)
-                ym = covid_data(25+i)
+                ym = covid_data(24+i)
 
                 do k = 1, n_test
                     ti = t_test(k)
                     pred(k) = ym + pdata%xk(1) * (ti - tm) + &
                             pdata%xk(2) * ((ti - tm)**2) + pdata%xk(3) * ((ti - tm)**3)
-                enddo               
+                enddo  
+                
+                print*, covid_data(25+j)
+                ! call absolute_error(covid_data())
 
                 ! call rmsd(pdata%n,covid_data(i+start_date-1:i+start_date+3),pred,pred_rmsd(j))
             enddo    
