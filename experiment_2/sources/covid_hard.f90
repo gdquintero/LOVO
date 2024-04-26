@@ -40,9 +40,9 @@ program main
     subroutine hard_test()
         implicit none
 
-        integer :: samples,i,j,k,n_train,n_test,optimal_ntrain,noutliers,start,allocerr
-        real(kind=8) :: fobj,ti,tm,ym
-        real(kind=8), allocatable :: t(:),t_test(:),covid_data(:),indices(:),sp_vector(:),pred(:),pred_rmsd(:)
+        integer :: samples,i,j,k,n_train,n_test,optimal_ntrain,noutliers,allocerr
+        real(kind=8) :: fobj,ti,tm,ym,pred
+        real(kind=8), allocatable :: t(:),t_test(:),covid_data(:),indices(:),sp_vector(:),abs_err(:)
         integer, allocatable :: outliers(:)
 
         Open(Unit = 100, File = trim(pwd)//"/../data/covid_mixed.txt", Access = "SEQUENTIAL")
@@ -55,7 +55,7 @@ program main
         allocate(covid_data(samples),t(30),t_test(n_test),indices(30),sp_vector(30),outliers(4),&
         pdata%hess_sp(pdata%n,pdata%n),pdata%eig_hess_sp(pdata%n),pdata%WORK(pdata%LWORK),&
         pdata%aux_mat(pdata%n,pdata%n),pdata%aux_vec(pdata%n),pdata%IPIV(pdata%n),pdata%xtrial(pdata%n),&
-        pdata%xk(pdata%n),pdata%grad_sp(pdata%n),pred(n_test),pred_rmsd(n_test),stat=allocerr)
+        pdata%xk(pdata%n),pdata%grad_sp(pdata%n),abs_err(n_test),stat=allocerr)
 
         if ( allocerr .ne. 0 ) then
             write(*,*) 'Allocation error.'
@@ -88,17 +88,15 @@ program main
 
                 do k = 1, n_test
                     ti = t_test(k)
-                    pred(k) = ym + pdata%xk(1) * (ti - tm) + &
+                    pred = ym + pdata%xk(1) * (ti - tm) + &
                             pdata%xk(2) * ((ti - tm)**2) + pdata%xk(3) * ((ti - tm)**3)
-                enddo  
-                
-                print*, covid_data(25+j)
-                ! call absolute_error(covid_data())
 
-                ! call rmsd(pdata%n,covid_data(i+start_date-1:i+start_date+3),pred,pred_rmsd(j))
+                    call absolute_error(covid_data(25+j),pred,abs_err(k))
+                enddo   
+
             enddo    
             
-            ! call find_optimal_ntrain(pred_rmsd,6,optimal_ntrain)
+            ! call find_optimal_ntrain(abs_err,6,optimal_ntrain)
             
             ! call lovo_algorithm(t(1:optimal_ntrain),covid_data(i+start_date-optimal_ntrain-1:i+start_date-2),&
             ! indices(1:optimal_ntrain),outliers,optimal_ntrain,noutliers,sp_vector(1:optimal_ntrain),pdata,.false.,fobj)
