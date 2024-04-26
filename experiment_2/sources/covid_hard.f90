@@ -72,6 +72,7 @@ program main
 
         do i = 1, 1
             ! Find optimal n_train
+
             do j = 1, 5
                 n_train = 5 * j
                 noutliers = 0*int(dble(n_train) / 7.0d0)
@@ -79,18 +80,18 @@ program main
 
                 indices(:) = (/(k, k = 1, 25)/)
 
-                print*, 25+i-n_train,24+i
-                ! call lovo_algorithm(t(1:n_train),covid_data(i+start_date-n_train-6:i+start_date-7),indices(1:n_train),&
-                ! outliers,n_train,noutliers,sp_vector(1:n_train),pdata,.false.,fobj)
+                call lovo_algorithm(t(1:n_train),covid_data(25+i-n_train:24+i),indices(1:n_train),&
+                outliers,n_train,noutliers,sp_vector(1:n_train),pdata,.false.,fobj)
 
-                ! tm = t(n_train)
-                ! ym = covid_data(i+start_date-n_test-2)
+                tm = t(n_train)
+                ym = covid_data(25+i)
 
-                ! do k = 1, n_test
-                !     ti = t_test(k)
-                !     pred(k) = ym + pdata%xk(1) * (ti - tm) + &
-                !             pdata%xk(2) * ((ti - tm)**2) + pdata%xk(3) * ((ti - tm)**3)
-                ! enddo
+                do k = 1, n_test
+                    ti = t_test(k)
+                    pred(k) = ym + pdata%xk(1) * (ti - tm) + &
+                            pdata%xk(2) * ((ti - tm)**2) + pdata%xk(3) * ((ti - tm)**3)
+                enddo               
+
                 ! call rmsd(pdata%n,covid_data(i+start_date-1:i+start_date+3),pred,pred_rmsd(j))
             enddo    
             
@@ -104,8 +105,8 @@ program main
 
         enddo
 
-        10 format (ES13.6,1X,ES13.6,1X,ES13.6)
-        20 format (I2)
+        ! 10 format (ES13.6,1X,ES13.6,1X,ES13.6)
+        ! 20 format (I2)
 
         close(200)
         close(300)
@@ -239,16 +240,15 @@ program main
     !*****************************************************************
     !*****************************************************************
 
-    ! subroutine relative_error(o,p,res)
-    !     implicit none
+    subroutine absolute_error(o,p,res)
+        implicit none
 
-    !     real(kind=8),   intent(in) :: o,p
-    !     real(kind=8),   intent(out):: res
+        real(kind=8),   intent(in) :: o,p
+        real(kind=8),   intent(out):: res
 
-    !     res = abs(p - o) / abs(o)
-    !     ! res = res * 100.d0
+        res = abs(p - o)
     
-    ! end subroutine relative_error
+    end subroutine absolute_error
 
     !*****************************************************************
     !*****************************************************************
