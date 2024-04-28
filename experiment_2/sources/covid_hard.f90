@@ -97,19 +97,17 @@ program main
             enddo    
             
             call find_optimal_ntrain(abs_err,5,optimal_ntrain)
-
-            print*, optimal_ntrain
             
-            ! call lovo_algorithm(t(1:optimal_ntrain),covid_data(i+start_date-optimal_ntrain-1:i+start_date-2),&
-            ! indices(1:optimal_ntrain),outliers,optimal_ntrain,noutliers,sp_vector(1:optimal_ntrain),pdata,.false.,fobj)
+            call lovo_algorithm(t(1:optimal_ntrain),covid_data(25+i-optimal_ntrain-1:25+i-2),&
+            indices(1:optimal_ntrain),outliers,optimal_ntrain,noutliers,sp_vector(1:optimal_ntrain),pdata,.false.,fobj)
 
-            ! write(200,10) pdata%xk(1),pdata%xk(2),pdata%xk(3)
-            ! write(300,20) optimal_ntrain
+            write(200,10) pdata%xk(1),pdata%xk(2),pdata%xk(3)
+            write(300,20) optimal_ntrain
 
         enddo
 
-        ! 10 format (ES13.6,1X,ES13.6,1X,ES13.6)
-        ! 20 format (I2)
+        10 format (ES13.6,1X,ES13.6,1X,ES13.6)
+        20 format (I2)
 
         close(200)
         close(300)
@@ -219,26 +217,26 @@ program main
         enddo
     end subroutine find_optimal_ntrain
 
-    !*****************************************************************
-    !*****************************************************************
+    ! !*****************************************************************
+    ! !*****************************************************************
     
-    subroutine rmsd(n,o,p,res)
-        implicit none
+    ! subroutine rmsd(n,o,p,res)
+    !     implicit none
 
-        integer,        intent(in) :: n
-        real(kind=8),   intent(in) :: o(n),p(n)
-        real(kind=8),   intent(out) :: res
-        integer :: i
+    !     integer,        intent(in) :: n
+    !     real(kind=8),   intent(in) :: o(n),p(n)
+    !     real(kind=8),   intent(out) :: res
+    !     integer :: i
 
-        res = 0.d0
+    !     res = 0.d0
 
-        do i = 1,n
-            res = res + (o(i)-p(i))**2
-        enddo
+    !     do i = 1,n
+    !         res = res + (o(i)-p(i))**2
+    !     enddo
 
-        res = sqrt(res / n)
+    !     res = sqrt(res / n)
 
-    end subroutine rmsd
+    ! end subroutine rmsd
 
     !*****************************************************************
     !*****************************************************************
