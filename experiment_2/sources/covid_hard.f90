@@ -91,7 +91,7 @@ program main
                     pred = ym + pdata%xk(1) * (ti - tm) + &
                             pdata%xk(2) * ((ti - tm)**2) + pdata%xk(3) * ((ti - tm)**3)
 
-                    call absolute_error(covid_data(25+j),pred,abs_err(k))
+                    call absolute_error(covid_data(25+i+j-1),pred,abs_err(k))
                 enddo   
 
             enddo    
