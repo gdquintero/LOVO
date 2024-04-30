@@ -4,7 +4,7 @@ program main
     implicit none
 
     type :: pdata_type
-        integer :: counters(3) = 0,n
+        integer :: counters(2) = 0,n
         real(kind=8) :: sigma,fobj
         real(kind=8), allocatable :: xtrial(:),xk(:),sp_vector(:),grad_sp(:),hess_sp(:,:),eig_hess_sp(:),aux_mat(:,:),aux_vec(:)
         integer, allocatable :: outliers(:)
@@ -41,18 +41,18 @@ program main
         implicit none
 
         integer :: samples,i,j,k,n_train,n_test,optimal_ntrain,noutliers,allocerr
-        real(kind=8) :: fobj,ti,tm,ym,pred
+        real(kind=8) :: fobj,ti,tm,ym,pred,av_err_train,av_err_test
         real(kind=8), allocatable :: t(:),t_test(:),covid_data(:),indices(:),sp_vector(:),abs_err(:)
         integer, allocatable :: outliers(:)
 
         Open(Unit = 100, File = trim(pwd)//"/../data/covid_mixed.txt", Access = "SEQUENTIAL")
         Open(Unit = 200, File = trim(pwd)//"/../output/solutions_covid_mixed.txt", Access = "SEQUENTIAL")
-        Open(Unit = 300, File = trim(pwd)//"/../output/optimal_ntrains.txt", Access = "SEQUENTIAL")
+        Open(Unit = 300, File = trim(pwd)//"/../output/output_covid_hard.txt", Access = "SEQUENTIAL")
     
         samples = 100
         n_test = 5
 
-        allocate(covid_data(samples),t(30),t_test(n_test),indices(30),sp_vector(30),outliers(4),&
+        allocate(covid_data(samples),t(25),t_test(n_test),indices(25),sp_vector(25),outliers(4),&
         pdata%hess_sp(pdata%n,pdata%n),pdata%eig_hess_sp(pdata%n),pdata%WORK(pdata%LWORK),&
         pdata%aux_mat(pdata%n,pdata%n),pdata%aux_vec(pdata%n),pdata%IPIV(pdata%n),pdata%xtrial(pdata%n),&
         pdata%xk(pdata%n),pdata%grad_sp(pdata%n),abs_err(n_test),stat=allocerr)
@@ -70,29 +70,28 @@ program main
     
         close(100)
 
-        do i = 1, 1
-            ! Find optimal n_train
-
+        do i = 1, 70
+            ym = covid_data(24+i)
             do j = 1, 5
                 n_train = 5 * j
-                noutliers = 0*int(dble(n_train) / 7.0d0)
+                noutliers = 2*int(dble(n_train) / 5.0d0)
                 t_test = (/(k+1, k = n_train,n_train+4)/)
-
                 indices(:) = (/(k, k = 1, 25)/)
 
                 call lovo_algorithm(t(1:n_train),covid_data(25+i-n_train:24+i),indices(1:n_train),&
                 outliers,n_train,noutliers,sp_vector(1:n_train),pdata,.false.,fobj)
 
                 tm = t(n_train)
-                ym = covid_data(24+i)
 
                 do k = 1, n_test
                     ti = t_test(k)
                     pred = ym + pdata%xk(1) * (ti - tm) + &
                             pdata%xk(2) * ((ti - tm)**2) + pdata%xk(3) * ((ti - tm)**3)
 
-                    call absolute_error(covid_data(25+i),pred,abs_err(k))
+                    abs_err(k) = absolute_error(covid_data(25+i),pred)
                 enddo   
+
+                av_err_test = sum(abs_err) / 5 
 
             enddo    
             
@@ -101,13 +100,24 @@ program main
             call lovo_algorithm(t(1:optimal_ntrain),covid_data(25+i-optimal_ntrain-1:25+i-2),&
             indices(1:optimal_ntrain),outliers,optimal_ntrain,noutliers,sp_vector(1:optimal_ntrain),pdata,.false.,fobj)
 
+            tm = t(optimal_ntrain)
+            do k = 1, optimal_ntrain
+                ti = t(k)
+                pred = ym + pdata%xk(1) * (ti - tm) + &
+                        pdata%xk(2) * ((ti - tm)**2) + pdata%xk(3) * ((ti - tm)**3)
+
+                av_err_train = av_err_train + absolute_error(covid_data(k),pred)
+            enddo  
+
+            av_err_train = av_err_train / optimal_ntrain
+
             write(200,10) pdata%xk(1),pdata%xk(2),pdata%xk(3)
-            write(300,20) optimal_ntrain
+            write(300,20) i,fobj,av_err_train,av_err_test,optimal_ntrain
 
         enddo
 
         10 format (ES13.6,1X,ES13.6,1X,ES13.6)
-        20 format (I2)
+        20 format (I3,1X,ES10.3,1X,ES10.3,1X,ES10.3,1X,I2)
 
         close(200)
         close(300)
@@ -241,15 +251,14 @@ program main
     !*****************************************************************
     !*****************************************************************
 
-    subroutine absolute_error(o,p,res)
+    real(kind=8) function absolute_error(o,p)
         implicit none
 
-        real(kind=8),   intent(in) :: o,p
-        real(kind=8),   intent(out):: res
+        real(kind=8) :: o,p
 
-        res = abs(p - o)
+        absolute_error = abs(p - o)
     
-    end subroutine absolute_error
+    end function absolute_error
 
     !*****************************************************************
     !*****************************************************************
