@@ -40,7 +40,7 @@ program main
     subroutine hard_test()
         implicit none
 
-        integer :: samples,i,j,k,n_train,n_test,optimal_ntrain,noutliers,allocerr,out_per_ndays
+        integer :: samples,i,j,k,n_train,n_test,optimal_ntrain,noutliers,allocerr,out_per_ndays,total_test
         real(kind=8) :: fobj,ti,tm,ym,pred,av_err_train,av_err_test
         real(kind=8), allocatable :: t(:),t_test(:),covid_data(:),indices(:),sp_vector(:),abs_err(:)
         integer, allocatable :: outliers(:)
@@ -70,9 +70,10 @@ program main
     
         close(100)
 
-        out_per_ndays = 1
+        out_per_ndays = 0
+        total_test = 71
 
-        do i = 1, 1
+        do i = 1, total_test
             ym = covid_data(24+i)
             do j = 1, 5
                 n_train = 5 * j
@@ -127,6 +128,8 @@ program main
 
         close(200)
         close(300)
+
+        print*, "Test Finished!!"
 
     end subroutine hard_test
 
