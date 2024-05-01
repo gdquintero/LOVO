@@ -42,7 +42,7 @@ program main
 
         integer :: samples,i,j,k,n_train,n_test,optimal_ntrain,noutliers,allocerr,out_per_ndays,total_test
         real(kind=8) :: fobj,ti,tm,ym,pred,av_err_train,av_err_test
-        real(kind=8), allocatable :: t(:),t_test(:),covid_data(:),indices(:),sp_vector(:),abs_err(:)
+        real(kind=8), allocatable :: t(:),t_test(:),covid_data(:),indices(:),sp_vector(:),abs_err(:,:),av_abs_err(:)
         integer, allocatable :: outliers(:)
 
         Open(Unit = 100, File = trim(pwd)//"/../data/covid_mixed.txt", Access = "SEQUENTIAL")
@@ -55,7 +55,7 @@ program main
         allocate(covid_data(samples),t(25),t_test(n_test),indices(25),sp_vector(25),outliers(4),&
         pdata%hess_sp(pdata%n,pdata%n),pdata%eig_hess_sp(pdata%n),pdata%WORK(pdata%LWORK),&
         pdata%aux_mat(pdata%n,pdata%n),pdata%aux_vec(pdata%n),pdata%IPIV(pdata%n),pdata%xtrial(pdata%n),&
-        pdata%xk(pdata%n),pdata%grad_sp(pdata%n),abs_err(n_test),stat=allocerr)
+        pdata%xk(pdata%n),pdata%grad_sp(pdata%n),abs_err(5,n_test),av_abs_err(n_test),stat=allocerr)
 
         if ( allocerr .ne. 0 ) then
             write(*,*) 'Allocation error.'
@@ -70,8 +70,8 @@ program main
     
         close(100)
 
-        out_per_ndays = 2
-        total_test = 71
+        out_per_ndays = 0
+        total_test = 1
 
         do i = 1, total_test
             ym = covid_data(24+i)
@@ -92,14 +92,16 @@ program main
                     pred = ym + pdata%xk(1) * (ti - tm) + &
                             pdata%xk(2) * ((ti - tm)**2) + pdata%xk(3) * ((ti - tm)**3)
 
-                    abs_err(k) = absolute_error(covid_data(25+i),pred)
+                    abs_err(j,k) = absolute_error(covid_data(25+i),pred)
                 enddo   
-
-                av_err_test = sum(abs_err) / 5 
-
+                av_abs_err(j) = sum(abs_err(j,:)) / n_test
             enddo    
-            
-            call find_optimal_ntrain(abs_err,5,optimal_ntrain)
+    
+            call find_optimal_ntrain(av_abs_err,5,optimal_ntrain)
+
+            print*, optimal_ntrain
+
+            ! av_err_test = sum(abs_err(int(5 / optimal_ntrain))) / 5 
 
             indices(:) = (/(k, k = 1, 25)/)
             noutliers = out_per_ndays*int(dble(optimal_ntrain) / 5.0d0)
