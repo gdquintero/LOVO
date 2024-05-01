@@ -70,7 +70,7 @@ program main
     
         close(100)
 
-        out_per_ndays = 0
+        out_per_ndays = 2
         total_test = 71
 
         do i = 1, total_test
@@ -160,7 +160,7 @@ program main
         iter_sub_lovo = 0
         lovo_order = n_train - noutliers
   
-        pdata%xk(:) = 1.0d-1
+        pdata%xk(:) = 1.0d-5
         
         call compute_sp(pdata%xk,t,y,indices,sp_vector,pdata%n,n_train,lovo_order,fxk)
 
