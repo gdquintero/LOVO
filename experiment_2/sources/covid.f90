@@ -98,6 +98,8 @@ program main
     
         10 format (ES13.6,1X,ES13.6,1X,ES13.6) 
         20 format (I2)
+
+        call export_plot(pdata%xk,n,pdata%t(pdata%n_train),pdata%y(pdata%n_train),pdata%n_train,pdata%n_test)
     
         close(100)
         close(200)
@@ -200,76 +202,28 @@ program main
     !*****************************************************************
     !*****************************************************************
 
-    subroutine cross_validation(ncv,pdata,covid_data)
+    subroutine export_plot(xsol,n,tm,ym,n_train,n_test)
         implicit none
 
-        integer, intent(in) :: ncv
-        type(pdata_type), intent(inout) :: pdata
-        real(kind=8), intent(in) :: covid_data(:)
+        integer,        intent(in) :: n,n_train,n_test
+        real(kind=8),   intent(in) :: xsol(n),tm,ym
+        real(kind=8) :: delta_x,t,y
+        integer :: h,i
 
-        integer :: i,init,end
-        
-        do i = 1, ncv 
-            init = 1 + (30 - pdata%n_train) + (i-1) * 40
-            end = (30 - pdata%n_train) + (i-1) * 40 + pdata%n_train
-            pdata%train_data(i,:) = covid_data(init:end)
-            pdata%test_data(i,:) = covid_data(end+1:end + pdata%n_test) 
-        enddo
-        
-    end subroutine cross_validation
+        h = 1000
+        Open(Unit = 100, File = trim(pwd)//"/../output/plot_covid.txt", ACCESS = "SEQUENTIAL")
 
-    !*****************************************************************
-    !*****************************************************************
+        delta_x = float((n_train + n_test - 1)) / float((h-1))
 
-    subroutine mount_dataset(pdata,covid_data)
-        implicit none
-  
-        type(pdata_type), intent(inout) :: pdata
-        real(kind=8), intent(in) :: covid_data(:)
-  
-        integer :: i
-  
-        do i = 1, pdata%days_test
-           pdata%train_data(i,:) = covid_data(i:i+pdata%n_train-1)
-           pdata%test_data(i,:) = covid_data(i+pdata%n_train:i+pdata%n_train+pdata%n_test-1)    
-        enddo
-  
-     end subroutine mount_dataset
-
-    !*****************************************************************
-    !*****************************************************************
-    
-    subroutine rmsd(n,o,p,res)
-        implicit none
-
-        integer,        intent(in) :: n
-        real(kind=8),   intent(in) :: o(n),p(n)
-        real(kind=8),   intent(out) :: res
-        integer :: i
-
-        res = 0.d0
-
-        do i = 1,n
-            res = res + (o(i)-p(i))**2
+        do i = 1, h
+            t = 1.d0 + (i-1) * delta_x
+            y = ym + xsol(1) * (t-tm) + xsol(2) * (t-tm)**2 + xsol(3) * (t-tm)**3 
+            write(100,*) t, y
         enddo
 
-        res = sqrt(res / n)
+        close(100)
 
-    end subroutine rmsd
-
-    !*****************************************************************
-    !*****************************************************************
-
-    subroutine relative_error(o,p,res)
-        implicit none
-
-        real(kind=8),   intent(in) :: o,p
-        real(kind=8),   intent(out):: res
-
-        res = abs(p - o) / abs(o)
-        ! res = res * 100.d0
-    
-    end subroutine relative_error
+    end subroutine export_plot
 
     !*****************************************************************
     !*****************************************************************

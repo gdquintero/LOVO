@@ -13,9 +13,7 @@ plt.rcParams.update({'font.size': 13})
 plt.rc('text', usetex=True)
 plt.rc('font', family='serif')
 
-df_data = pd.read_table(parent+"/data/covid.txt",delimiter=" ",header=None,skiprows=2,skipinitialspace=True)
-df_sols = pd.read_table(parent+"/output/solutions_5_25.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
+df_sol = pd.read_table(parent+"/output/plot_covid.txt",delimiter=" ",header=None,skiprows=0,skipinitialspace=True)
 
-
-
+plt.plot(df_sol[0].values,df_sol[1].values)
 plt.show()
