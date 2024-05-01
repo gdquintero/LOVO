@@ -40,7 +40,7 @@ program main
     subroutine hard_test()
         implicit none
 
-        integer :: samples,i,j,k,n_train,n_test,optimal_ntrain,noutliers,allocerr
+        integer :: samples,i,j,k,n_train,n_test,optimal_ntrain,noutliers,allocerr,out_per_ndays
         real(kind=8) :: fobj,ti,tm,ym,pred,av_err_train,av_err_test
         real(kind=8), allocatable :: t(:),t_test(:),covid_data(:),indices(:),sp_vector(:),abs_err(:)
         integer, allocatable :: outliers(:)
@@ -70,11 +70,13 @@ program main
     
         close(100)
 
+        out_per_ndays = 1
+
         do i = 1, 1
             ym = covid_data(24+i)
             do j = 1, 5
                 n_train = 5 * j
-                noutliers = 1*int(dble(n_train) / 5.0d0)
+                noutliers = out_per_ndays*int(dble(n_train) / 5.0d0)
                 t_test = (/(k+1, k = n_train,n_train+4)/)
                 indices(:) = (/(k, k = 1, 25)/)
 
@@ -96,9 +98,13 @@ program main
             enddo    
             
             call find_optimal_ntrain(abs_err,5,optimal_ntrain)
+
+            indices(:) = (/(k, k = 1, 25)/)
+            noutliers = out_per_ndays*int(dble(optimal_ntrain) / 5.0d0)
             
             call lovo_algorithm(t(1:optimal_ntrain),covid_data(25+i-optimal_ntrain:24+i),&
             indices(1:optimal_ntrain),outliers,optimal_ntrain,noutliers,sp_vector(1:optimal_ntrain),pdata,.false.,fobj)
+
 
             tm = t(optimal_ntrain)
             do k = 1, optimal_ntrain
