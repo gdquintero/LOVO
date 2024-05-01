@@ -75,6 +75,7 @@ program main
 
         do i = 1, total_test
             ym = covid_data(24+i)
+        
             do j = 1, 5
                 n_train = 5 * j
                 noutliers = out_per_ndays*int(dble(n_train) / 5.0d0)
@@ -160,7 +161,7 @@ program main
         iter_sub_lovo = 0
         lovo_order = n_train - noutliers
   
-        pdata%xk(:) = 1.0d-5
+        pdata%xk(:) = 1.0d-1
         
         call compute_sp(pdata%xk,t,y,indices,sp_vector,pdata%n,n_train,lovo_order,fxk)
 

@@ -1,8 +1,6 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import matplotlib.cm as mplcm
-import matplotlib.colors as colors
 import os
 import models
 

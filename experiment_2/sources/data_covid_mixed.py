@@ -4,7 +4,7 @@ import pandas as pd
 import os
 
 font = {'family': 'serif',
-        'color':  'darkred',
+        'color':  'black',
         'weight': 'normal',
         'size': 16,
         }
