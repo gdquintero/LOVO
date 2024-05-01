@@ -70,7 +70,7 @@ program main
     
         close(100)
 
-        do i = 1, 71
+        do i = 1, 1
             ym = covid_data(24+i)
             do j = 1, 5
                 n_train = 5 * j
@@ -97,7 +97,7 @@ program main
             
             call find_optimal_ntrain(abs_err,5,optimal_ntrain)
             
-            call lovo_algorithm(t(1:optimal_ntrain),covid_data(25+i-optimal_ntrain-1:25+i-2),&
+            call lovo_algorithm(t(1:optimal_ntrain),covid_data(25+i-optimal_ntrain:24+i),&
             indices(1:optimal_ntrain),outliers,optimal_ntrain,noutliers,sp_vector(1:optimal_ntrain),pdata,.false.,fobj)
 
             tm = t(optimal_ntrain)

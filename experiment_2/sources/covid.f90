@@ -88,8 +88,6 @@ program main
         Open(Unit = 200, File = trim(pwd)//"/../output/outliers.txt", ACCESS = "SEQUENTIAL")
     
         call lovo_algorithm(n,pdata%noutliers,pdata%outliers,pdata,.true.,pdata%fobj)
-
-        print*, pdata%counters
     
         write(100,10) pdata%xk(1),pdata%xk(2),pdata%xk(3)
         write(200,20) pdata%noutliers
@@ -100,7 +98,6 @@ program main
     
         10 format (ES13.6,1X,ES13.6,1X,ES13.6) 
         20 format (I2)
-        30 format (ES10.3)
     
         close(100)
         close(200)
@@ -141,7 +138,7 @@ program main
         iter_sub_lovo = 0
         pdata%lovo_order = pdata%n_train - noutliers
   
-        pdata%xk(:) = 1.0d-5
+        pdata%xk(:) = 1.0d-1
         
         call compute_sp(n,pdata%xk,pdata,fxk)  
 
