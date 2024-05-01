@@ -71,7 +71,7 @@ program main
         close(100)
 
         out_per_ndays = 0
-        total_test = 1
+        total_test = 71
 
         do i = 1, total_test
             ym = covid_data(24+i)
@@ -99,7 +99,7 @@ program main
     
             call find_optimal_ntrain(av_abs_err,5,optimal_ntrain)
 
-            av_err_test = av_abs_err(int(5 / optimal_ntrain)) 
+            av_err_test = av_abs_err(int(optimal_ntrain / 5)) 
 
             indices(:) = (/(k, k = 1, 25)/)
             noutliers = out_per_ndays*int(dble(optimal_ntrain) / 5.0d0)
@@ -130,6 +130,7 @@ program main
         close(200)
         close(300)
 
+        print*
         print*, "Test Finished!!"
 
     end subroutine hard_test
