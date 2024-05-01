@@ -99,9 +99,7 @@ program main
     
             call find_optimal_ntrain(av_abs_err,5,optimal_ntrain)
 
-            print*, optimal_ntrain
-
-            ! av_err_test = sum(abs_err(int(5 / optimal_ntrain))) / 5 
+            av_err_test = av_abs_err(int(5 / optimal_ntrain)) 
 
             indices(:) = (/(k, k = 1, 25)/)
             noutliers = out_per_ndays*int(dble(optimal_ntrain) / 5.0d0)
