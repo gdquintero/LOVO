@@ -10,11 +10,11 @@ plt.rcParams.update({'font.size': 13})
 plt.rc('text', usetex=True)
 plt.rc('font', family='serif')
 
-font = {'family': 'serif',
-        'color':  'darkred',
-        'weight': 'normal',
-        'size': 16,
-        }
+# font = {'family': 'serif',
+#         'color':  'darkred',
+#         'weight': 'normal',
+#         'size': 16,
+#         }
 
 countries = {
     "ar" : "ar.xlsx",
@@ -27,20 +27,20 @@ countries = {
     "us" : "us.xlsx"
 }
 
-country = countries["it"]
+country = countries["br"]
 # ind_excel = 100 # 10 abr 2020 desorden panama
 # ind_excel = 122 # 2 de mayo 2020 subida brasil - bajada uk
 # ind_excel = 171 # 20 de junio usa
 # ind_excel = 166 # 15 jun 2020 estados unidos con outliers
 # ind_excel = 216 # 4 de agosto italia 
 
-ind_excel = 218
+ind_excel = 476
 
 df = pd.read_excel(parent+"/data/"+country)
 
 initial_date = ind_excel - 2
-n_train = 27
-n_test = 3
+n_train = 5
+n_test = 5
 total_days = n_train + n_test  
 data = np.zeros(n_train)
 
@@ -59,12 +59,13 @@ with open(parent+"/data/covid.txt","w") as f:
 
         if j <= n_train - 1:
             data[j] = x
-        
+    
         j += 1
 
+print(data)
+
 plt.plot(np.linspace(1,n_train,n_train),data,"--o",color="darkgreen")
-plt.ylim([0,0.5])
-plt.xlabel("Days",fontdict=font)
-plt.ylabel("New deaths per million",fontdict=font)
+plt.xlabel("Days")
+plt.ylabel("New deaths per million")
 plt.savefig(parent+"/images/data_ita.pdf",bbox_inches = "tight")
 plt.show()

@@ -70,11 +70,11 @@ program main
     
         close(100)
 
-        do i = 1, 70
+        do i = 1, 71
             ym = covid_data(24+i)
             do j = 1, 5
                 n_train = 5 * j
-                noutliers = 2*int(dble(n_train) / 5.0d0)
+                noutliers = 1*int(dble(n_train) / 5.0d0)
                 t_test = (/(k+1, k = n_train,n_train+4)/)
                 indices(:) = (/(k, k = 1, 25)/)
 
