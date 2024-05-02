@@ -52,7 +52,7 @@ program main
         samples = 100
         n_test = 5
 
-        allocate(covid_data(samples),t(25),t_test(n_test),indices(25),sp_vector(25),outliers(5),&
+        allocate(covid_data(samples),t(25),t_test(n_test),indices(25),sp_vector(25),outliers(10),&
         pdata%hess_sp(pdata%n,pdata%n),pdata%eig_hess_sp(pdata%n),pdata%WORK(pdata%LWORK),&
         pdata%aux_mat(pdata%n,pdata%n),pdata%aux_vec(pdata%n),pdata%IPIV(pdata%n),pdata%xtrial(pdata%n),&
         pdata%xk(pdata%n),pdata%grad_sp(pdata%n),abs_err(5,n_test),av_abs_err(n_test),stat=allocerr)
@@ -70,7 +70,7 @@ program main
     
         close(100)
 
-        out_per_ndays = 1
+        out_per_ndays = 0
         total_test = 71
 
         do i = 1, total_test
