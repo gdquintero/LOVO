@@ -71,7 +71,7 @@ program main
         close(100)
 
         out_per_ndays = 1
-        total_test = 1
+        total_test = 71
 
         do i = 1, total_test
             ym = covid_data(24+i)
@@ -107,7 +107,7 @@ program main
             
             call lovo_algorithm(t(1:optimal_ntrain),covid_data(25+i-optimal_ntrain:24+i),&
             indices(1:optimal_ntrain),outliers,optimal_ntrain,noutliers,sp_vector(1:optimal_ntrain),pdata,.false.,fobj)
-            j = 0
+            
             tm = t(optimal_ntrain)
             do k = 1, optimal_ntrain
                 ti = t(k)
@@ -115,11 +115,10 @@ program main
                         pdata%xk(2) * ((ti - tm)**2) + pdata%xk(3) * ((ti - tm)**3)
 
                 if (.not. ANY(outliers(1:noutliers) .eq. k)) then
-                    j = j + 1
                     av_err_train = av_err_train + absolute_error(covid_data(k),pred)
                 endif
             enddo  
-            
+
             av_err_train = av_err_train / (optimal_ntrain - noutliers)
 
             write(200,10) pdata%xk(1),pdata%xk(2),pdata%xk(3)
