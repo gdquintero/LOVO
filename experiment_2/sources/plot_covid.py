@@ -33,5 +33,6 @@ plt.setp(l1, 'markersize')
 
 l2 = plt.plot(t[25:],df_data[0].values[25:],"ok",mfc='none',ms=6,marker="s")
 plt.setp(l2, 'markersize')
+plt.ylim([min(df_data[0].values)-2, max(df_data[0].values)+1])
 plt.savefig(parent+"/images/image.pdf",bbox_inches = "tight")
-# plt.show()
+plt.show()

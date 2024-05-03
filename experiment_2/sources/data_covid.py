@@ -29,13 +29,13 @@ countries = {
 
 country = countries["br"]
 
-ind_excel = 500
+ind_excel = 480
 # ind_excel = 218
 
 df = pd.read_excel(parent+"/data/"+country)
 
 initial_date = ind_excel - 2
-n_train = 25
+n_train = 20
 n_test = 5
 total_days = n_train + n_test  
 data = np.zeros(n_train)
@@ -62,7 +62,7 @@ with open(parent+"/data/covid.txt","w") as f:
 plt.plot(np.linspace(1,n_train,n_train),data,":o",color="darkgreen")
 plt.xlabel("Days",fontdict=font)
 plt.ylabel("Deaths per million",fontdict=font)
-plt.savefig(parent+"/images/image.pdf",bbox_inches="tight")
+# plt.savefig(parent+"/images/image.pdf",bbox_inches="tight")
 # plt.show()
 plt.close()
 
