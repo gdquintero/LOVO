@@ -29,13 +29,13 @@ countries = {
 
 country = countries["br"]
 
-ind_excel = 480
+ind_excel = 475
 # ind_excel = 218
 
 df = pd.read_excel(parent+"/data/"+country)
 
 initial_date = ind_excel - 2
-n_train = 20
+n_train = 25
 n_test = 5
 total_days = n_train + n_test  
 data = np.zeros(n_train)

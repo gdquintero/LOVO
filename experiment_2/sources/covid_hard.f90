@@ -41,7 +41,7 @@ program main
         implicit none
 
         integer :: samples,i,j,k,n_train,n_test,optimal_ntrain,noutliers,allocerr,out_per_ndays,total_test
-        real(kind=8) :: fobj,ti,tm,ym,pred,av_err_train,av_err_test
+        real(kind=8) :: fobj,ti,tm,ym,pred,av_err_train,av_err_test,start,finish
         real(kind=8), allocatable :: t(:),t_test(:),covid_data(:),indices(:),sp_vector(:),abs_err(:,:),av_abs_err(:)
         integer, allocatable :: outliers(:)
 
@@ -72,6 +72,8 @@ program main
 
         out_per_ndays = 0
         total_test = 71
+
+        call cpu_time(start)
 
         do i = 1, total_test
             ym = covid_data(24+i)
@@ -126,6 +128,8 @@ program main
 
         enddo
 
+        call cpu_time(finish)
+
         10 format (ES13.6,1X,ES13.6,1X,ES13.6)
         20 format (I3,1X,ES10.3,1X,ES10.3,1X,ES10.3,1X,I2)
 
@@ -134,6 +138,9 @@ program main
 
         print*
         print*, "Test Finished!!"
+        write(*,30) " Time: ",finish - start
+
+        30 format (A7,1X,F6.4)
 
     end subroutine hard_test
 

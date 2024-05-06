@@ -39,7 +39,6 @@ for i in range(noutliers):
     cubic_outliers[0,i] = days[outliers[i]-1]
     cubic_outliers[1,i] = df_data.values[outliers[i]+1]
 
-
 plt.plot(t,models.cubic(x[0],x[1],x[2],t,y[len(y)-n_test-1],days[len(y)-n_test-1]),lw=2)
 plt.plot(cubic_outliers[0],cubic_outliers[1],'ro',mfc='none',ms=10)
 
