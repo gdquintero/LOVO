@@ -67,8 +67,8 @@ program main
     pdata%t(1:pdata%n_train) = pdata%data(1,1:pdata%n_train)
     pdata%y(1:pdata%n_train) = pdata%data(2,1:pdata%n_train)
 
-    pdata%inf = 7
-    pdata%sup = 7
+    pdata%inf = 0
+    pdata%sup = 10
  
     allocate(pdata%outliers(pdata%n_train*(pdata%sup-pdata%inf+1)),stat=allocerr)
  
@@ -232,7 +232,7 @@ program main
   
             fxk = fxtrial
             pdata%xk(:) = pdata%xtrial(:)
-            pdata%counters(2) = iter_sub_lovo + pdata%counters(2)
+            pdata%counters(2) = iter_sub_lovo + pdata%counters(2) + 1
   
         enddo
   

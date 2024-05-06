@@ -184,7 +184,7 @@ program main
   
             fxk = fxtrial
             pdata%xk(:) = pdata%xtrial(:)
-            pdata%counters(2) = iter_sub_lovo + pdata%counters(2)
+            pdata%counters(2) = iter_sub_lovo + pdata%counters(2) + 1
   
         enddo
   

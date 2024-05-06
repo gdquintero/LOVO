@@ -11,7 +11,7 @@ plt.rc('text', usetex=True)
 plt.rc('font', family='serif')
 
 font = {'family': 'serif',
-        'color':  'darkred',
+        'color':  'black',
         'weight': 'normal',
         'size': 16,
         }
@@ -23,7 +23,7 @@ def plot1():
     ax.set_xscale('linear')
     ax.set_xlim(inf - 0.5,sup + 0.5)
     ax.set_ylim(min(np.log10(y)),max(np.log10(y))+10)
-    plt.xlabel("Outliers",fontdict=font)
+    plt.xlabel("Number of outliers",fontdict=font)
     plt.ylabel("$S_p(x^*)$ (log scale)",fontdict=font)
     plt.savefig(parent+"/images/log10.pdf",bbox_inches = "tight")
     plt.show()
