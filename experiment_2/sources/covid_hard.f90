@@ -102,7 +102,7 @@ program main
                 av_abs_err(l) = sum(abs_err(l,:)) / n_test
             enddo    
 
-            print*, av_abs_err
+            print*, minloc(av_abs_err)
     
             ! ! call find_optimal_ntrain(av_abs_err,5,optimal_ntrain)
 
