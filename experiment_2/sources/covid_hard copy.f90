@@ -4,7 +4,7 @@ program main
     implicit none
 
     type :: pdata_type
-        integer :: counters(3) = 0,n
+        integer :: counters(2) = 0,n
         real(kind=8) :: sigma,fobj
         real(kind=8), allocatable :: xtrial(:),xk(:),sp_vector(:),grad_sp(:),hess_sp(:,:),eig_hess_sp(:),aux_mat(:,:),aux_vec(:)
         integer, allocatable :: outliers(:)
@@ -40,24 +40,22 @@ program main
     subroutine hard_test()
         implicit none
 
-        integer :: samples,i,j,k,n_train,n_test,optimal_ntrain,noutliers,start_date,allocerr
-        real(kind=8) :: fobj,ti,tm,ym
-        real(kind=8), allocatable :: t(:),t_test(:),covid_data(:),indices(:),sp_vector(:),pred(:),pred_rmsd(:)
+        integer :: samples,i,j,k,n_train,n_test,optimal_ntrain,noutliers,allocerr,out_per_ndays,total_test
+        real(kind=8) :: fobj,ti,tm,ym,pred,av_err_train,av_err_test,start,finish
+        real(kind=8), allocatable :: t(:),t_test(:),covid_data(:),indices(:),sp_vector(:),abs_err(:,:),av_abs_err(:)
         integer, allocatable :: outliers(:)
 
         Open(Unit = 100, File = trim(pwd)//"/../data/covid_mixed.txt", Access = "SEQUENTIAL")
         Open(Unit = 200, File = trim(pwd)//"/../output/solutions_covid_mixed.txt", Access = "SEQUENTIAL")
-        Open(Unit = 300, File = trim(pwd)//"/../output/optimal_ntrains.txt", Access = "SEQUENTIAL")
+        Open(Unit = 300, File = trim(pwd)//"/../output/output_covid_hard.txt", Access = "SEQUENTIAL")
     
-        read(100,*) samples
-
-        start_date = 36
+        samples = 100
         n_test = 5
 
-        allocate(covid_data(samples),t(30),t_test(n_test),indices(30),sp_vector(30),outliers(4),&
+        allocate(covid_data(samples),t(25),t_test(n_test),indices(25),sp_vector(25),outliers(10),&
         pdata%hess_sp(pdata%n,pdata%n),pdata%eig_hess_sp(pdata%n),pdata%WORK(pdata%LWORK),&
         pdata%aux_mat(pdata%n,pdata%n),pdata%aux_vec(pdata%n),pdata%IPIV(pdata%n),pdata%xtrial(pdata%n),&
-        pdata%xk(pdata%n),pdata%grad_sp(pdata%n),pred(n_test),pred_rmsd(6),stat=allocerr)
+        pdata%xk(pdata%n),pdata%grad_sp(pdata%n),abs_err(5,n_test),av_abs_err(n_test),stat=allocerr)
 
         if ( allocerr .ne. 0 ) then
             write(*,*) 'Allocation error.'
@@ -72,46 +70,77 @@ program main
     
         close(100)
 
-        do i = 1, 1
-            ! Find optimal n_train
+        out_per_ndays = 0
+        total_test = 71
+
+        call cpu_time(start)
+
+        do i = 1, total_test
+            ym = covid_data(24+i)
+        
             do j = 1, 5
                 n_train = 5 * j
-                noutliers = 0*int(dble(n_train) / 7.0d0)
+                noutliers = out_per_ndays * n_train / 5
                 t_test = (/(k+1, k = n_train,n_train+4)/)
-
                 indices(:) = (/(k, k = 1, 25)/)
 
-                print*, i+start_date-n_train-6,i+start_date-7
+                call lovo_algorithm(t(1:n_train),covid_data(25+i-n_train:24+i),indices(1:n_train),&
+                outliers,n_train,noutliers,sp_vector(1:n_train),pdata,.false.,fobj)
 
-                ! call lovo_algorithm(t(1:n_train),covid_data(i+start_date-n_train-6:i+start_date-7),indices(1:n_train),&
-                ! outliers,n_train,noutliers,sp_vector(1:n_train),pdata,.false.,fobj)
+                tm = t(n_train)
 
-                ! tm = t(n_train)
-                ! ym = covid_data(i+start_date-n_test-2)
+                do k = 1, n_test
+                    ti = t_test(k)
+                    pred = ym + pdata%xk(1) * (ti - tm) + &
+                            pdata%xk(2) * ((ti - tm)**2) + pdata%xk(3) * ((ti - tm)**3)
 
-                ! do k = 1, n_test
-                !     ti = t_test(k)
-                !     pred(k) = ym + pdata%xk(1) * (ti - tm) + &
-                !             pdata%xk(2) * ((ti - tm)**2) + pdata%xk(3) * ((ti - tm)**3)
-                ! enddo
-                ! call rmsd(pdata%n,covid_data(i+start_date-1:i+start_date+3),pred,pred_rmsd(j))
+                    abs_err(j,k) = absolute_error(covid_data(25+i),pred)
+                enddo   
+                av_abs_err(j) = sum(abs_err(j,:)) / n_test
             enddo    
+    
+            call find_optimal_ntrain(av_abs_err,5,optimal_ntrain)
+
+            av_err_test = av_abs_err(int(optimal_ntrain / 5)) 
+
+            indices(:) = (/(k, k = 1, 25)/)
+            noutliers = out_per_ndays * optimal_ntrain / 5
+            outliers(:) = 0
             
-            call find_optimal_ntrain(pred_rmsd,6,optimal_ntrain)
-            
-            call lovo_algorithm(t(1:optimal_ntrain),covid_data(i+start_date-optimal_ntrain-1:i+start_date-2),&
+            call lovo_algorithm(t(1:optimal_ntrain),covid_data(25+i-optimal_ntrain:24+i),&
             indices(1:optimal_ntrain),outliers,optimal_ntrain,noutliers,sp_vector(1:optimal_ntrain),pdata,.false.,fobj)
+            
+            tm = t(optimal_ntrain)
+            do k = 1, optimal_ntrain
+                ti = t(k)
+                pred = ym + pdata%xk(1) * (ti - tm) + &
+                        pdata%xk(2) * ((ti - tm)**2) + pdata%xk(3) * ((ti - tm)**3)
+
+                if (.not. ANY(outliers(1:noutliers) .eq. k)) then
+                    av_err_train = av_err_train + absolute_error(covid_data(k),pred)
+                endif
+            enddo  
+
+            av_err_train = av_err_train / (optimal_ntrain - noutliers)
 
             write(200,10) pdata%xk(1),pdata%xk(2),pdata%xk(3)
-            write(300,20) optimal_ntrain
+            write(300,20) i,fobj,av_err_train,av_err_test,optimal_ntrain
 
         enddo
 
+        call cpu_time(finish)
+
         10 format (ES13.6,1X,ES13.6,1X,ES13.6)
-        20 format (I2)
+        20 format (I3,1X,ES10.3,1X,ES10.3,1X,ES10.3,1X,I2)
 
         close(200)
         close(300)
+
+        print*
+        print*, "Test Finished!!"
+        write(*,30) " Time: ",finish - start
+
+        30 format (A7,1X,F6.4)
 
     end subroutine hard_test
 
@@ -186,7 +215,7 @@ program main
   
             fxk = fxtrial
             pdata%xk(:) = pdata%xtrial(:)
-            pdata%counters(2) = iter_sub_lovo + pdata%counters(2)
+            pdata%counters(2) = iter_sub_lovo + pdata%counters(2) + 1
   
         enddo
   
@@ -196,7 +225,7 @@ program main
         if (single_type_test) then
             write(*,*) "--------------------------------------------------------"
         endif
-
+        
         outliers(:) = int(indices(n_train - noutliers + 1:))
 
     end subroutine lovo_algorithm
@@ -218,40 +247,38 @@ program main
         enddo
     end subroutine find_optimal_ntrain
 
-    !*****************************************************************
-    !*****************************************************************
+    ! !*****************************************************************
+    ! !*****************************************************************
     
-    subroutine rmsd(n,o,p,res)
-        implicit none
-
-        integer,        intent(in) :: n
-        real(kind=8),   intent(in) :: o(n),p(n)
-        real(kind=8),   intent(out) :: res
-        integer :: i
-
-        res = 0.d0
-
-        do i = 1,n
-            res = res + (o(i)-p(i))**2
-        enddo
-
-        res = sqrt(res / n)
-
-    end subroutine rmsd
-
-    !*****************************************************************
-    !*****************************************************************
-
-    ! subroutine relative_error(o,p,res)
+    ! subroutine rmsd(n,o,p,res)
     !     implicit none
 
-    !     real(kind=8),   intent(in) :: o,p
-    !     real(kind=8),   intent(out):: res
+    !     integer,        intent(in) :: n
+    !     real(kind=8),   intent(in) :: o(n),p(n)
+    !     real(kind=8),   intent(out) :: res
+    !     integer :: i
 
-    !     res = abs(p - o) / abs(o)
-    !     ! res = res * 100.d0
+    !     res = 0.d0
+
+    !     do i = 1,n
+    !         res = res + (o(i)-p(i))**2
+    !     enddo
+
+    !     res = sqrt(res / n)
+
+    ! end subroutine rmsd
+
+    !*****************************************************************
+    !*****************************************************************
+
+    real(kind=8) function absolute_error(o,p)
+        implicit none
+
+        real(kind=8) :: o,p
+
+        absolute_error = abs(p - o)
     
-    ! end subroutine relative_error
+    end function absolute_error
 
     !*****************************************************************
     !*****************************************************************
