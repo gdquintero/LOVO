@@ -70,8 +70,8 @@ program main
     
         close(100)
 
-        out_per_ndays = 0
-        total_test = 1
+        out_per_ndays = 1
+        total_test = 71
 
         call cpu_time(start)
 
@@ -102,36 +102,32 @@ program main
                 av_abs_err(l) = sum(abs_err(l,:)) / n_test
             enddo    
 
-            print*, minloc(av_abs_err)
-    
-            ! ! call find_optimal_ntrain(av_abs_err,5,optimal_ntrain)
+            optimal_ntrain = 5 + minloc(av_abs_err,optimal_ntrain)
 
-            ! optimal_ntrain = 10
+            av_err_test = av_abs_err(int(optimal_ntrain / 5)) 
 
-            ! av_err_test = av_abs_err(int(optimal_ntrain / 5)) 
-
-            ! indices(:) = (/(k, k = 1, 25)/)
-            ! noutliers = out_per_ndays * optimal_ntrain / 5
-            ! outliers(:) = 0
+            indices(:) = (/(k, k = 1, 25)/)
+            noutliers = out_per_ndays * optimal_ntrain / 5
+            outliers(:) = 0
             
-            ! call lovo_algorithm(t(1:optimal_ntrain),covid_data(25+i-optimal_ntrain:24+i),&
-            ! indices(1:optimal_ntrain),outliers,optimal_ntrain,noutliers,sp_vector(1:optimal_ntrain),pdata,.false.,fobj)
+            call lovo_algorithm(t(1:optimal_ntrain),covid_data(25+i-optimal_ntrain:24+i),&
+            indices(1:optimal_ntrain),outliers,optimal_ntrain,noutliers,sp_vector(1:optimal_ntrain),pdata,.false.,fobj)
             
-            ! tm = t(optimal_ntrain)
-            ! do k = 1, optimal_ntrain
-            !     ti = t(k)
-            !     pred = ym + pdata%xk(1) * (ti - tm) + &
-            !             pdata%xk(2) * ((ti - tm)**2) + pdata%xk(3) * ((ti - tm)**3)
+            tm = t(optimal_ntrain)
+            do k = 1, optimal_ntrain
+                ti = t(k)
+                pred = ym + pdata%xk(1) * (ti - tm) + &
+                        pdata%xk(2) * ((ti - tm)**2) + pdata%xk(3) * ((ti - tm)**3)
 
-            !     if (.not. ANY(outliers(1:noutliers) .eq. k)) then
-            !         av_err_train = av_err_train + absolute_error(covid_data(k),pred)
-            !     endif
-            ! enddo  
+                if (.not. ANY(outliers(1:noutliers) .eq. k)) then
+                    av_err_train = av_err_train + absolute_error(covid_data(k),pred)
+                endif
+            enddo  
 
-            ! av_err_train = av_err_train / (optimal_ntrain - noutliers)
+            av_err_train = av_err_train / (optimal_ntrain - noutliers)
 
-            ! write(200,10) pdata%xk(1),pdata%xk(2),pdata%xk(3)
-            ! write(300,20) i,fobj,av_err_train,av_err_test,optimal_ntrain
+            write(200,10) pdata%xk(1),pdata%xk(2),pdata%xk(3)
+            write(300,20) i,fobj,av_err_train,av_err_test,optimal_ntrain
 
         enddo
 
