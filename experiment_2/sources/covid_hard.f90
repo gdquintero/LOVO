@@ -40,7 +40,7 @@ program main
     subroutine hard_test()
         implicit none
 
-        integer :: samples,i,j,k,l,n_train,n_test,optimal_ntrain,noutliers,allocerr,out_per_ndays,total_test
+        integer :: samples,i,j,k,n_train,n_test,optimal_ntrain,noutliers,allocerr,out_per_ndays,total_test
         real(kind=8) :: fobj,ti,tm,ym,pred,av_err_train,av_err_test,start,finish
         real(kind=8), allocatable :: t(:),t_test(:),covid_data(:),indices(:),sp_vector(:),abs_err(:,:),av_abs_err(:)
         integer, allocatable :: outliers(:)
@@ -70,19 +70,18 @@ program main
     
         close(100)
 
-        out_per_ndays = 1
-        total_test = 71
+        out_per_ndays = 0
+        total_test = 1
 
         call cpu_time(start)
 
         do i = 1, total_test
             ym = covid_data(24+i)
 
-            l = 0
+            j = 0
         
-            do j = 5, 25
-                n_train = j
-                l = l + 1
+            do n_train = 5,25,5
+                j = j + 1
                 noutliers = out_per_ndays * n_train / 5
                 t_test = (/(k+1, k = n_train,n_train+4)/)
                 indices(:) = (/(k, k = 1, 25)/)
@@ -97,9 +96,9 @@ program main
                     pred = ym + pdata%xk(1) * (ti - tm) + &
                             pdata%xk(2) * ((ti - tm)**2) + pdata%xk(3) * ((ti - tm)**3)
 
-                    abs_err(l,k) = absolute_error(covid_data(25+i),pred)
+                    abs_err(j,k) = absolute_error(covid_data(25+i),pred)
                 enddo   
-                av_abs_err(l) = sum(abs_err(l,:)) / n_test
+                av_abs_err(j) = sum(abs_err(j,:)) / n_test
             enddo    
 
             optimal_ntrain = 5 + minloc(av_abs_err,optimal_ntrain)
@@ -232,44 +231,6 @@ program main
         outliers(:) = int(indices(n_train - noutliers + 1:))
 
     end subroutine lovo_algorithm
-
-    !*****************************************************************
-    !*****************************************************************
-    subroutine find_optimal_ntrain(x,n,res)
-        implicit none
-
-        integer,        intent(in) :: n
-        real(kind=8),   intent(in) :: x(n)
-        integer,        intent(inout) :: res
-        integer :: i
-
-        do i = 1, n
-            if (x(i) .eq. minval(x)) then
-                res = 5*i
-            endif
-        enddo
-    end subroutine find_optimal_ntrain
-
-    ! !*****************************************************************
-    ! !*****************************************************************
-    
-    ! subroutine rmsd(n,o,p,res)
-    !     implicit none
-
-    !     integer,        intent(in) :: n
-    !     real(kind=8),   intent(in) :: o(n),p(n)
-    !     real(kind=8),   intent(out) :: res
-    !     integer :: i
-
-    !     res = 0.d0
-
-    !     do i = 1,n
-    !         res = res + (o(i)-p(i))**2
-    !     enddo
-
-    !     res = sqrt(res / n)
-
-    ! end subroutine rmsd
 
     !*****************************************************************
     !*****************************************************************

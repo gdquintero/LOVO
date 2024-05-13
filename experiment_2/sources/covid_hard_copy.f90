@@ -71,7 +71,7 @@ program main
         close(100)
 
         out_per_ndays = 0
-        total_test = 71
+        total_test = 1
 
         call cpu_time(start)
 
@@ -86,6 +86,8 @@ program main
 
                 call lovo_algorithm(t(1:n_train),covid_data(25+i-n_train:24+i),indices(1:n_train),&
                 outliers,n_train,noutliers,sp_vector(1:n_train),pdata,.false.,fobj)
+
+                print*, pdata%xk
 
                 tm = t(n_train)
 
