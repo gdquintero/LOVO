@@ -40,7 +40,7 @@ program main
     subroutine hard_test()
         implicit none
 
-        integer :: samples,i,j,k,n_train,n_test,optimal_ntrain,noutliers,allocerr,out_per_ndays,total_test,step
+        integer :: samples,i,j,k,n_train,n_test,optimal_ntrain,noutliers,allocerr,out_per_ndays,total_test
         real(kind=8) :: fobj,ti,tm,ym,pred,av_err_train,av_err_test,start,finish
         real(kind=8), allocatable :: t(:),t_test(:),covid_data(:),indices(:),sp_vector(:),abs_err(:,:),av_abs_err(:)
         integer, allocatable :: outliers(:)
@@ -71,17 +71,16 @@ program main
         close(100)
 
         out_per_ndays = 0
-        total_test = 71
-        step = 1
+        total_test = 1
 
         call cpu_time(start)
 
-        do i = 1, total_test
+        do i = 7, 7
             ym = covid_data(24+i)
 
             j = 0
         
-            do n_train = 5,25,step
+            do n_train = 5,25,1
                 j = j + 1
                 noutliers = out_per_ndays * n_train / 5
                 t_test = (/(k+1, k = n_train,n_train+4)/)
@@ -102,7 +101,11 @@ program main
                 av_abs_err(j) = sum(abs_err(j,:)) / n_test
             enddo    
 
-            optimal_ntrain = step * minloc(av_abs_err(1:j),optimal_ntrain)
+            if (j .eq. 5) then
+                optimal_ntrain = 5 * minloc(av_abs_err(1:j),optimal_ntrain)
+            else
+                optimal_ntrain = 4 + minloc(av_abs_err(1:j),optimal_ntrain)
+            endif
 
             av_err_test = av_abs_err(int(optimal_ntrain / 5)) 
 
@@ -114,6 +117,7 @@ program main
             indices(1:optimal_ntrain),outliers,optimal_ntrain,noutliers,sp_vector(1:optimal_ntrain),pdata,.false.,fobj)
             
             tm = t(optimal_ntrain)
+
             do k = 1, optimal_ntrain
                 ti = t(k)
                 pred = ym + pdata%xk(1) * (ti - tm) + &
@@ -128,7 +132,7 @@ program main
 
             write(200,10) pdata%xk(1),pdata%xk(2),pdata%xk(3)
             write(300,20) i,fobj,av_err_train,av_err_test,optimal_ntrain
-
+            print*, av_err_train,av_err_test
         enddo
 
         call cpu_time(finish)
