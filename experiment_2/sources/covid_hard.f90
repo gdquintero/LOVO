@@ -40,7 +40,7 @@ program main
     subroutine hard_test()
         implicit none
 
-        integer :: samples,i,j,k,n_train,n_test,optimal_ntrain,noutliers,allocerr,out_per_ndays,total_test
+        integer :: samples,i,j,k,n_train,n_test,optimal_ntrain,noutliers,allocerr,out_per_ndays,total_test,step
         real(kind=8) :: fobj,ti,tm,ym,pred,av_err_train,av_err_test,start,finish
         real(kind=8), allocatable :: t(:),t_test(:),covid_data(:),indices(:),sp_vector(:),abs_err(:,:),av_abs_err(:)
         integer, allocatable :: outliers(:)
@@ -72,6 +72,7 @@ program main
 
         out_per_ndays = 0
         total_test = 1
+        step = 1
 
         call cpu_time(start)
 
@@ -80,7 +81,7 @@ program main
 
             j = 0
         
-            do n_train = 5,25,5
+            do n_train = 5,25,step
                 j = j + 1
                 noutliers = out_per_ndays * n_train / 5
                 t_test = (/(k+1, k = n_train,n_train+4)/)
@@ -101,7 +102,13 @@ program main
                 av_abs_err(j) = sum(abs_err(j,:)) / n_test
             enddo    
 
-            optimal_ntrain = 5 + minloc(av_abs_err,optimal_ntrain)
+            print*, av_abs_err
+
+            print*
+
+            print*, av_abs_err(1:int(25/step))
+
+            optimal_ntrain = step * minloc(av_abs_err(1:int(25/step)),optimal_ntrain)
 
             av_err_test = av_abs_err(int(optimal_ntrain / 5)) 
 

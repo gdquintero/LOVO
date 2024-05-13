@@ -71,7 +71,7 @@ program main
         close(100)
 
         out_per_ndays = 0
-        total_test = 1
+        total_test = 71
 
         call cpu_time(start)
 
@@ -87,8 +87,6 @@ program main
                 call lovo_algorithm(t(1:n_train),covid_data(25+i-n_train:24+i),indices(1:n_train),&
                 outliers,n_train,noutliers,sp_vector(1:n_train),pdata,.false.,fobj)
 
-                print*, pdata%xk
-
                 tm = t(n_train)
 
                 do k = 1, n_test
@@ -99,8 +97,8 @@ program main
                     abs_err(j,k) = absolute_error(covid_data(25+i),pred)
                 enddo   
                 av_abs_err(j) = sum(abs_err(j,:)) / n_test
-            enddo    
-    
+            enddo 
+
             call find_optimal_ntrain(av_abs_err,5,optimal_ntrain)
 
             av_err_test = av_abs_err(int(optimal_ntrain / 5)) 
