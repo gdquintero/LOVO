@@ -71,7 +71,7 @@ program main
         close(100)
 
         out_per_ndays = 0
-        total_test = 1
+        total_test = 71
         step = 1
 
         call cpu_time(start)
@@ -102,13 +102,7 @@ program main
                 av_abs_err(j) = sum(abs_err(j,:)) / n_test
             enddo    
 
-            print*, av_abs_err
-
-            print*
-
-            print*, av_abs_err(1:int(25/step))
-
-            optimal_ntrain = step * minloc(av_abs_err(1:int(25/step)),optimal_ntrain)
+            optimal_ntrain = step * minloc(av_abs_err(1:j),optimal_ntrain)
 
             av_err_test = av_abs_err(int(optimal_ntrain / 5)) 
 
