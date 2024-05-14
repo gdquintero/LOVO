@@ -70,17 +70,17 @@ program main
     
         close(100)
 
-        out_per_ndays = 0
-        total_test = 1
+        out_per_ndays = 2
+        total_test = 71
 
         call cpu_time(start)
 
-        do i = 7, 7
+        do i = 1, total_test
             ym = covid_data(24+i)
 
             j = 0
         
-            do n_train = 5,25,1
+            do n_train = 5,25
                 j = j + 1
                 noutliers = out_per_ndays * n_train / 5
                 t_test = (/(k+1, k = n_train,n_train+4)/)
@@ -101,13 +101,9 @@ program main
                 av_abs_err(j) = sum(abs_err(j,:)) / n_test
             enddo    
 
-            if (j .eq. 5) then
-                optimal_ntrain = 5 * minloc(av_abs_err(1:j),optimal_ntrain)
-            else
-                optimal_ntrain = 4 + minloc(av_abs_err(1:j),optimal_ntrain)
-            endif
+            optimal_ntrain = 4 + minloc(av_abs_err(1:j),optimal_ntrain)
 
-            av_err_test = av_abs_err(int(optimal_ntrain / 5)) 
+            av_err_test = av_abs_err(optimal_ntrain-4) 
 
             indices(:) = (/(k, k = 1, 25)/)
             noutliers = out_per_ndays * optimal_ntrain / 5
@@ -132,7 +128,6 @@ program main
 
             write(200,10) pdata%xk(1),pdata%xk(2),pdata%xk(3)
             write(300,20) i,fobj,av_err_train,av_err_test,optimal_ntrain
-            print*, av_err_train,av_err_test
         enddo
 
         call cpu_time(finish)
