@@ -70,7 +70,7 @@ program main
     
         close(100)
 
-        out_per_ndays = 0
+        out_per_ndays = 2
         total_test = 71
 
         call cpu_time(start)
@@ -125,6 +125,8 @@ program main
 
             write(200,10) pdata%xk(1),pdata%xk(2),pdata%xk(3)
             write(300,20) i,fobj,av_err_train,av_err_test,optimal_ntrain
+
+            av_err_train = 0.d0
 
         enddo
 
