@@ -75,7 +75,7 @@ program main
 
         call cpu_time(start)
 
-        do i = 1, total_test
+        do i = 1, 1
             ym = covid_data(24+i)
         
             do j = 1, 5
@@ -99,7 +99,11 @@ program main
                 av_abs_err(j) = sum(abs_err(j,:)) / n_test
             enddo 
 
-            call find_optimal_ntrain(av_abs_err,5,optimal_ntrain)
+            ! call find_optimal_ntrain(av_abs_err,5,optimal_ntrain)
+
+            optimal_ntrain = 4 + minloc(av_abs_err(1:5),optimal_ntrain)
+
+            print*, optimal_ntrain
 
             av_err_test = av_abs_err(int(optimal_ntrain / 5)) 
 

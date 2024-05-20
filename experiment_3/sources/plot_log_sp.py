@@ -23,10 +23,12 @@ def plot1():
     ax.set_xscale('linear')
     ax.set_xlim(inf - 0.5,sup + 0.5)
     ax.set_ylim(min(np.log10(y)),max(np.log10(y))+10)
-    plt.xlabel("Number of outliers",fontdict=font)
-    plt.ylabel("$S_p(x^*)$ (log scale)",fontdict=font)
+    plt.xlabel("Number of outliers $o$",fontdict=font)
+    plt.ylabel("$S_q(x^*)$ (log scale)",fontdict=font)
+    # plt.figure(figsize=(1,1))
     plt.savefig(parent+"/images/log10.pdf",bbox_inches = "tight")
-    plt.show()
+    
+    # plt.show()
 
 def plot2():
     fig = plt.figure()

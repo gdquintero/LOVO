@@ -53,7 +53,8 @@ program main
         read(100,*) pdata%n_train
         read(100,*) pdata%n_test
     
-        pdata%noutliers = 2*int(dble(pdata%n_train) / 5.0d0)
+        ! pdata%noutliers = 2*int(dble(pdata%n_train) / 5.0d0)
+        pdata%noutliers = 0
     
         allocate(pdata%t(pdata%n_train),pdata%y(pdata%n_train),pdata%y_test(pdata%n_test),pdata%t_test(pdata%n_test),&
         pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),pdata%indices(pdata%n_train),stat=allocerr)
@@ -140,7 +141,7 @@ program main
         iter_sub_lovo = 0
         pdata%lovo_order = pdata%n_train - noutliers
   
-        pdata%xk(:) = 1.0d-1
+        pdata%xk(:) = 1.0d-5
         
         call compute_sp(n,pdata%xk,pdata,fxk)  
 

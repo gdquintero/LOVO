@@ -41,8 +41,6 @@ for i in range(3):
     
 errors[:] = absolute_error(obs,pred)
 
-print("Obs: ",obs)
-
 print("\nPredictions: ")
 for i in range(3):
     print("%.3f" % pred[i])

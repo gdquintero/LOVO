@@ -7,7 +7,7 @@ import models
 cwd = os.getcwd()
 parent =  os.path.abspath(os.path.join(cwd,os.pardir))
 
-plt.rcParams.update({'font.size': 13})
+plt.rcParams.update({'font.size': 22})
 plt.rc('text', usetex=True)
 plt.rc('font', family='serif')
 
@@ -50,6 +50,6 @@ plt.setp(l2, 'markersize')
 
 # plt.xticks(range(-1, 4, 1))
 # plt.yticks(range(-4, 5, 2))
-# plt.ylim([0,0.5])
+plt.ylim([0,0.5])
 plt.savefig(parent+"/images/image.pdf",bbox_inches = "tight")
-plt.show()
+# plt.show()

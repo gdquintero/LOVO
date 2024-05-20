@@ -67,8 +67,8 @@ program main
     pdata%t(1:pdata%n_train) = pdata%data(1,1:pdata%n_train)
     pdata%y(1:pdata%n_train) = pdata%data(2,1:pdata%n_train)
 
-    pdata%inf = 0
-    pdata%sup = 10
+    pdata%inf = 7
+    pdata%sup = 7
  
     allocate(pdata%outliers(pdata%n_train*(pdata%sup-pdata%inf+1)),stat=allocerr)
  

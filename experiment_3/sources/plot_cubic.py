@@ -8,14 +8,14 @@ import os
 cwd = os.getcwd()
 parent =  os.path.abspath(os.path.join(cwd,os.pardir))
 
-plt.rcParams.update({'font.size': 13})
+plt.rcParams.update({'font.size': 20})
 plt.rc('text', usetex=True)
 plt.rc('font', family='serif')
 
 font = {'family': 'serif',
-        'color':  'darkred',
+        'color':  'black',
         'weight': 'normal',
-        'size': 16,
+        'size': 22,
         }
 
 def poly(x,t):
@@ -52,8 +52,10 @@ plt.setp(l2, 'markersize', 4)
 
 plt.xticks(range(-1, 4, 1))
 plt.yticks(range(-4, 5, 2))
+# plt.xticks(fontsize=20)
+# plt.yticks(fontsize=20)
 plt.xlabel("$t$",fontdict=font)
-plt.ylabel("$y$",fontdict=font)
+plt.ylabel("$y(t;x^*)$",fontdict=font)
 plt.ylim([-4.5,4.5])
 plt.savefig(parent+"/images/cubic.pdf",bbox_inches = "tight")
 # plt.show()
