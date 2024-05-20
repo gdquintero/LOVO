@@ -55,7 +55,7 @@ program main
         read(100,*) pdata%n_test
     
         ! pdata%noutliers = 2*int(dble(pdata%n_train) / 5.0d0)
-        pdata%noutliers = 7
+        pdata%noutliers = 3
     
         allocate(pdata%t(pdata%n_train),pdata%y(pdata%n_train),pdata%y_test(pdata%n_test),pdata%t_test(pdata%n_test),&
         pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),pdata%indices(pdata%n_train),stat=allocerr)
@@ -105,18 +105,17 @@ program main
         enddo
 
         av_err_train = av_err_train / (pdata%n_train - pdata%noutliers)
-        print*, "Average absolute error on train set:", av_err_train
+        write(*,'(A36,1X,F6.3)') "Average absolute error on train set:", av_err_train
 
-        j = 1
+        j = 0
 
         do i = 1 + pdata%n_train, pdata%n_test + pdata%n_train
-            ti = pdata%t(i)
+            j = j + 1
+            ti = pdata%t_test(j)
             pred = ym + pdata%xk(1) * (ti - tm) + &
                         pdata%xk(2) * ((ti - tm)**2) + pdata%xk(3) * ((ti - tm)**3)
-            print*, "Absolute error at day",i,":",absolute_error(pdata%y_test(j),pred)
+            write(*,30) "Absolute error at day",i,":",absolute_error(pdata%y_test(j),pred)
         enddo
-
-        
 
         write(100,10) pdata%xk(1),pdata%xk(2),pdata%xk(3)
         write(200,20) pdata%noutliers
@@ -127,6 +126,7 @@ program main
     
         10 format (ES13.6,1X,ES13.6,1X,ES13.6) 
         20 format (I2)
+        30 format (A21,1X,I2,1X,A1,1X,F6.3)
 
         call export_plot(pdata%xk,n,pdata%t(pdata%n_train),pdata%y(pdata%n_train),pdata%n_train,pdata%n_test)
     
