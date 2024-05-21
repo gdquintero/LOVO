@@ -101,7 +101,7 @@ program main
   
         integer, intent(in) :: n
         integer :: noutliers,i
-        real(kind=8) :: fobj,start,finish,ti,pred,av_err_train,av_err_test
+        real(kind=8) :: fobj,start,finish,ti,pred,av_err_train,av_err_test,norm_bkj
         type(pdata_type), intent(inout) :: pdata
 
         Open(Unit = 100, File = trim(pwd)//"/../output/solution_cubic.txt", ACCESS = "SEQUENTIAL")
@@ -112,10 +112,10 @@ program main
         do noutliers = pdata%inf, pdata%sup
 
             call cpu_time(start)
-            call lovo_algorithm(n,noutliers,pdata%outliers,pdata,.false.,fobj)
+            call lovo_algorithm(n,noutliers,pdata%outliers,pdata,.false.,fobj,norm_bkj)
             call cpu_time(finish)
 
-            ! print*, pdata%outliers(1:noutliers)    
+            write(*,'(F10.3)') norm_bkj
 
             av_err_train = 0.d0
 
@@ -141,9 +141,7 @@ program main
 
             write(100,1000) pdata%xk(1),pdata%xk(2),pdata%xk(3),pdata%xk(4)
             write(200,'(ES13.6)') fobj
-            write(300,'(4F7.3,1X,F6.3)') pdata%xk,fobj
-
-            write(*,'(F6.3)') maxval(abs(pdata%c(:) - pdata%xk(:)))
+            write(300,'(8F7.3)') pdata%xk,fobj,maxval(abs(pdata%c(:) - pdata%xk(:))),av_err_train,av_err_test
   
             pdata%counters(:) = 0
            
@@ -160,16 +158,16 @@ program main
   
     end subroutine mixed_test
 
-    subroutine lovo_algorithm(n,noutliers,outliers,pdata,type_test,fobj)
+    subroutine lovo_algorithm(n,noutliers,outliers,pdata,type_test,fobj,norm_bkj)
         implicit none
         
         logical, intent(in) :: type_test
         integer, intent(in) :: n,noutliers
         integer, intent(inout) :: outliers(noutliers)
-        real(kind=8), intent(out) :: fobj
+        real(kind=8), intent(out) :: fobj,norm_bkj
         type(pdata_type), intent(inout) :: pdata
   
-        real(kind=8) :: sigmin,epsilon,fxk,fxtrial,alpha,gamma,termination
+        real(kind=8) :: sigmin,epsilon,fxk,fxtrial,alpha,gamma,termination,aux
         integer :: iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo
   
         sigmin = 1.0d-1
@@ -201,6 +199,14 @@ program main
     
             call compute_grad_sp(n,pdata%xk,pdata,pdata%grad_sp)
             call compute_Bkj(n,pdata)
+
+            if (iter_lovo .eq. 1) then
+                norm_bkj = frobenius(pdata%hess_sp,n,n)
+            else
+                aux = frobenius(pdata%hess_sp,n,n)
+            endif
+
+            if (norm_bkj .lt. aux) norm_bkj = aux
     
             termination = norm2(pdata%grad_sp(1:n))
             
@@ -257,6 +263,27 @@ program main
         absolute_error = abs(p - o)
 
     end function absolute_error
+
+    !*****************************************************************
+    !*****************************************************************
+
+    real(kind=8) function frobenius(A,rows,cols)
+        implicit none
+
+        integer :: rows,cols,i,j
+        real(kind=8) :: A(rows,cols)
+
+        frobenius = 0.d0
+
+        do i = 1, rows
+            do j = 1, cols
+                frobenius = frobenius + A(i,j)**2
+            enddo
+        enddo
+
+        frobenius = sqrt(frobenius)
+        
+    end function frobenius
 
     !*****************************************************************
     !*****************************************************************
