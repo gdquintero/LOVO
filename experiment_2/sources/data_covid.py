@@ -5,6 +5,7 @@ import os
 
 cwd = os.getcwd()
 parent =  os.path.abspath(os.path.join(cwd,os.pardir))
+
 size_img = 0.6
 plt.rcParams.update({'font.size': 11})
 plt.rcParams['figure.figsize'] = [size_img * 6.4,size_img * 4.8]

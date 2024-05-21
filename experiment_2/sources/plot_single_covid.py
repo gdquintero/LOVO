@@ -7,7 +7,9 @@ import models
 cwd = os.getcwd()
 parent =  os.path.abspath(os.path.join(cwd,os.pardir))
 
-plt.rcParams.update({'font.size': 22})
+size_img = 0.6
+plt.rcParams.update({'font.size': 11})
+plt.rcParams['figure.figsize'] = [size_img * 6.4,size_img * 4.8]
 plt.rc('text', usetex=True)
 plt.rc('font', family='serif')
 
@@ -39,17 +41,14 @@ for i in range(noutliers):
     cubic_outliers[0,i] = days[outliers[i]-1]
     cubic_outliers[1,i] = df_data.values[outliers[i]+1]
 
-plt.plot(t,models.cubic(x[0],x[1],x[2],t,y[len(y)-n_test-1],days[len(y)-n_test-1]),lw=2)
-plt.plot(cubic_outliers[0],cubic_outliers[1],'ro',mfc='none',ms=10)
+plt.plot(t,models.cubic(x[0],x[1],x[2],t,y[len(y)-n_test-1],days[len(y)-n_test-1]))
+plt.plot(cubic_outliers[0],cubic_outliers[1],'ro',mfc='none',ms=6)
 
-l1 = plt.plot(days[:n_train],y[:n_train],"ok")
-plt.setp(l1, 'markersize')
+plt.plot(days[:n_train],y[:n_train],"ok",ms=4)
+plt.plot(days[n_train:],y[n_train:],"sk",mfc='none',ms=4)
 
-l2 = plt.plot(days[n_train:],y[n_train:],"ok",mfc='none',ms=6,marker="s")
-plt.setp(l2, 'markersize')
-
-# plt.xticks(range(-1, 4, 1))
-# plt.yticks(range(-4, 5, 2))
-plt.ylim([0,0.5])
+plt.xticks(np.arange(5,31,5))
+plt.yticks(np.arange(0.1,0.55,0.1))
+plt.tick_params(axis='both',direction='in')
 plt.savefig(parent+"/images/image.pdf",bbox_inches = "tight")
 # plt.show()
