@@ -7,7 +7,7 @@ program main
         integer :: counters(2) = 0
         integer :: samples,inf,sup,lovo_order,dim_Imin,n_train,n_test
         real(kind=8) :: sigma,theta
-        real(kind=8), allocatable :: xstar(:),xtrial(:),xk(:),t(:),y(:),t_test(:),y_test(:),data(:,:),indices(:),sp_vector(:),&
+        real(kind=8), allocatable :: c(:),xtrial(:),xk(:),t(:),y(:),t_test(:),y_test(:),data(:,:),indices(:),sp_vector(:),&
         grad_sp(:),gp(:),lbnd(:),ubnd(:),hess_sp(:,:),eig_hess_sp(:),aux_mat(:,:),aux_vec(:)
         integer, allocatable :: outliers(:)
         character(len=1) :: JOBZ,UPLO ! lapack variables
@@ -39,7 +39,7 @@ program main
     pdata%n_train = pdata%samples - 20
     pdata%n_test = pdata%samples - pdata%n_train
 
-    allocate(pdata%xstar(n),pdata%xtrial(n),pdata%xk(n),pdata%t(pdata%n_train),pdata%y(pdata%n_train),&
+    allocate(pdata%c(n),pdata%xtrial(n),pdata%xk(n),pdata%t(pdata%n_train),pdata%y(pdata%n_train),&
     pdata%indices(pdata%n_train),pdata%sp_vector(pdata%n_train),pdata%grad_sp(n),pdata%gp(n),&
     pdata%data(2,pdata%samples),pdata%t_test(pdata%n_test),pdata%y_test(pdata%n_test),stat=allocerr)
 
@@ -62,7 +62,7 @@ program main
 
     close(10)
 
-    pdata%xstar(:) = (/1.d0,1.d0,-3.d0,1.d0/)
+    pdata%c(:) = (/1.d0,1.d0,-3.d0,1.d0/)
   
     pdata%t(1:pdata%n_train) = pdata%data(1,1:pdata%n_train)
     pdata%y(1:pdata%n_train) = pdata%data(2,1:pdata%n_train)
@@ -70,8 +70,8 @@ program main
     pdata%t_test(:) = pdata%data(1,1+pdata%n_train:)
     pdata%y_test(:) = pdata%data(2,1+pdata%n_train:)
 
-    pdata%inf = 7
-    pdata%sup = 7
+    pdata%inf = 0
+    pdata%sup = 10
  
     allocate(pdata%outliers(pdata%n_train*(pdata%sup-pdata%inf+1)),stat=allocerr)
  
@@ -100,30 +100,50 @@ program main
         implicit none
   
         integer, intent(in) :: n
-        integer :: noutliers,i,j
-        real(kind=8) :: fobj,start,finish,ti,pred
+        integer :: noutliers,i
+        real(kind=8) :: fobj,start,finish,ti,pred,av_err_train,av_err_test
         type(pdata_type), intent(inout) :: pdata
 
         Open(Unit = 100, File = trim(pwd)//"/../output/solution_cubic.txt", ACCESS = "SEQUENTIAL")
         Open(Unit = 200, File = trim(pwd)//"/../output/log_sp.txt", ACCESS = "SEQUENTIAL")
+        Open(Unit = 300, File = trim(pwd)//"/../output/output_latex.txt", ACCESS = "SEQUENTIAL")
 
         
         do noutliers = pdata%inf, pdata%sup
-            write(*,*)
-            write(*,*) "Outliers: ", noutliers
 
             call cpu_time(start)
-            call lovo_algorithm(n,noutliers,pdata%outliers,pdata,fobj)
+            call lovo_algorithm(n,noutliers,pdata%outliers,pdata,.false.,fobj)
             call cpu_time(finish)
 
-            ! print*, pdata%outliers(1:noutliers)
+            ! print*, pdata%outliers(1:noutliers)    
 
-            ! do i = 1, pdata%n_train
+            av_err_train = 0.d0
 
-            ! enddo
+            do i = 1, pdata%n_train
+                ti = pdata%t(i)
+                pred = pdata%xk(1) + pdata%xk(2) * ti + pdata%xk(3) * (ti**2) + pdata%xk(4) * (ti**3)
+
+                if (.not. ANY(pdata%outliers(1:noutliers) .eq. i)) then
+                    av_err_train = av_err_train + absolute_error(pdata%y(i),pred)
+                endif
+            enddo
+
+            av_err_train = av_err_train / (pdata%n_train - noutliers)
+            av_err_test = 0.d0
+
+            do i = 1, pdata%n_test
+                ti = pdata%t_test(i)
+                pred = pdata%xk(1) + pdata%xk(2) * ti + pdata%xk(3) * (ti**2) + pdata%xk(4) * (ti**3)
+                av_err_test = av_err_test + absolute_error(pdata%y_test(i),pred)
+            enddo
+
+            av_err_test = av_err_test / pdata%n_test
 
             write(100,1000) pdata%xk(1),pdata%xk(2),pdata%xk(3),pdata%xk(4)
             write(200,'(ES13.6)') fobj
+            write(300,'(4F7.3,1X,F6.3)') pdata%xk,fobj
+
+            write(*,'(F6.3)') maxval(abs(pdata%c(:) - pdata%xk(:)))
   
             pdata%counters(:) = 0
            
@@ -140,9 +160,10 @@ program main
   
     end subroutine mixed_test
 
-    subroutine lovo_algorithm(n,noutliers,outliers,pdata,fobj)
+    subroutine lovo_algorithm(n,noutliers,outliers,pdata,type_test,fobj)
         implicit none
-  
+        
+        logical, intent(in) :: type_test
         integer, intent(in) :: n,noutliers
         integer, intent(inout) :: outliers(noutliers)
         real(kind=8), intent(out) :: fobj
@@ -165,11 +186,15 @@ program main
         ! pdata%xk(:) = 1.0d-1
   
         call compute_sp(n,pdata%xk,pdata,fxk)      
-  
-        write(*,*) "--------------------------------------------------------"
-        write(*,10) "#iter","#init","Sp(xstar)","Stop criteria","#Imin"
-        10 format (2X,A5,4X,A5,6X,A9,6X,A13,2X,A5)
-        write(*,*) "--------------------------------------------------------"
+        
+        if (type_test) then
+            write(*,*)
+            write(*,*) "Outliers: ", noutliers
+            write(*,*) "--------------------------------------------------------"
+            write(*,10) "#iter","#init","Sp(xstar)","Stop criteria","#Imin"
+            10 format (2X,A5,4X,A5,6X,A9,6X,A13,2X,A5)
+            write(*,*) "--------------------------------------------------------"
+        endif
   
         do
             iter_lovo = iter_lovo + 1
@@ -178,9 +203,11 @@ program main
             call compute_Bkj(n,pdata)
     
             termination = norm2(pdata%grad_sp(1:n))
-    
-            write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination,pdata%dim_Imin
-            20 format (I6,5X,I4,4X,ES14.6,3X,ES14.6,2X,I2)
+            
+            if (type_test) then
+                write(*,20)  iter_lovo,iter_sub_lovo,fxk,termination,pdata%dim_Imin
+                20 format (I6,5X,I4,4X,ES14.6,3X,ES14.6,2X,I2)
+            endif
     
             if (termination .le. epsilon) exit
             if (iter_lovo .ge. max_iter_lovo) exit
