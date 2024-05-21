@@ -6,7 +6,7 @@ import os
 cwd = os.getcwd()
 parent =  os.path.abspath(os.path.join(cwd,os.pardir))
 
-plt.rcParams['figure.figsize'] = [3.84, 2.88]
+plt.rcParams['figure.figsize'] = 0.6 * [6.4, 4.8]
 plt.rc('text', usetex=True)
 
 font = {'family': 'serif',
