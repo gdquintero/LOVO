@@ -33,7 +33,7 @@ initial_date = ind_excel - 2
 n_train = 27
 n_test = 3
 total_days = n_train + n_test  
-data = np.zeros(n_train)
+data = np.zeros(total_days)
 
 with open(parent+"/data/covid.txt","w") as f:
     f.write("%i\n" % n_train)
@@ -48,18 +48,19 @@ with open(parent+"/data/covid.txt","w") as f:
         else:
             f.write("%f\n" % x)
 
-        if j <= n_train - 1:
-            data[j] = x
+        data[j] = x
     
         j += 1
 
+print(data)
 
-l = plt.plot(np.linspace(1,n_train,n_train),data,":o",color="darkgreen")
-plt.setp(l,'markersize',4)
+
+plt.plot(np.linspace(1,n_train,n_train),data[:n_train],":o",color="darkgreen",lw=1,ms=4)
+plt.plot(np.linspace(n_train+1,n_train+n_test,n_test),data[n_train:],'s',color="darkgreen",mfc='none',ms=4)
 
 plt.xlabel("Days")
 plt.ylabel("Deaths per million")
-plt.xticks(np.arange(5,26,5))
+plt.xticks(np.arange(5,31,5))
 plt.yticks(np.arange(0.1,0.55,0.1))
 plt.tick_params(axis='both',direction='in')
 plt.savefig(parent+"/images/image.pdf",bbox_inches="tight")
