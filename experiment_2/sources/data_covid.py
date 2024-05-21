@@ -52,8 +52,6 @@ with open(parent+"/data/covid.txt","w") as f:
     
         j += 1
 
-print(data)
-
 
 plt.plot(np.linspace(1,n_train,n_train),data[:n_train],":o",color="darkgreen",lw=1,ms=4)
 plt.plot(np.linspace(n_train+1,n_train+n_test,n_test),data[n_train:],'s',color="darkgreen",mfc='none',ms=4)
