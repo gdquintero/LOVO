@@ -7,8 +7,8 @@ program main
         integer :: counters(2) = 0
         integer :: samples,inf,sup,lovo_order,dim_Imin,n_train,n_test
         real(kind=8) :: sigma,theta
-        real(kind=8), allocatable :: xstar(:),xtrial(:),xk(:),t(:),y(:),t_test(:),y_test(:),data(:,:),indices(:),sp_vector(:),&
-        grad_sp(:),gp(:),lbnd(:),ubnd(:),hess_sp(:,:),eig_hess_sp(:),aux_mat(:,:),aux_vec(:)
+        real(kind=8), allocatable :: xstar(:),xtrial(:),xk(:),t(:),y(:),data(:,:),indices(:),sp_vector(:),&
+        grad_sp(:),gp(:),lbnd(:),ubnd(:),pred(:),errors(:),hess_sp(:,:),eig_hess_sp(:),aux_mat(:,:),aux_vec(:)
         integer, allocatable :: outliers(:)
         character(len=1) :: JOBZ,UPLO ! lapack variables
         integer :: LDA,LWORK,INFO,NRHS,LDB ! lapack variables
@@ -41,7 +41,7 @@ program main
 
     allocate(pdata%xstar(n),pdata%xtrial(n),pdata%xk(n),pdata%t(pdata%n_train),pdata%y(pdata%n_train),&
     pdata%indices(pdata%n_train),pdata%sp_vector(pdata%n_train),pdata%grad_sp(n),pdata%gp(n),&
-    pdata%data(2,pdata%samples),pdata%t_test(pdata%n_test),pdata%y_test(pdata%n_test),stat=allocerr)
+    pdata%data(2,pdata%samples),pdata%pred(pdata%n_test),pdata%errors(pdata%n_test),stat=allocerr)
 
     if ( allocerr .ne. 0 ) then
         write(*,*) 'Allocation error.'
@@ -66,9 +66,6 @@ program main
   
     pdata%t(1:pdata%n_train) = pdata%data(1,1:pdata%n_train)
     pdata%y(1:pdata%n_train) = pdata%data(2,1:pdata%n_train)
-
-    pdata%t_test(:) = pdata%data(1,1+pdata%n_train:)
-    pdata%y_test(:) = pdata%data(2,1+pdata%n_train:)
 
     pdata%inf = 7
     pdata%sup = 7
@@ -101,11 +98,13 @@ program main
   
         integer, intent(in) :: n
         integer :: noutliers,i,j
-        real(kind=8) :: fobj,start,finish,ti,pred
+        real(kind=8) :: fobj,start,finish,ti,mean_abs_err,mae_train,p,o,aux
         type(pdata_type), intent(inout) :: pdata
 
         Open(Unit = 100, File = trim(pwd)//"/../output/solution_cubic.txt", ACCESS = "SEQUENTIAL")
-        Open(Unit = 200, File = trim(pwd)//"/../output/log_sp.txt", ACCESS = "SEQUENTIAL")
+        Open(Unit = 200, File = trim(pwd)//"/../output/output_latex.txt", ACCESS = "SEQUENTIAL")
+        Open(Unit = 300, File = trim(pwd)//"/../output/log_sp.txt", ACCESS = "SEQUENTIAL")
+        Open(Unit = 400, File = trim(pwd)//"/../output/errors.txt", ACCESS = "SEQUENTIAL")
 
         
         do noutliers = pdata%inf, pdata%sup
@@ -118,25 +117,55 @@ program main
 
             ! print*, pdata%outliers(1:noutliers)
 
-            ! do i = 1, pdata%n_train
+            do i = 1, pdata%n_test
+                ti = pdata%data(1,i+pdata%n_train)
+                pdata%pred(i) = pdata%xk(1) + (pdata%xk(2) * ti) + (pdata%xk(3) * (ti**2)) + (pdata%xk(4) * (ti**3))
+                call absolute_error(pdata%data(2,i+pdata%n_train),pdata%pred(i),pdata%errors(i))
+                ! call relative_error(pdata%data(2,i+pdata%n_train),pdata%pred(i),pdata%errors(i))
+            enddo
 
-            ! enddo
+            mean_abs_err = sum(pdata%errors)/pdata%n_test
+            mae_train = 0.d0
+
+            do i = 1, pdata%n_train - noutliers
+                j = int(pdata%indices(i))
+                ti = pdata%data(1,j)
+                p = pdata%xk(1) + (pdata%xk(2) * ti) + (pdata%xk(3) * (ti**2)) + (pdata%xk(4) * (ti**3))
+                o = pdata%data(2,j)
+                call absolute_error(o,p,aux)
+                mae_train = mae_train + aux
+            enddo
+
+            mae_train = mae_train / (pdata%n_train - noutliers)
+
 
             write(100,1000) pdata%xk(1),pdata%xk(2),pdata%xk(3),pdata%xk(4)
-            write(200,'(ES13.6)') fobj
+            write(200,1100) pdata%xk(1),pdata%xk(2),pdata%xk(3),pdata%xk(4),fobj,norm2(pdata%xk-pdata%xstar),&
+            maxval(abs(pdata%xk-pdata%xstar)),mean_abs_err,mae_train,pdata%counters(1),pdata%counters(2)
+            write(300,1300) fobj
+
+            write(400,1400) pdata%errors
   
             pdata%counters(:) = 0
            
         enddo
   
         Open(Unit = 500, File = trim(pwd)//"/../output/num_mixed_test.txt", ACCESS = "SEQUENTIAL")
-        write(500,'(I2)') pdata%inf
-        write(500,'(I2)') pdata%sup
+        write(500,1200) pdata%inf
+        write(500,1200) pdata%sup
   
         1000 format (ES13.6,1X,ES13.6,1X,ES13.6,1X,ES13.6)
+        1200 format (I2)
+        1100 format (F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,F6.3,1X,I4,1X,I4)
+        1300 format (ES13.6)
+        1400 format (20ES13.6)
 
         close(100)
         close(200)
+        close(300)
+        close(400)
+        close(500)
+
   
     end subroutine mixed_test
 
@@ -221,15 +250,51 @@ program main
 
     !*****************************************************************
     !*****************************************************************
-
-    real(kind=8) function absolute_error(o,p)
+    
+    subroutine rmsd(n,o,p,res)
         implicit none
 
-        real(kind=8) :: o,p
+        integer,        intent(in) :: n
+        real(kind=8),   intent(in) :: o(n),p(n)
+        real(kind=8),   intent(out) :: res
+        integer :: i
 
-        absolute_error = abs(p - o)
+        res = 0.d0
 
-    end function absolute_error
+        do i = 1,n
+            res = res + (o(i)-p(i))**2
+        enddo
+
+        res = sqrt(res / n)
+
+    end subroutine rmsd
+
+    !*****************************************************************
+    !*****************************************************************
+
+    subroutine relative_error(o,p,res)
+        implicit none
+
+        real(kind=8),   intent(in) :: o,p
+        real(kind=8),   intent(out):: res
+
+        res = abs(p - o) / abs(o)
+        ! res = res * 100.d0
+    
+    end subroutine relative_error
+
+    !*****************************************************************
+    !*****************************************************************
+
+    subroutine absolute_error(o,p,res)
+        implicit none
+
+        real(kind=8),   intent(in) :: o,p
+        real(kind=8),   intent(out):: res
+
+        res = abs(p - o)
+    
+    end subroutine absolute_error
 
     !*****************************************************************
     !*****************************************************************

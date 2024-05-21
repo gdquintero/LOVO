@@ -8,15 +8,11 @@ import os
 cwd = os.getcwd()
 parent =  os.path.abspath(os.path.join(cwd,os.pardir))
 
-plt.rcParams.update({'font.size': 20})
+size_img = 1
+plt.rcParams.update({'font.size': 11})
+plt.rcParams['figure.figsize'] = [size_img * 6.4,size_img * 4.8]
 plt.rc('text', usetex=True)
 plt.rc('font', family='serif')
-
-font = {'family': 'serif',
-        'color':  'black',
-        'weight': 'normal',
-        'size': 22,
-        }
 
 def poly(x,t):
     return x[0] + x[1] * t + x[2] * (t**2) + x[3] * (t**3)
@@ -41,21 +37,19 @@ for i in range(noutliers):
 
 t = np.linspace(df_data[0].values[0],df_data[0].values[-1],1000)        
 
-plt.plot(t,poly(df_sol.values[0][:4],t),lw=2)
-plt.plot(cubic_outliers[0],cubic_outliers[1],'ro',mfc='none',ms=10)
+plt.plot(t,poly(df_sol.values[0][:4],t))
+plt.plot(cubic_outliers[0],cubic_outliers[1],'ro',mfc='none',ms=6)
 
-l1 = plt.plot(df_data[0].values[:80],df_data[1].values[:80],"ok")
-plt.setp(l1, 'markersize', 4)
+plt.plot(df_data[0].values[:80],df_data[1].values[:80],"ok",ms=3)
 
-l2 = plt.plot(df_data[0].values[80:],df_data[1].values[80:],"ok",mfc='none',ms=10,marker="s")
-plt.setp(l2, 'markersize', 4)
+l2 = plt.plot(df_data[0].values[80:],df_data[1].values[80:],"sk",mfc='none',ms=3)
 
 plt.xticks(range(-1, 4, 1))
 plt.yticks(range(-4, 5, 2))
 # plt.xticks(fontsize=20)
 # plt.yticks(fontsize=20)
-plt.xlabel("$t$",fontdict=font)
-plt.ylabel("$y(t;x^*)$",fontdict=font)
+plt.xlabel("$t$")
+plt.ylabel("$y(t;x^*)$")
 plt.ylim([-4.5,4.5])
 plt.savefig(parent+"/images/cubic.pdf",bbox_inches = "tight")
 # plt.show()
