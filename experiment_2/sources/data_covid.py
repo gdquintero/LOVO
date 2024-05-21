@@ -54,7 +54,9 @@ with open(parent+"/data/covid.txt","w") as f:
         j += 1
 
 
-plt.plot(np.linspace(1,n_train,n_train),data,":o",color="darkgreen")
+l = plt.plot(np.linspace(1,n_train,n_train),data,":o",color="darkgreen")
+plt.setp(l,'markersize',4)
+
 plt.xlabel("Days")
 plt.ylabel("Deaths per million")
 plt.xticks(np.arange(5,26,5))
@@ -63,13 +65,3 @@ plt.tick_params(axis='both',direction='in')
 plt.savefig(parent+"/images/image.pdf",bbox_inches="tight")
 # plt.show()
 plt.close()
-
-# def plot_data():
-#     for i in range(4):
-#         plt.plot(np.linspace(i*25+1,(i+1)*25,25),data[i*25:i*25+25],":o",color="darkgreen")
-#         plt.xlabel("Days",fontdict=font)
-#         plt.ylabel("Deaths per million",fontdict=font)
-#         plt.savefig(parent+"/images/image"+str(i+1)+".pdf",bbox_inches="tight")
-#         plt.close()
-
-# plot_data()
