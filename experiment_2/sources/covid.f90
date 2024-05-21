@@ -46,8 +46,7 @@ program main
     subroutine single_test()
         implicit none
 
-        integer :: i,j
-        real(kind=8) :: ti,tm,ym,pred,av_err_train
+        integer :: i        
 
         Open(Unit = 100, File = trim(pwd)//"/../data/covid.txt", Access = "SEQUENTIAL")
     
@@ -55,7 +54,7 @@ program main
         read(100,*) pdata%n_test
     
         ! pdata%noutliers = 2*int(dble(pdata%n_train) / 5.0d0)
-        pdata%noutliers = 3
+        pdata%noutliers = 10
     
         allocate(pdata%t(pdata%n_train),pdata%y(pdata%n_train),pdata%y_test(pdata%n_test),pdata%t_test(pdata%n_test),&
         pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),pdata%indices(pdata%n_train),stat=allocerr)
@@ -91,32 +90,6 @@ program main
     
         call lovo_algorithm(n,pdata%noutliers,pdata%outliers,pdata,.true.,pdata%fobj)
 
-        tm = pdata%n_train
-        ym = pdata%y(pdata%n_train)
-
-        do i = 1, pdata%n_train
-            ti = pdata%t(i)
-            pred = ym + pdata%xk(1) * (ti - tm) + &
-                        pdata%xk(2) * ((ti - tm)**2) + pdata%xk(3) * ((ti - tm)**3)
-
-            if (.not. ANY(pdata%outliers(1:pdata%noutliers) .eq. i)) then
-                av_err_train = av_err_train + absolute_error(pdata%y(i),pred)
-            endif
-        enddo
-
-        av_err_train = av_err_train / (pdata%n_train - pdata%noutliers)
-        write(*,'(A36,1X,F6.3)') "Average absolute error on train set:", av_err_train
-
-        j = 0
-
-        do i = 1 + pdata%n_train, pdata%n_test + pdata%n_train
-            j = j + 1
-            ti = pdata%t_test(j)
-            pred = ym + pdata%xk(1) * (ti - tm) + &
-                        pdata%xk(2) * ((ti - tm)**2) + pdata%xk(3) * ((ti - tm)**3)
-            write(*,30) "Absolute error at day",i,":",absolute_error(pdata%y_test(j),pred)
-        enddo
-
         write(100,10) pdata%xk(1),pdata%xk(2),pdata%xk(3)
         write(200,20) pdata%noutliers
 
@@ -126,12 +99,13 @@ program main
     
         10 format (ES13.6,1X,ES13.6,1X,ES13.6) 
         20 format (I2)
-        30 format (A21,1X,I2,1X,A1,1X,F6.3)
 
         call export_plot(pdata%xk,n,pdata%t(pdata%n_train),pdata%y(pdata%n_train),pdata%n_train,pdata%n_test)
     
         close(100)
         close(200)
+
+        call output()
 
         deallocate(pdata%t,pdata%y,pdata%y_test,pdata%t_test,pdata%xtrial,pdata%xk,pdata%grad_sp,&
         pdata%indices,pdata%sp_vector,pdata%outliers,pdata%hess_sp,pdata%eig_hess_sp,pdata%WORK,&
@@ -230,6 +204,56 @@ program main
 
     !*****************************************************************
     !*****************************************************************
+
+    subroutine output()
+        implicit none
+        integer :: i,j
+        real(kind=8) :: ti,tm,ym,pred,av_err_train,av_err_test
+
+        tm = pdata%n_train
+        ym = pdata%y(pdata%n_train)
+        av_err_train = 0.d0
+
+        do i = 1, pdata%n_train
+            ti = pdata%t(i)
+            pred = ym + pdata%xk(1) * (ti - tm) + &
+                        pdata%xk(2) * ((ti - tm)**2) + pdata%xk(3) * ((ti - tm)**3)
+
+            if (.not. ANY(pdata%outliers(1:pdata%noutliers) .eq. i)) then
+                av_err_train = av_err_train + absolute_error(pdata%y(i),pred)
+            endif
+        enddo
+
+        av_err_train = av_err_train / (pdata%n_train - pdata%noutliers)
+
+        j = 0
+        av_err_test = 0.d0
+        print*
+
+        do i = 1 + pdata%n_train, pdata%n_test + pdata%n_train
+            j = j + 1
+            ti = pdata%t_test(j)
+
+            write(*,"(A3,1X,I2,A1)") "Day",int(ti),":"
+            write(*,"(A7)") "-------"
+
+            pred = ym + pdata%xk(1) * (ti - tm) + &
+                        pdata%xk(2) * ((ti - tm)**2) + pdata%xk(3) * ((ti - tm)**3)
+            
+            ! write(*,"(A11,1X,F6.3)") "Observation",pdata%y_test(j)
+            write(*,"(A11,1X,F6.3)") "Prediction:",pred
+            write(*,"(A15,1X,F6.3)") "Absolute error:",absolute_error(pdata%y_test(j),pred)
+            print*
+
+            av_err_test = av_err_test + absolute_error(pdata%y_test(j),pred)
+        enddo
+
+        av_err_test = av_err_test / pdata%n_test
+
+        write(*,'(A36,1X,F6.3)') "Average absolute error on train set:", av_err_train
+        write(*,'(A35,1X,F6.3)') "Average absolute error on test set:", av_err_test
+    
+    end subroutine output
 
     subroutine export_plot(xsol,n,tm,ym,n_train,n_test)
         implicit none
