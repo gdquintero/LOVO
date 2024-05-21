@@ -115,7 +115,7 @@ program main
             call lovo_algorithm(n,noutliers,pdata%outliers,pdata,.false.,fobj,norm_bkj)
             call cpu_time(finish)
 
-            write(*,'(F10.3)') norm_bkj
+            write(*,'(ES10.3)') norm_bkj
 
             av_err_train = 0.d0
 
@@ -204,9 +204,8 @@ program main
                 norm_bkj = frobenius(pdata%hess_sp,n,n)
             else
                 aux = frobenius(pdata%hess_sp,n,n)
+                if (norm_bkj .lt. aux) norm_bkj = aux
             endif
-
-            if (norm_bkj .lt. aux) norm_bkj = aux
     
             termination = norm2(pdata%grad_sp(1:n))
             

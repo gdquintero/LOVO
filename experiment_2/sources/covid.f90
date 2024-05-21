@@ -6,7 +6,7 @@ program main
     type :: pdata_type
         integer :: counters(2) = 0
         integer :: lovo_order,n_train,n_test,days_test,noutliers,dim_Imin
-        real(kind=8) :: sigma,fobj
+        real(kind=8) :: sigma,fobj,norm_bkj
         real(kind=8), allocatable :: xtrial(:),xk(:),t(:),y(:),t_test(:),y_test(:),indices(:),&
         pred(:),re(:),sp_vector(:),grad_sp(:),hess_sp(:,:),eig_hess_sp(:),aux_mat(:,:),aux_vec(:),&
         test_data(:,:),train_data(:,:)
@@ -46,7 +46,7 @@ program main
     subroutine single_test()
         implicit none
 
-        integer :: i        
+        integer :: i       
 
         Open(Unit = 100, File = trim(pwd)//"/../data/covid.txt", Access = "SEQUENTIAL")
     
@@ -88,7 +88,7 @@ program main
         Open(Unit = 100, File = trim(pwd)//"/../output/solution_covid.txt", ACCESS = "SEQUENTIAL")
         Open(Unit = 200, File = trim(pwd)//"/../output/outliers.txt", ACCESS = "SEQUENTIAL")
     
-        call lovo_algorithm(n,pdata%noutliers,pdata%outliers,pdata,.true.,pdata%fobj)
+        call lovo_algorithm(n,pdata%noutliers,pdata%outliers,pdata,.true.,pdata%fobj,pdata%norm_bkj)
 
         write(100,10) pdata%xk(1),pdata%xk(2),pdata%xk(3)
         write(200,20) pdata%noutliers
@@ -121,16 +121,16 @@ program main
     !*****************************************************************
     !*****************************************************************
 
-    subroutine lovo_algorithm(n,noutliers,outliers,pdata,single_type_test,fobj)
+    subroutine lovo_algorithm(n,noutliers,outliers,pdata,single_type_test,fobj,norm_bkj)
         implicit none
         
         logical,        intent(in) :: single_type_test
         integer,        intent(in) :: n,noutliers
         integer,        intent(inout) :: outliers(noutliers)
-        real(kind=8),   intent(out) :: fobj
+        real(kind=8),   intent(out) :: fobj,norm_bkj
         type(pdata_type), intent(inout) :: pdata
   
-        real(kind=8) :: sigmin,epsilon,fxk,fxtrial,alpha,gamma,termination
+        real(kind=8) :: sigmin,epsilon,fxk,fxtrial,alpha,gamma,termination,aux
         integer :: iter_lovo,iter_sub_lovo,max_iter_lovo,max_iter_sub_lovo
   
         sigmin = 1.0d-1
@@ -159,6 +159,13 @@ program main
     
             call compute_grad_sp(n,pdata%xk,pdata,pdata%grad_sp)
             call compute_Bkj(n,pdata)
+
+            if (iter_lovo .eq. 1) then
+                norm_bkj = frobenius(pdata%hess_sp,n,n)
+            else
+                aux = frobenius(pdata%hess_sp,n,n)
+                if (norm_bkj .lt. aux) norm_bkj = aux
+            endif
 
             termination = norm2(pdata%grad_sp(:))
             
@@ -252,8 +259,12 @@ program main
 
         write(*,'(A36,1X,F6.3)') "Average absolute error on train set:", av_err_train
         write(*,'(A35,1X,F6.3)') "Average absolute error on test set:", av_err_test
+        write(*,'(A24,1X,ES10.3)') "Maximum of hessian norm:",pdata%norm_bkj
     
     end subroutine output
+
+    !*****************************************************************
+    !*****************************************************************
 
     subroutine export_plot(xsol,n,tm,ym,n_train,n_test)
         implicit none
@@ -278,6 +289,9 @@ program main
 
     end subroutine export_plot
 
+    !*****************************************************************
+    !*****************************************************************
+
     real(kind=8) function absolute_error(o,p)
         implicit none
 
@@ -286,6 +300,27 @@ program main
         absolute_error = abs(p - o)
 
     end function absolute_error
+
+    !*****************************************************************
+    !*****************************************************************
+
+    real(kind=8) function frobenius(A,rows,cols)
+        implicit none
+
+        integer :: rows,cols,i,j
+        real(kind=8) :: A(rows,cols)
+
+        frobenius = 0.d0
+
+        do i = 1, rows
+            do j = 1, cols
+                frobenius = frobenius + A(i,j)**2
+            enddo
+        enddo
+
+        frobenius = sqrt(frobenius)
+        
+    end function frobenius
 
     !*****************************************************************
     !*****************************************************************
