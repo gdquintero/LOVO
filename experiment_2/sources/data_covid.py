@@ -59,8 +59,10 @@ plt.plot(np.linspace(n_train+1,n_train+n_test,n_test),data[n_train:],'s',color="
 
 plt.xlabel("Days")
 plt.ylabel("Deaths per million")
-plt.xticks(np.arange(5,31,5))
+plt.xticks(np.arange(0,31,5))
 plt.yticks(np.arange(0.1,0.55,0.1))
+plt.xlim(-1,31)
+plt.ylim(0.05,0.5)
 plt.tick_params(axis='both',direction='in')
 plt.savefig(parent+"/images/image.pdf",bbox_inches="tight")
 # plt.show()
