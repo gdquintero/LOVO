@@ -5,15 +5,11 @@ import os
 
 cwd = os.getcwd()
 parent =  os.path.abspath(os.path.join(cwd,os.pardir))
-
-plt.rcParams['figure.figsize'] = 0.6 * [6.4, 4.8]
+size_img = 0.6
+plt.rcParams.update({'font.size': 11})
+plt.rcParams['figure.figsize'] = [size_img * 6.4,size_img * 4.8]
 plt.rc('text', usetex=True)
-
-font = {'family': 'serif',
-        'color':  'black',
-        'weight': 'normal',
-        'size': 11,
-        }
+plt.rc('font', family='serif')
 
 countries = {
     "ar" : "ar.xlsx",
@@ -59,7 +55,21 @@ with open(parent+"/data/covid.txt","w") as f:
 
 
 plt.plot(np.linspace(1,n_train,n_train),data,":o",color="darkgreen")
-plt.xlabel("Days",fontdict=font)
-plt.ylabel("Deaths per million",fontdict=font)
+plt.xlabel("Days")
+plt.ylabel("Deaths per million")
+plt.xticks(np.arange(5,26,5))
+plt.yticks(np.arange(0.1,0.55,0.1))
+plt.tick_params(axis='both',direction='in')
 plt.savefig(parent+"/images/image.pdf",bbox_inches="tight")
 # plt.show()
+plt.close()
+
+# def plot_data():
+#     for i in range(4):
+#         plt.plot(np.linspace(i*25+1,(i+1)*25,25),data[i*25:i*25+25],":o",color="darkgreen")
+#         plt.xlabel("Days",fontdict=font)
+#         plt.ylabel("Deaths per million",fontdict=font)
+#         plt.savefig(parent+"/images/image"+str(i+1)+".pdf",bbox_inches="tight")
+#         plt.close()
+
+# plot_data()
