@@ -10,6 +10,6 @@ def F(t,a,b,c):
 
 # Covid models
 def cubic(x1,x2,x3,t,ym,tm):
-    return ym + x1 * (t - tm) + x2 * (t - tm)**2 + x3 * (t - tm)**3
+    return ym + x1 * (t/tm - 1) + x2 * (t/tm - 1)**2 + x3 * (t/tm - 1)**3
 
     

@@ -87,18 +87,12 @@ program main
      
         Open(Unit = 100, File = trim(pwd)//"/../output/solution_covid.txt", ACCESS = "SEQUENTIAL")
         Open(Unit = 200, File = trim(pwd)//"/../output/outliers.txt", ACCESS = "SEQUENTIAL")
-
-        ! Initial solution by Least Squares
-        if (pdata%noutliers .ne. 0) then
-            pdata%xk(:) = 0.0d0
-            call lovo_algorithm(n,0,pdata%outliers,pdata,.false.,pdata%fobj,pdata%norm_bkj)
-        endif
     
-        call lovo_algorithm(n,pdata%noutliers,pdata%outliers,pdata,.true.,pdata%fobj,pdata%norm_bkj)
+        call lovo_algorithm(n,pdata%noutliers,pdata%outliers,pdata,.false.,pdata%fobj,pdata%norm_bkj)
 
-        ! do i = 1, 3
-        !     print*, pdata%hess_sp(i,:)
-        ! enddo
+        do i = 1, 3
+            print*, pdata%hess_sp(i,:)
+        enddo
 
         write(100,10) pdata%xk(1),pdata%xk(2),pdata%xk(3)
         write(200,20) pdata%noutliers
@@ -115,7 +109,7 @@ program main
         close(100)
         close(200)
 
-        call output()
+        ! call output()
 
         deallocate(pdata%t,pdata%y,pdata%y_test,pdata%t_test,pdata%xtrial,pdata%xk,pdata%grad_sp,&
         pdata%indices,pdata%sp_vector,pdata%outliers,pdata%hess_sp,pdata%eig_hess_sp,pdata%WORK,&
@@ -152,6 +146,8 @@ program main
         iter_lovo = 0
         iter_sub_lovo = 0
         pdata%lovo_order = pdata%n_train - noutliers
+  
+        pdata%xk(:) = 1.0d-5
         
         call compute_sp(n,pdata%xk,pdata,fxk)  
 
@@ -223,16 +219,16 @@ program main
     subroutine output()
         implicit none
         integer :: i,j
-        real(kind=8) :: t,ym,pred,av_err_train,av_err_test
+        real(kind=8) :: ti,tm,ym,pred,av_err_train,av_err_test
 
-        
+        tm = pdata%n_train
         ym = pdata%y(pdata%n_train)
         av_err_train = 0.d0
 
-        do i = 1, pdata%n_train/pdata%n_train
-            t = pdata%t(i)
-            pred = ym + pdata%xk(1) * (t - 1.d0) + &
-                        pdata%xk(2) * ((t - 1.d0)**2) + pdata%xk(3) * ((t - 1.d0)**3)
+        do i = 1, pdata%n_train
+            ti = pdata%t(i)
+            pred = ym + pdata%xk(1) * (ti - tm) + &
+                        pdata%xk(2) * ((ti - tm)**2) + pdata%xk(3) * ((ti - tm)**3)
 
             if (.not. ANY(pdata%outliers(1:pdata%noutliers) .eq. i)) then
                 av_err_train = av_err_train + absolute_error(pdata%y(i),pred)
@@ -241,24 +237,26 @@ program main
 
         av_err_train = av_err_train / (pdata%n_train - pdata%noutliers)
 
+        j = 0
         av_err_test = 0.d0
         print*
 
-        do i = 1,pdata%n_test
-            t = pdata%t_test(i) / pdata%t(pdata%n_train)
+        do i = 1 + pdata%n_train, pdata%n_test + pdata%n_train
+            j = j + 1
+            ti = pdata%t_test(j)
 
-            write(*,"(A3,1X,I2,A1)") "Day",int(pdata%t_test(i)),":"
+            write(*,"(A3,1X,I2,A1)") "Day",int(ti),":"
             write(*,"(A7)") "-------"
 
-            pred = ym + pdata%xk(1) * (t - 1.d0) + &
-                        pdata%xk(2) * ((t - 1.d0)**2) + pdata%xk(3) * ((t - 1.d0)**3)
+            pred = ym + pdata%xk(1) * (ti - tm) + &
+                        pdata%xk(2) * ((ti - tm)**2) + pdata%xk(3) * ((ti - tm)**3)
             
             ! write(*,"(A11,1X,F6.3)") "Observation",pdata%y_test(j)
             write(*,"(A11,1X,F6.3)") "Prediction:",pred
-            write(*,"(A15,1X,F6.3)") "Absolute error:",absolute_error(pdata%y_test(i),pred)
+            write(*,"(A15,1X,F6.3)") "Absolute error:",absolute_error(pdata%y_test(j),pred)
             print*
 
-            av_err_test = av_err_test + absolute_error(pdata%y_test(i),pred)
+            av_err_test = av_err_test + absolute_error(pdata%y_test(j),pred)
         enddo
 
         av_err_test = av_err_test / pdata%n_test
@@ -374,19 +372,19 @@ program main
         real(kind=8),  intent(out) :: res(n)
         type(pdata_type), intent(in) :: pdata
   
-        real(kind=8) :: gaux,t
+        real(kind=8) :: gaux,ti
         integer :: i
         
         res(:) = 0.0d0
   
         do i = 1, pdata%lovo_order
-            t = pdata%t(int(pdata%indices(i))) / pdata%t(pdata%n_train)
+            ti = pdata%t(int(pdata%indices(i)))
             call model(n,x,int(pdata%indices(i)),pdata,gaux)
             gaux = gaux - pdata%y(int(pdata%indices(i)))
             
-            res(1) = res(1) + gaux * (t - 1.d0)
-            res(2) = res(2) + gaux * ((t - 1.d0)**2)
-            res(3) = res(3) + gaux * ((t - 1.d0)**3)
+            res(1) = res(1) + gaux * (ti - pdata%t(pdata%n_train))
+            res(2) = res(2) + gaux * ((ti - pdata%t(pdata%n_train))**2)
+            res(3) = res(3) + gaux * ((ti - pdata%t(pdata%n_train))**3)
          enddo
   
     end subroutine compute_grad_sp
@@ -401,17 +399,18 @@ program main
         real(kind=8),  intent(out) :: res(n,n)
         type(pdata_type), intent(in) :: pdata
 
-        real(kind=8) :: t
+        real(kind=8) :: ti,tm
         integer :: i
 
         res(:,:) = 0.0d0
+        tm = pdata%t(pdata%n_train)
 
         do i = 1, pdata%lovo_order
-            t = pdata%t(int(pdata%indices(i))) / pdata%t(pdata%n_train)
-             
-            res(1,:) = res(1,:) + (/(t - 1.d0)**2,(t - 1.d0)**3,(t - 1.d0)**4/) 
-            res(2,:) = res(2,:) + (/(t - 1.d0)**3,(t - 1.d0)**4,(t - 1.d0)**5/) 
-            res(3,:) = res(3,:) + (/(t - 1.d0)**4,(t - 1.d0)**5,(t - 1.d0)**6/) 
+            ti = pdata%t(int(pdata%indices(i)))
+
+            res(1,:) = res(1,:) + (/(ti-tm)**2,(ti-tm)**3,(ti-tm)**4/) 
+            res(2,:) = res(2,:) + (/(ti-tm)**3,(ti-tm)**4,(ti-tm)**5/) 
+            res(3,:) = res(3,:) + (/(ti-tm)**4,(ti-tm)**5,(ti-tm)**6/) 
             
         enddo
     
@@ -491,13 +490,11 @@ program main
         integer,        intent(in) :: n,i
         real(kind=8),   intent(in) :: x(n)
         real(kind=8),   intent(out) :: res
-        type(pdata_type), intent(in) :: pdata
-        real(kind=8) :: t
 
-        t = pdata%t(i) / pdata%t(pdata%n_train)
+        type(pdata_type), intent(in) :: pdata
    
-        res = pdata%y(pdata%n_train) + x(1) * (t - 1.d0) + &
-        x(2) * ((t - 1.d0)**2) + x(3) * ((t - 1.d0)**3) 
+        res = pdata%y(pdata%n_train) + x(1) * (pdata%t(i) - pdata%t(pdata%n_train)) + &
+        x(2) * ((pdata%t(i) - pdata%t(pdata%n_train))**2) + x(3) * ((pdata%t(i) - pdata%t(pdata%n_train))**3)
 
     end subroutine model
 
