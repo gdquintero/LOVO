@@ -54,7 +54,7 @@ program main
         read(100,*) pdata%n_test
     
         ! pdata%noutliers = 2*int(dble(pdata%n_train) / 5.0d0)
-        pdata%noutliers = 0
+        pdata%noutliers = 10
     
         allocate(pdata%t(pdata%n_train),pdata%y(pdata%n_train),pdata%y_test(pdata%n_test),pdata%t_test(pdata%n_test),&
         pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),pdata%indices(pdata%n_train),stat=allocerr)
@@ -242,6 +242,8 @@ program main
         av_err_train = av_err_train / (pdata%n_train - pdata%noutliers)
 
         av_err_test = 0.d0
+
+        write(*,"(A16,1X,ES10.3)") "Target function:",pdata%fobj
         print*
 
         do i = 1,pdata%n_test
