@@ -222,15 +222,15 @@ program main
 
     subroutine output()
         implicit none
-        integer :: i,j
+        integer :: i
         real(kind=8) :: t,ym,pred,av_err_train,av_err_test
 
         
         ym = pdata%y(pdata%n_train)
         av_err_train = 0.d0
 
-        do i = 1, pdata%n_train/pdata%n_train
-            t = pdata%t(i)
+        do i = 1, pdata%n_train
+            t = pdata%t(i)/pdata%n_train
             pred = ym + pdata%xk(1) * (t - 1.d0) + &
                         pdata%xk(2) * ((t - 1.d0)**2) + pdata%xk(3) * ((t - 1.d0)**3)
 
