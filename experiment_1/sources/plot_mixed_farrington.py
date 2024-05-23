@@ -27,12 +27,14 @@ def plot_mixed(ind,t,inf,df_seropositives,df_mixed):
 
     for i in range(n):
         plt.plot(t,models.F(t,*df_mixed.iloc[i].values),label="o = "+str(inf+i),linewidth=1)
-        plt.legend(loc='lower right',prop={'size':7})
+        plt.legend(loc='lower right',prop={'size':8})
 
     plt.plot(df_seropositives[0].values,df_seropositives[ind].values,"ko",ms=3)
     plt.tick_params(axis='both',direction='in')
-    plt.xticks(range(0, 71, 10))
-    # plt.yticks(range(-4, 5, 2))
+    plt.xticks(np.arange(0,71,10))
+    plt.yticks(np.arange(0.2,1.1,0.2))
+    plt.ylim(0.0,1)
+    plt.xlim(-4.0,70)
     plt.savefig(parent+"/images/"+str(ind)+".pdf",bbox_inches = "tight")
     
     # plt.show()

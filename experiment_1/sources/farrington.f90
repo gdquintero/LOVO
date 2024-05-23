@@ -42,8 +42,8 @@ program farrington
   
     pdata%t(:) = pdata%data(1,:)
 
-    pdata%inf = 0
-    pdata%sup = 10
+    pdata%inf = 4
+    pdata%sup = 4
 
     pdata%lbnd(1:n) = 0.0d0
     pdata%ubnd(1:n) = 1.0d+20
