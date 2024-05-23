@@ -10,34 +10,32 @@ cwd = os.getcwd()
 parent =  os.path.abspath(os.path.join(cwd,os.pardir))
 
 def plot_mixed(ind,t,inf,df_seropositives,df_mixed):
-    disease = [r"Measles",r"Mumps",r"Rubella"]
-    plt.rcParams.update({'font.size': 13})
+    size_img = 0.6
+    plt.rcParams.update({'font.size': 11})
+    plt.rcParams['figure.figsize'] = [size_img * 6.4,size_img * 4.8]
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
-    NUM_COLORS = 10
+    NUM_COLORS = 11
     cm = plt.get_cmap('rainbow')
-    cNorm  = colors.Normalize(vmin=0, vmax=NUM_COLORS-1)
+    cNorm  = colors.Normalize(vmin=0, vmax=NUM_COLORS+1)
     scalarMap = mplcm.ScalarMappable(norm=cNorm, cmap=cm)
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.set_prop_cycle(color=[scalarMap.to_rgba(NUM_COLORS-i) for i in range(NUM_COLORS)])
-    # plt.figure(figsize=(10,7))
-    # plt.xticks(fontsize=18)
-    # plt.yticks(fontsize=18)
     plt.ylim([0,1.05])
     
 
     for i in range(n):
-        plt.plot(t,models.F(t,*df_mixed.iloc[i].values),label="o = "+str(inf+i),linewidth=1.5)
-        # plt.title(disease[ind-1],fontsize = 18)
-        # plt.title(disease[ind-1])
-        plt.legend( loc='lower right')
+        plt.plot(t,models.F(t,*df_mixed.iloc[i].values),label="o = "+str(inf+i),linewidth=1)
+        plt.legend(loc='lower right',prop={'size':7})
 
-    l = plt.plot(df_seropositives[0].values,df_seropositives[ind].values,"ko")
-    plt.setp(l, 'markersize', 6)
-
-    # plt.savefig(disease[ind-1]+".pdf",bbox_inches = "tight")
-    plt.show()
+    plt.plot(df_seropositives[0].values,df_seropositives[ind].values,"ko",ms=3)
+    plt.tick_params(axis='both',direction='in')
+    plt.xticks(range(0, 71, 10))
+    # plt.yticks(range(-4, 5, 2))
+    plt.savefig(parent+"/images/"+str(ind)+".pdf",bbox_inches = "tight")
+    
+    # plt.show()
     plt.close()
 
 df_seropositives = pd.read_table(parent+"/data/seropositives.txt",delimiter=" ",header=None,skiprows=1)

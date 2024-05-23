@@ -42,8 +42,8 @@ program farrington
   
     pdata%t(:) = pdata%data(1,:)
 
-    pdata%inf = 4
-    pdata%sup = 4
+    pdata%inf = 0
+    pdata%sup = 10
 
     pdata%lbnd(1:n) = 0.0d0
     pdata%ubnd(1:n) = 1.0d+20
@@ -62,11 +62,11 @@ program farrington
     Open(Unit = 20, File = trim(pwd)//"/../data/sol_ovo_mumps.txt", Access = "SEQUENTIAL")
     Open(Unit = 30, File = trim(pwd)//"/../data/sol_ovo_rubella.txt", Access = "SEQUENTIAL")
 
-    do i = 1, pdata%sup-pdata%inf+1
-        read(10,*) pdata%sol_ovo_measles(i,:)
-        read(20,*) pdata%sol_ovo_mumps(i,:)
-        read(30,*) pdata%sol_ovo_rubella(i,:)
-    enddo
+    ! do i = 1, pdata%sup-pdata%inf+1
+    !     read(10,*) pdata%sol_ovo_measles(i,:)
+    !     read(20,*) pdata%sol_ovo_mumps(i,:)
+    !     read(30,*) pdata%sol_ovo_rubella(i,:)
+    ! enddo
 
     call mixed_test(n,pdata)
 
