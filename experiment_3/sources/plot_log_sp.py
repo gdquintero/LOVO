@@ -6,27 +6,23 @@ import os
 cwd = os.getcwd()
 parent =  os.path.abspath(os.path.join(cwd,os.pardir))
 
-plt.rcParams.update({'font.size': 13})
+size_img = 0.6
+plt.rcParams.update({'font.size': 11})
+plt.rcParams['figure.figsize'] = [size_img * 6.4,size_img * 4.8]
 plt.rc('text', usetex=True)
 plt.rc('font', family='serif')
-
-font = {'family': 'serif',
-        'color':  'black',
-        'weight': 'normal',
-        'size': 16,
-        }
 
 def plot1():
     fig = plt.figure()
     ax = fig.subplots(1, 1)
-    ax.loglog(x,y,"--go")
+    ax.tick_params(axis='both',direction='in')
+    ax.loglog(x,y,":o",color="darkgreen",lw=1,ms=4)
     ax.set_xscale('linear')
-    ax.set_xlim(inf - 0.5,sup + 0.5)
-    ax.set_ylim(min(np.log10(y)),max(np.log10(y))+10)
-    plt.xlabel("Number of outliers $o$",fontdict=font)
-    plt.ylabel("$S_q(x^*)$ (log scale)",fontdict=font)
-    # plt.figure(figsize=(1,1))
-    plt.savefig(parent+"/images/log10.pdf",bbox_inches = "tight")
+    plt.ylim(0,10)
+    # ax.set_ylim(min(np.log10(y)),max(np.log10(y))+10)
+    plt.xlabel("Number of outliers $o$")
+    plt.ylabel("$S_q(x^*)$ (log scale)")
+    plt.savefig(parent+"/images/log10.pdf",bbox_inches="tight")
     
     # plt.show()
 

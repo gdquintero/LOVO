@@ -42,7 +42,7 @@ for i in range(noutliers):
     cubic_outliers[1,i] = df_data.values[outliers[i]+1]
 
 plt.plot(t,models.cubic(x[0],x[1],x[2],t,y[len(y)-n_test-1],days[len(y)-n_test-1]),lw=1)
-plt.plot(cubic_outliers[0],cubic_outliers[1],'ro',mfc='none',ms=6)
+plt.plot(cubic_outliers[0],cubic_outliers[1],'ro',mfc='none',ms=7,mew=0.5)
 
 plt.plot(days[:n_train],y[:n_train],"ok",ms=3)
 plt.plot(days[n_train:],y[n_train:],"sk",mfc='none',ms=3)

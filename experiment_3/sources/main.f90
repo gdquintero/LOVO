@@ -108,14 +108,18 @@ program main
         Open(Unit = 200, File = trim(pwd)//"/../output/log_sp.txt", ACCESS = "SEQUENTIAL")
         Open(Unit = 300, File = trim(pwd)//"/../output/output_latex.txt", ACCESS = "SEQUENTIAL")
 
-        
+        pdata%xk(:) = 0.0d0
         do noutliers = pdata%inf, pdata%sup
+            
+            ! Initial solution by Least Squares
+            if (noutliers .ne. 0) then
+                pdata%xk(:) = 0.0d0
+                call lovo_algorithm(n,0,pdata%outliers,pdata,.false.,fobj,norm_bkj)
+            endif
 
             call cpu_time(start)
-            call lovo_algorithm(n,noutliers,pdata%outliers,pdata,.false.,fobj,norm_bkj)
+            call lovo_algorithm(n,noutliers,pdata%outliers,pdata,.true.,fobj,norm_bkj)
             call cpu_time(finish)
-
-            write(*,'(ES10.3)') norm_bkj
 
             av_err_train = 0.d0
 
@@ -179,9 +183,6 @@ program main
         iter_lovo = 0
         iter_sub_lovo = 0
         pdata%lovo_order = pdata%n_train - noutliers
-  
-        pdata%xk(1:n) =  -1.d0
-        ! pdata%xk(:) = 1.0d-1
   
         call compute_sp(n,pdata%xk,pdata,fxk)      
         
