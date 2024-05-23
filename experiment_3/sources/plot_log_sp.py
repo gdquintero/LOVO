@@ -13,9 +13,8 @@ plt.rc('text', usetex=True)
 plt.rc('font', family='serif')
 
 def plot1():
-    fig = plt.figure()
-    ax = fig.subplots(1, 1)
-    ax.tick_params(axis='both',direction='in')
+    fig,ax = plt.subplots(1, 1)
+    ax.tick_params(axis='both',direction='in',which='both')
     ax.loglog(x,y,":o",color="darkgreen",lw=1,ms=4)
     ax.set_xscale('linear')
     plt.ylim(0,10)
