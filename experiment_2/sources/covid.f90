@@ -53,8 +53,8 @@ program main
         read(100,*) pdata%n_train
         read(100,*) pdata%n_test
     
-        ! pdata%noutliers = 2*int(dble(pdata%n_train) / 5.0d0)
-        pdata%noutliers = 10
+        pdata%noutliers = 0*int(dble(pdata%n_train) / 5.0d0)
+        ! pdata%noutliers = 10
     
         allocate(pdata%t(pdata%n_train),pdata%y(pdata%n_train),pdata%y_test(pdata%n_test),pdata%t_test(pdata%n_test),&
         pdata%xtrial(n),pdata%xk(n),pdata%grad_sp(n),pdata%indices(pdata%n_train),stat=allocerr)
@@ -93,6 +93,8 @@ program main
             pdata%xk(:) = 0.0d0
             call lovo_algorithm(n,0,pdata%outliers,pdata,.false.,pdata%fobj,pdata%norm_bkj)
         endif
+
+        pdata%xk(:) = 1.0d-1
     
         call lovo_algorithm(n,pdata%noutliers,pdata%outliers,pdata,.true.,pdata%fobj,pdata%norm_bkj)
 
@@ -145,7 +147,7 @@ program main
   
         sigmin = 1.0d-1
         gamma = 1.0d+1
-        epsilon = 1.0d-4
+        epsilon = 1.0d-3
         alpha = 1.0d-8
         max_iter_lovo = 1000
         max_iter_sub_lovo = 100
@@ -279,19 +281,25 @@ program main
 
         integer,        intent(in) :: n,n_train,n_test
         real(kind=8),   intent(in) :: xsol(n),tm,ym
-        real(kind=8) :: delta_x,t,y
+        real(kind=8) :: delta_x,t,y,ti
         integer :: h,i
+
+        print*, "hi", ym
 
         h = 1000
         Open(Unit = 100, File = trim(pwd)//"/../output/plot_covid.txt", ACCESS = "SEQUENTIAL")
 
         delta_x = float((n_train + n_test - 1)) / float((h-1))
 
+
         do i = 1, h
             t = 1.d0 + (i-1) * delta_x
-            y = ym + xsol(1) * (t-tm) + xsol(2) * (t-tm)**2 + xsol(3) * (t-tm)**3 
-            write(100,*) t, y
+            ti = t / tm
+            y = ym + xsol(1) * (ti-1.d0) + xsol(2) * (ti-1.d0)**2 + xsol(3) * (ti-1.d0)**3 
+            write(100,10) t, y
         enddo
+
+        10 format (ES13.6,1X,ES13.6) 
 
         close(100)
 

@@ -23,16 +23,16 @@ countries = {
     "us" : "us.xlsx"
 }
 
-country = countries["it"]
+country = countries["br"]
 
-# ind_excel = 475
-ind_excel = 218
+
+ind_excel = 106
 
 df = pd.read_excel(parent+"/data/"+country)
 
 initial_date = ind_excel - 2
-n_train = 27
-n_test = 3
+n_train = 5
+n_test = 5
 total_days = n_train + n_test  
 data = np.zeros(total_days)
 

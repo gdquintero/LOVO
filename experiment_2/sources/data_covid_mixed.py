@@ -27,7 +27,8 @@ parent =  os.path.abspath(os.path.join(cwd,os.pardir))
 
 df = pd.read_excel(parent+"/data/"+country)
 
-ind_excel_init  = 456
+ind_excel_init  = 86
+# ind_excel_init  = 547
 ind_excel_end   = ind_excel_init + 99 
 init_date       = ind_excel_init - 2
 end_date        = ind_excel_end - 2
