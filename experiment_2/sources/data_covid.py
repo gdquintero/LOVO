@@ -26,7 +26,7 @@ countries = {
 country = countries["br"]
 
 
-ind_excel = 106
+ind_excel = 205
 
 df = pd.read_excel(parent+"/data/"+country)
 

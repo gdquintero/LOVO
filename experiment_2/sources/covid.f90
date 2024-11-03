@@ -98,6 +98,8 @@ program main
     
         call lovo_algorithm(n,pdata%noutliers,pdata%outliers,pdata,.true.,pdata%fobj,pdata%norm_bkj)
 
+        print*, pdata%xk
+
         ! do i = 1, 3
         !     print*, pdata%hess_sp(i,:)
         ! enddo

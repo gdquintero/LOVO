@@ -70,9 +70,9 @@ program main
     
         close(100)
 
-        out_per_ndays = 0
+        out_per_ndays = 1
         total_test = 71
-        ! total_test = 1
+        total_test = 1
 
         call cpu_time(start)
 
@@ -81,9 +81,10 @@ program main
 
             j = 0
         
-            do n_train = 5,25
+            do n_train = 5,25,5
                 j = j + 1
                 noutliers = out_per_ndays * n_train / 5
+
                 t_test = (/(k+1, k = n_train,n_train+4)/)
                 indices(:) = (/(k, k = 1, 25)/)
 
