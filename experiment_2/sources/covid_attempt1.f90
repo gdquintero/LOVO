@@ -40,9 +40,9 @@ program main
     subroutine hard_test()
         implicit none
 
-        integer :: samples,i,j,k,n_train,n_test,optimal_ntrain,noutliers,allocerr,out_per_ndays,total_test
+        integer :: samples,i,k,n_train,n_test,optimal_ntrain,noutliers,allocerr,out_per_ndays,total_test
         real(kind=8) :: fobj,tm,ym,pred,start,finish,av_err_train,av_err_train_best
-        real(kind=8), allocatable :: t(:),t_test(:),covid_data(:),indices(:),sp_vector(:),abs_err(:,:),av_abs_err(:)
+        real(kind=8), allocatable :: t(:),t_test(:),covid_data(:),indices(:),sp_vector(:),abs_err(:,:),av_abs_err(:),xinit(:)
         integer, allocatable :: outliers(:)
 
         Open(Unit = 100, File = trim(pwd)//"/../data/covid_mixed.txt", Access = "SEQUENTIAL")
@@ -55,7 +55,7 @@ program main
         allocate(covid_data(samples),t(25),t_test(n_test),indices(25),sp_vector(25),outliers(10),&
         pdata%hess_sp(pdata%n,pdata%n),pdata%eig_hess_sp(pdata%n),pdata%WORK(pdata%LWORK),&
         pdata%aux_mat(pdata%n,pdata%n),pdata%aux_vec(pdata%n),pdata%IPIV(pdata%n),pdata%xtrial(pdata%n),&
-        pdata%xk(pdata%n),pdata%grad_sp(pdata%n),abs_err(5,n_test),av_abs_err(5),stat=allocerr)
+        pdata%xk(pdata%n),pdata%grad_sp(pdata%n),abs_err(5,n_test),av_abs_err(5),xinit(pdata%n),stat=allocerr)
 
         if ( allocerr .ne. 0 ) then
             write(*,*) 'Allocation error.'
@@ -71,7 +71,7 @@ program main
         close(100)
 
         out_per_ndays = 0
-        total_test = 100
+        total_test = 1
 
         call cpu_time(start)
 
@@ -79,19 +79,28 @@ program main
             ym = covid_data(24+i)        
             av_err_train_best = huge(1.d0)
         
-            do n_train = 5,10,1
+            do n_train = 25,25,5
                 noutliers = out_per_ndays * n_train / 5
                 indices(:) = (/(k, k = 1, 25)/)
                 outliers(:) = 0
                 av_err_train = 0.d0
 
+                !----> Initial solution by least squares
+                pdata%xk(:) = 1.0d-1
+                call lovo_algorithm(t(1:n_train),covid_data(25+i-n_train:24+i),indices(1:n_train),&
+                outliers,n_train,0,sp_vector(1:n_train),pdata,.false.,fobj)
+                xinit(:) = pdata%xk(:)
+                ! Initial solution by least squares <----
+
                 call lovo_algorithm(t(1:n_train),covid_data(25+i-n_train:24+i),indices(1:n_train),&
                 outliers,n_train,noutliers,sp_vector(1:n_train),pdata,.false.,fobj)
+
+                print*, pdata%xk
 
                 do k = 1, n_train
                     tm = t(k) / t(n_train)
                     pred = cubic_model(tm,ym,pdata)
-    
+
                     if (.not. ANY(outliers(1:noutliers) .eq. k)) then
                         av_err_train = av_err_train + absolute_error(covid_data(24+i+k-n_train),pred)
                     endif
@@ -103,14 +112,16 @@ program main
                     optimal_ntrain = n_train
                     av_err_train_best = av_err_train
                 endif
-
-                print*, optimal_ntrain, av_err_train_best
                 
             enddo    
+
+            ! print*, optimal_ntrain, av_err_train_best
 
             indices(:) = (/(k, k = 1, 25)/)
             noutliers = out_per_ndays * optimal_ntrain / 5
             outliers(:) = 0
+
+            pdata%xk(:) = xinit(:)
 
             call lovo_algorithm(t(1:optimal_ntrain),covid_data(25+i-optimal_ntrain:24+i),&
             indices(1:optimal_ntrain),outliers,optimal_ntrain,noutliers,sp_vector(1:optimal_ntrain),pdata,.false.,fobj)
@@ -174,8 +185,6 @@ program main
         iter_lovo = 0
         iter_sub_lovo = 0
         lovo_order = n_train - noutliers
-  
-        pdata%xk(:) = 1.0d-1
         
         call compute_sp(pdata%xk,t,y,indices,sp_vector,pdata%n,n_train,lovo_order,fxk)
 
