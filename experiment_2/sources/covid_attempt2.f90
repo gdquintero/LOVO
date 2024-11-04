@@ -148,14 +148,16 @@ program main
             av_err_test = sum(err_test(:)) / n_val
 
             write(200,10) pdata%xk(1),pdata%xk(2),pdata%xk(3)
-            write(300,20) i,"&",optimal_ntrain,"&",fobj,"&",av_err_test,"&",av_err_train,"\\"
+            write(300,20) i,"&",optimal_ntrain,"&",fobj,"&",err_test(1),"&",err_test(2),"&",err_test(3),"&",&
+            err_test(4),"&",err_test(5),"&",av_err_test,"&",av_err_train,"\\"
 
         enddo
 
         call cpu_time(finish)
 
         10 format (ES13.6,1X,ES13.6,1X,ES13.6)
-        20 format (I3,1X,A1,1X,I2,1X,A1,1X,ES10.3,1X,A1,1X,ES10.3,1X,A1,1X,ES10.3,1X,A2)
+        20 format (I3,1X,A1,1X,I2,1X,A1,1X,ES10.3,1X,A1,1X,ES10.3,1X,A1,1X,ES10.3,1X,A1,1X,ES10.3,1X,&
+        A1,1X,ES10.3,1X,A1,1X,ES10.3,1X,A1,1X,ES10.3,1X,A1,1X,ES10.3,1X,A2)
 
         close(200)
         close(300)
