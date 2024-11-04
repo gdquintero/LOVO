@@ -148,7 +148,7 @@ program main
             av_err_test = sum(err_test(:)) / n_val
 
             write(200,10) pdata%xk(1),pdata%xk(2),pdata%xk(3)
-            write(300,20) i,"&",optimal_ntrain,"&",fobj,"&",av_err_train,"&",av_err_test,"\\"
+            write(300,20) i,"&",optimal_ntrain,"&",fobj,"&",av_err_test,"&",av_err_train,"\\"
 
         enddo
 
