@@ -41,11 +41,12 @@ program main
         implicit none
 
         integer :: samples,i,k,n_train,n_test,optimal_ntrain,noutliers,allocerr,out_per_ndays,total_test
-        real(kind=8) :: fobj,tm,ym,pred,start,finish,av_err_train,av_err_train_best
-        real(kind=8), allocatable :: t(:),t_test(:),covid_data(:),indices(:),sp_vector(:),abs_err(:,:),av_abs_err(:),xinit(:)
+        real(kind=8) :: fobj,tm,ym,pred,start,finish,av_err_train,av_err_train_best,av_err_test
+        real(kind=8), allocatable :: t(:),t_test(:),covid_data(:),indices(:),sp_vector(:),abs_err(:,:),&
+        err_test(:),av_abs_err(:),xinit(:)
         integer, allocatable :: outliers(:)
 
-        Open(Unit = 100, File = trim(pwd)//"/../data/covid_mixed.txt", Access = "SEQUENTIAL")
+        Open(Unit = 100, File = trim(pwd)//"/../data/covid_attempt1.txt", Access = "SEQUENTIAL")
         Open(Unit = 200, File = trim(pwd)//"/../output/solutions_covid_mixed.txt", Access = "SEQUENTIAL")
         Open(Unit = 300, File = trim(pwd)//"/../output/output_covid_hard.txt", Access = "SEQUENTIAL")
     
@@ -53,7 +54,7 @@ program main
         n_test = 5
 
         allocate(covid_data(samples),t(25),t_test(n_test),indices(25),sp_vector(25),outliers(10),&
-        pdata%hess_sp(pdata%n,pdata%n),pdata%eig_hess_sp(pdata%n),pdata%WORK(pdata%LWORK),&
+        pdata%hess_sp(pdata%n,pdata%n),pdata%eig_hess_sp(pdata%n),pdata%WORK(pdata%LWORK),err_test(n_test),&
         pdata%aux_mat(pdata%n,pdata%n),pdata%aux_vec(pdata%n),pdata%IPIV(pdata%n),pdata%xtrial(pdata%n),&
         pdata%xk(pdata%n),pdata%grad_sp(pdata%n),abs_err(5,n_test),av_abs_err(5),xinit(pdata%n),stat=allocerr)
 
@@ -70,16 +71,17 @@ program main
     
         close(100)
 
-        out_per_ndays = 0
-        total_test = 1
+        out_per_ndays = 2
+        total_test = 50
 
         call cpu_time(start)
 
         do i = 1, total_test
             ym = covid_data(24+i)        
             av_err_train_best = huge(1.d0)
+            err_test(:) = 0.d0
         
-            do n_train = 25,25,5
+            do n_train = 5,25,5
                 noutliers = out_per_ndays * n_train / 5
                 indices(:) = (/(k, k = 1, 25)/)
                 outliers(:) = 0
@@ -94,8 +96,6 @@ program main
 
                 call lovo_algorithm(t(1:n_train),covid_data(25+i-n_train:24+i),indices(1:n_train),&
                 outliers,n_train,noutliers,sp_vector(1:n_train),pdata,.false.,fobj)
-
-                print*, pdata%xk
 
                 do k = 1, n_train
                     tm = t(k) / t(n_train)
@@ -115,8 +115,7 @@ program main
                 
             enddo    
 
-            ! print*, optimal_ntrain, av_err_train_best
-
+            t_test = (/(k+1, k = optimal_ntrain,optimal_ntrain + 4)/)
             indices(:) = (/(k, k = 1, 25)/)
             noutliers = out_per_ndays * optimal_ntrain / 5
             outliers(:) = 0
@@ -126,27 +125,25 @@ program main
             call lovo_algorithm(t(1:optimal_ntrain),covid_data(25+i-optimal_ntrain:24+i),&
             indices(1:optimal_ntrain),outliers,optimal_ntrain,noutliers,sp_vector(1:optimal_ntrain),pdata,.false.,fobj)
 
-            do k = 1, optimal_ntrain
-                tm = t(k) / t(optimal_ntrain)
+            do k = 1, n_test
+                tm = t_test(k) / t(optimal_ntrain)
                 pred = cubic_model(tm,ym,pdata)
 
-                if (.not. ANY(outliers(1:noutliers) .eq. k)) then
-                    av_err_train = av_err_train + absolute_error(covid_data(k),pred)
-                endif
+                err_test(k) = err_test(k) + absolute_error(covid_data(29+i+k),pred)
             enddo  
+            
+            av_err_test = sum(err_test(:)) / n_test
 
-            ! av_err_train = av_err_train / (optimal_ntrain - noutliers)
+            write(200,10) pdata%xk(1),pdata%xk(2),pdata%xk(3)
+            write(300,20) i,"&",optimal_ntrain,"&",av_err_train_best,"&",av_err_test
 
-            ! write(200,10) pdata%xk(1),pdata%xk(2),pdata%xk(3)
-            ! write(300,20) i,"&",optimal_ntrain,"&",fobj,"&",av_err_train,"&",av_err_test,"\\"
-
-            ! av_err_train = 0.d0
+            av_err_train = 0.d0
         enddo
 
         call cpu_time(finish)
 
         10 format (ES13.6,1X,ES13.6,1X,ES13.6)
-        20 format (I3,1X,A1,1X,I2,1X,A1,1X,ES10.3,1X,A1,1X,ES10.3,1X,A1,1X,ES10.3,1X,A2)
+        20 format (I3,1X,A1,1X,I2,1X,A1,1X,ES10.3,1X,A1,1X,ES10.3)
 
         close(200)
         close(300)

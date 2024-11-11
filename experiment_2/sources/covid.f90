@@ -53,7 +53,7 @@ program main
         read(100,*) pdata%n_train
         read(100,*) pdata%n_test
     
-        pdata%noutliers = 0*int(dble(pdata%n_train) / 5.0d0)
+        pdata%noutliers = 2*int(dble(pdata%n_train) / 5.0d0)
         ! pdata%noutliers = 10
     
         allocate(pdata%t(pdata%n_train),pdata%y(pdata%n_train),pdata%y_test(pdata%n_test),pdata%t_test(pdata%n_test),&
@@ -89,16 +89,13 @@ program main
         Open(Unit = 200, File = trim(pwd)//"/../output/outliers.txt", ACCESS = "SEQUENTIAL")
 
         ! Initial solution by Least Squares
-        if (pdata%noutliers .ne. 0) then
-            pdata%xk(:) = 0.0d0
-            call lovo_algorithm(n,0,pdata%outliers,pdata,.false.,pdata%fobj,pdata%norm_bkj)
-        endif
-
+       
         pdata%xk(:) = 1.0d-1
+        call lovo_algorithm(n,0,pdata%outliers,pdata,.false.,pdata%fobj,pdata%norm_bkj)
+
+        ! print*, pdata%xk
     
         call lovo_algorithm(n,pdata%noutliers,pdata%outliers,pdata,.true.,pdata%fobj,pdata%norm_bkj)
-
-        print*, pdata%xk
 
         ! do i = 1, 3
         !     print*, pdata%hess_sp(i,:)
@@ -286,13 +283,10 @@ program main
         real(kind=8) :: delta_x,t,y,ti
         integer :: h,i
 
-        print*, "hi", ym
-
         h = 1000
         Open(Unit = 100, File = trim(pwd)//"/../output/plot_covid.txt", ACCESS = "SEQUENTIAL")
 
         delta_x = float((n_train + n_test - 1)) / float((h-1))
-
 
         do i = 1, h
             t = 1.d0 + (i-1) * delta_x

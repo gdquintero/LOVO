@@ -40,10 +40,12 @@ program main
     subroutine hard_test()
         implicit none
 
-        integer :: samples,i,k,n_train,n_test,n_val,optimal_ntrain,noutliers,allocerr,out_per_ndays,total_test
-        real(kind=8) :: fobj,tm,ym,pred,av_err_test,start,finish,av_err_val_best,av_err_val,av_err_train
+        integer :: samples,i,k,n_train,n_test,n_val,optimal_ntrain,noutliers,allocerr,out_per_ndays,&
+        total_test,ind_best,ind_worse
+        real(kind=8) :: fobj,tm,ym,pred,av_err_test,start,finish,av_err_val_best,av_err_val,av_err_train,&
+        av_err_test_best,av_err_test_worse
         real(kind=8), allocatable :: t(:),t_test(:),t_val(:),covid_data(:),indices(:),sp_vector(:),abs_err(:,:),&
-        av_abs_err(:),xinit(:),err_val(:),err_test(:)
+        av_abs_err(:),err_val(:),err_test(:)
         integer, allocatable :: outliers(:)
 
         Open(Unit = 100, File = trim(pwd)//"/../data/covid_attempt2.txt", Access = "SEQUENTIAL")
@@ -55,9 +57,9 @@ program main
         n_val = 5
 
         allocate(covid_data(samples),t(25),t_test(n_test),t_val(n_val),indices(25),sp_vector(25),outliers(10),&
-        pdata%hess_sp(pdata%n,pdata%n),pdata%eig_hess_sp(pdata%n),pdata%WORK(pdata%LWORK),xinit(pdata%n),&
-        pdata%aux_mat(pdata%n,pdata%n),pdata%aux_vec(pdata%n),pdata%IPIV(pdata%n),pdata%xtrial(pdata%n),&
-        pdata%xk(pdata%n),pdata%grad_sp(pdata%n),abs_err(21,n_test),av_abs_err(21),err_val(n_val),err_test(n_test),stat=allocerr)
+        pdata%hess_sp(pdata%n,pdata%n),pdata%eig_hess_sp(pdata%n),pdata%WORK(pdata%LWORK),pdata%aux_mat(pdata%n,pdata%n),&
+        pdata%aux_vec(pdata%n),pdata%IPIV(pdata%n),pdata%xtrial(pdata%n),pdata%xk(pdata%n),pdata%grad_sp(pdata%n),&
+        abs_err(21,n_test),av_abs_err(21),err_val(n_val),err_test(n_test),stat=allocerr)
 
         if ( allocerr .ne. 0 ) then
             write(*,*) 'Allocation error.'
@@ -72,8 +74,10 @@ program main
     
         close(100)
 
-        out_per_ndays = 0
+        out_per_ndays = 2
         total_test = 100
+        av_err_test_best = huge(1.d0)
+        av_err_test_worse = 0.d0
 
         call cpu_time(start)
 
@@ -94,7 +98,7 @@ program main
                 pdata%xk(:) = 1.0d-1
                 call lovo_algorithm(t(1:n_train),covid_data(25+i-n_train:24+i),indices(1:n_train),&
                 outliers,n_train,0,sp_vector(1:n_train),pdata,.false.,fobj)
-                xinit(:) = pdata%xk(:)
+
                 ! Initial solution by least squares <----
 
                 call lovo_algorithm(t(1:n_train),covid_data(25+i-n_train:24+i),indices(1:n_train),&
@@ -122,10 +126,16 @@ program main
             noutliers = out_per_ndays * optimal_ntrain / 5
             outliers(:) = 0
 
-            pdata%xk(:) = xinit(:)
+            !----> Initial solution by least squares
+            pdata%xk(:) = 1.0d-1
+            call lovo_algorithm(t(1:optimal_ntrain),covid_data(30+i-optimal_ntrain:29+i),&
+            indices(1:optimal_ntrain),outliers,optimal_ntrain,0,sp_vector(1:optimal_ntrain),pdata,.false.,fobj)
+
+            ! Initial solution by least squares <----
 
             call lovo_algorithm(t(1:optimal_ntrain),covid_data(30+i-optimal_ntrain:29+i),&
             indices(1:optimal_ntrain),outliers,optimal_ntrain,noutliers,sp_vector(1:optimal_ntrain),pdata,.false.,fobj)
+
 
             do k = 1, optimal_ntrain
                 tm = t(k) / t(optimal_ntrain)
@@ -147,17 +157,28 @@ program main
             
             av_err_test = sum(err_test(:)) / n_val
 
+            if (av_err_test .lt. av_err_test_best) then
+                av_err_test_best = av_err_test
+                ind_best = i
+            endif
+
+            if (av_err_test .gt. av_err_test_worse) then            
+                av_err_test_worse = av_err_test
+                ind_worse = i
+            endif
+
             write(200,10) pdata%xk(1),pdata%xk(2),pdata%xk(3)
-            write(300,20) i,"&",optimal_ntrain,"&",fobj,"&",err_test(1),"&",err_test(2),"&",err_test(3),"&",&
-            err_test(4),"&",err_test(5),"&",av_err_test,"&",av_err_train,"\\"
+            write(300,20) i,"&",optimal_ntrain,"&",fobj,"&",av_err_train,"&",av_err_test,"\\"
 
         enddo
+
+        print*, "Best:", ind_best
+        print*, "Worse:", ind_worse
 
         call cpu_time(finish)
 
         10 format (ES13.6,1X,ES13.6,1X,ES13.6)
-        20 format (I3,1X,A1,1X,I2,1X,A1,1X,ES10.3,1X,A1,1X,ES10.3,1X,A1,1X,ES10.3,1X,A1,1X,ES10.3,1X,&
-        A1,1X,ES10.3,1X,A1,1X,ES10.3,1X,A1,1X,ES10.3,1X,A1,1X,ES10.3,1X,A2)
+        20 format (I3,1X,A1,1X,I2,1X,A1,1X,ES10.3,1X,A1,1X,ES10.3,1X,A1,1X,ES10.3,1X,A2)
 
         close(200)
         close(300)
@@ -196,8 +217,6 @@ program main
         iter_lovo = 0
         iter_sub_lovo = 0
         lovo_order = n_train - noutliers
-  
-        pdata%xk(:) = 1.0d-1
         
         call compute_sp(pdata%xk,t,y,indices,sp_vector,pdata%n,n_train,lovo_order,fxk)
 

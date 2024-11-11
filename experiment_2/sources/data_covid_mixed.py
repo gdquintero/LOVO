@@ -29,13 +29,13 @@ df = pd.read_excel(parent+"/data/"+country)
 
 ind_excel_init  = 86
 # ind_excel_init  = 547
-ind_excel_end   = ind_excel_init + 134
+ind_excel_end   = ind_excel_init + 129
 init_date       = ind_excel_init - 2
 end_date        = ind_excel_end - 2
 n = ind_excel_end-ind_excel_init + 1
 data = np.empty(n)
 
-with open(parent+"/data/covid_attempt2.txt","w") as f:
+with open(parent+"/data/covid_attempt1.txt","w") as f:
     f.write("%i\n" % n)
     for i in range(n):
         x = df["new_deaths_smoothed_per_million"][i+init_date]
