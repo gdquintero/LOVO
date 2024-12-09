@@ -74,7 +74,7 @@ program main
     
         close(100)
 
-        out_per_ndays = 2
+        out_per_ndays = 1
         total_test = 100
         av_err_test_best = huge(1.d0)
         av_err_test_worse = 0.d0

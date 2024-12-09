@@ -53,7 +53,7 @@ program main
         read(100,*) pdata%n_train
         read(100,*) pdata%n_test
     
-        pdata%noutliers = 2*int(dble(pdata%n_train) / 5.0d0)
+        pdata%noutliers = 1*int(dble(pdata%n_train) / 5.0d0)
         ! pdata%noutliers = 10
     
         allocate(pdata%t(pdata%n_train),pdata%y(pdata%n_train),pdata%y_test(pdata%n_test),pdata%t_test(pdata%n_test),&
